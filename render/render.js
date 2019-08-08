@@ -62,13 +62,14 @@ function loadTexture(gl,url){
 
 //Fps timing variables
 
-//Things that don't need to be done every frame
+//Things that don't need to be done every frame just once
+
 
 //Depth testing
 gl.enable(gl.DEPTH_TEST);
  
 //Back face culling   
-gl.enable(gl.CULL_FACE);
+//gl.enable(gl.CULL_FACE);
 gl.cullFace(gl.BACK);
 //No alpha blending          
 gl.disable(gl.BLEND);
@@ -89,6 +90,58 @@ gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
 
 //Background color
 gl.clearColor(0.10, 0.0, 0.1, 1.0);  
+
+
+//Building buffer for the block infront of you
+blockBuildVao = gl.createVertexArray();
+blockBuildPos = gl.createBuffer();
+blockBuildCol = gl.createBuffer();
+
+
+gl.bindVertexArray(blockBuildVao);
+
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPos);
+gl.vertexAttribPointer(programInfoCube.attribLocations.voxelPosition,3,gl.SHORT,false,0,0);
+gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelPosition);	
+
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildCol);
+gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array([
+90,90,90,
+90,90,90,
+90,90,90,
+90,90,90,
+
+150,150,150,
+150,150,150,
+150,150,150,
+150,150,150,
+
+50,50,50,
+50,50,50,
+50,50,50,
+50,50,50,
+
+110,110,110,
+110,110,110,
+110,110,110,
+110,110,110,
+
+170,170,170,
+170,170,170,
+170,170,170,
+170,170,170,
+
+210,210,210,
+210,210,210,
+210,210,210,
+210,210,210,
+]),gl.DYNAMIC_DRAW);
+gl.vertexAttribPointer(programInfoCube.attribLocations.voxelColor,3,gl.UNSIGNED_BYTE,false,0,0);
+gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelColor);
+
+
 
 
 //FPS
@@ -268,6 +321,16 @@ function drawScene(now) {
 			}
 		
 	}
+	
+	//Draw block infront where you will build
+	
+	if(ortho==0){
+		gl.bindVertexArray(blockBuildVao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, blockBuildPos);
+		gl.bufferData(gl.ARRAY_BUFFER,buildArrayPos,gl.DYNAMIC_DRAW);
+		gl.depthFunc(gl.LEQUAL);
+		gl.drawElements(gl.LINES, 36,gl.UNSIGNED_SHORT,0);	
+	}	
 
 	//Send buffers 
 	buffers_send();

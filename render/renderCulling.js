@@ -356,6 +356,7 @@ draw_chunk =function(chunkID){
 	var chunkPos = [(chunk[chunkID].coords[0]*chunkXY),(chunk[chunkID].coords[1]*chunkXY),(chunk[chunkID].coords[2]*chunkZ)];
 	//Mesh the blocklist 
 	var get = greedy(chunk[chunkID].blockList,chunkPos);;
+	console.log(get);
 	//Add draw data to send list
 	sendList.push({
 		coords: [chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2]],

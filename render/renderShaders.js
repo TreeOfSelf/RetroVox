@@ -107,7 +107,8 @@ void main() {
 	//Different depth depending on orthographic/perspective
 	if(uOrtho==1){
 		gl_Position[2]*=0.5;
-	}else{
+	}
+	if(uOrtho==2){
 		gl_Position[2]*=0.1;
 	}
 

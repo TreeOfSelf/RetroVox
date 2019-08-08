@@ -23,7 +23,7 @@ var keys=[];
 //Cam height modifier for crouching / proning
 var camHeightChange=0;
 
-//Whether you are unplayerCrouched, playerCrouched, or proned
+//Whether you are unplayerCrouched 0 , playerCrouched 1, or proned 2
 var playerCrouched=0;
 
 //Whether you are wallrunning
@@ -41,7 +41,6 @@ var buildMode=0;
 //Offset for the build positions
 var buildOffset = [0,0,0]
 
-
 //distance from camera to build at
 var buildDistance=1;
 
@@ -55,7 +54,6 @@ var blockBuild=16;
 var blockDel=3;
 
 
-
 //Player max speed
 var pspeed = 0.15;
 //Player acceleration
@@ -66,9 +64,8 @@ var forwardSpeed=0.0;
 //Strafe speed
 var strafeSpeed=0.0;
 
-
 //Vertical momemntum
-var mom=0;
+var momentum=0;
 
 //Whether or not on solid ground
 var solid=0;
@@ -80,6 +77,9 @@ function move_player(speedCheckX,speedCheckY,camChange){
 	var loc=-1;
 
 	//If gravity is on check for blocks infront
+	//The sloppy nested if statement is checking 3 blocks up and down
+	//I need to clean that up into a variable amount it checks up
+	//Depending on a height variable
 	if(gravity==1){
 		var loc = check_block(Math.round(cam[0]-Math.sin(camRotate[0]+camChange)*speedCheckX*forwardChange),Math.round(cam[1]	+Math.cos(camRotate[0]+camChange)*speedCheckY*forwardChange),Math.round(cam[2]));
 		if(loc==-1 || playerCrouched>0){
@@ -94,24 +94,28 @@ function move_player(speedCheckX,speedCheckY,camChange){
 		}
 	}
 	
+	//If a block was not deteced
 	if(loc==-1){
-	cam[0]-=Math.sin(camRotate[0]+camChange)*speedCheckX;
-	cam[1]+=Math.cos(camRotate[0]+camChange)*speedCheckY;
-	if(gravity==0 && camChange==0){
-	cam[2]-=Math.sin(camRotate[1])*(speedCheckX);
-	}
+		//Move camera coodinate
+		cam[0]-=Math.sin(camRotate[0]+camChange)*speedCheckX;
+		cam[1]+=Math.cos(camRotate[0]+camChange)*speedCheckY;
+		//Noclip moves the Z axis as well ^up and down v
+		if(gravity==0 && camChange==0){
+			cam[2]-=Math.sin(camRotate[1])*(speedCheckX);
+		}
+	//If you are walking into a block
 	}else{
+		//Walk up bottom blocks
 		if(bottom==1){
 			cam[2]-=1;
 			cam[0]-=Math.sin(camRotate[0]+camChange)*forwardSpeed;
 			cam[1]+=Math.cos(camRotate[0]+camChange)*forwardSpeed;
-
+		//Slow speed
 		}else{;
 			forwardSpeed*=0.99;
 			strafeSpeed*=0.99;
 		}
 	}
-	
 }
 
 
@@ -134,12 +138,19 @@ canvas.addEventListener('click', function() {canvas.requestPointerLock(); }, fal
 
 //Scroll
 canvas.addEventListener('wheel', function(e) {
+	//Prevent zooming while holding control
 	e.preventDefault();	
+	
+	
+	//Zoom orthographic view
 	if(ortho==1){
 		orthoView+=(e.deltaY*0.001)*orthoView;
 		if(orthoView<1){
 			orthoView=1;
 		}
+	//Move build distance
+	}else{
+		buildDistance-=(e.deltaY*0.001)*buildDistance;		
 	}
 });
 
@@ -147,23 +158,23 @@ canvas.addEventListener('wheel', function(e) {
 //Mouse look
 canvas.addEventListener('mousemove', function(e) {
 	//If pointer is locked
-	//if(document.pointerLockElement === canvas ||document.mozPointerLockElement === canvas) {
-   
-	//Move camera rotations depending on mouse X&Y
-	camRotate[0]+=e.movementX*0.004;
-	camRotate[1]+=e.movementY*0.004;
-	
-	//BHOP momentum if you are not prone and are on solid ground
-	/*if(solid==0 && playerCrouched!=2){
-		if(Math.abs(forwardSpeed)>0.01){
-		if(forwardSpeed>=0){
-		forwardSpeed+=Math.abs(e.movementX)*0.00002
-		}else{
-		forwardSpeed-=Math.abs(e.movementX)*0.00002
+	if(document.pointerLockElement === canvas ||document.mozPointerLockElement === canvas) {
+	   
+		//Move camera rotations depending on mouse X&Y
+		camRotate[0]+=e.movementX*0.004;
+		camRotate[1]+=e.movementY*0.004;
+		
+		//BHOP momentum if you are not prone and are on solid ground
+		if(solid==0 && playerCrouched!=2){
+			if(Math.abs(forwardSpeed)>0.01){
+			if(forwardSpeed>=0){
+			forwardSpeed+=Math.abs(e.movementX)*0.00002
+			}else{
+			forwardSpeed-=Math.abs(e.movementX)*0.00002
+			}
+			}
 		}
-		}
-	}*/
-//} 
+	} 
 	}, false);
 
  
@@ -174,15 +185,6 @@ document.onkeydown=function(e){
 	e =  e || window.event;
 	e.preventDefault(); e.stopPropagation();
 	
-
-	//Generate test cluster on culling Worker
-	if(e.key=='h' || e.key=='H'){
-		cullWorker.postMessage({
-		id : 'generate',
-	});
-	}
-	
-	
 	//Buildmode toggle
 	if(e.key=='n' || e.key=='N'){
 		if(buildMode==0){
@@ -192,9 +194,6 @@ document.onkeydown=function(e){
 		}
 	}
 	
-	if(e.key=='c' || e.key=='C'){
-		create_frustrum();
-	}
 	
 	//Reset player position & camera
 	if(e.key=='r' || e.key=='R'){
@@ -205,7 +204,6 @@ document.onkeydown=function(e){
 	//Prone
 	if(e.key=='z' || e.key=='Z'){
 		
-
 		//Go prone 
 		if(playerCrouched!=2){
 			playerCrouched=2;
@@ -225,15 +223,11 @@ document.onkeydown=function(e){
 	}
 	//Massive block
 	if(e.key=='Q' || e.key=='q'){
-		
 		cullWorker.postMessage({
 			id : "bigBlock",
 			blockBuild : Math.round(blockBuild*6.25),
-			cam : cam,
+			cam : buildPos,
 		});
-
-		
-		
 	}	
 	
 	
@@ -243,24 +237,17 @@ document.onkeydown=function(e){
 		cullWorker.postMessage({
 			id : "bigBlock",
 			blockBuild : blockBuild,
-			cam : cam,
+			cam : buildPos,
 		});
-
-		
-		
 	}
-	
-	
-	
+
 	//Full screen
 	if(e.key=='Enter'){
 	canvas.requestFullscreen();
 	}
 	
-	
 
-	
-	//Isometric view toggle
+	//Orthographic view toggle
 	if(e.key=='l' || e.key=='L'){
 		if(ortho==0){
 			ortho=1;
@@ -272,7 +259,7 @@ document.onkeydown=function(e){
 	
 	//Gravity toggle
 	if(e.key=='M' || e.key=='m'){
-		mom=0;
+		momentum=0;
 		if(gravity==0){
 			gravity=1;
 		}else{
@@ -301,10 +288,51 @@ function playerControl(){
 	//Turn off playerWallRunning (will be set to 1 again if you continue to run on the wall)
 	playerWallRunning=0;
 	
-	buildPos=[Math.round(cam[0]+buildOffset[0]+Math.sin(camRotate[0])*buildDistance),Math.round(cam[1]+buildOffset[1]-Math.cos(camRotate[0])*buildDistance),Math.round(cam[2]+buildOffset[2]+(camRotate[1]*buildDistance))]
 	
+	//Set build position based on camera view and buildDistance
+	//buildPos=[Math.round(cam[0]+buildOffset[0]+Math.sin(camRotate[0])*buildDistance),Math.round(cam[1]+buildOffset[1]-Math.cos(camRotate[0])*buildDistance),Math.round(cam[2]+buildOffset[2]+(camRotate[1]*buildDistance))]
+	buildPos=[Math.round(cam[0]+(Math.sin(camRotate[0])*Math.cos(camRotate[1]))*buildDistance), Math.round(cam[1]+(Math.cos(camRotate[0])*-Math.cos(camRotate[1])) *buildDistance), Math.round(cam[2]+Math.sin(camRotate[1])*buildDistance)]
 	
-		
+	buildArrayPos = new Int16Array([
+	
+	buildPos[0],  buildPos[1], buildPos[2],
+	buildPos[0],  buildPos[1]+1.0,buildPos[2],
+	buildPos[0]+1.0,  buildPos[1]+1.0,buildPos[2],
+	buildPos[0]+1.0,  buildPos[1], buildPos[2],
+
+	// Back face
+	buildPos[0],  buildPos[1], buildPos[2]+1.0,
+	buildPos[0],  buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0]+1.0,  buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0]+1.0,  buildPos[1], buildPos[2]+1.0,
+
+
+	// Top face
+	buildPos[0],  buildPos[1]+1.0, buildPos[2],
+	buildPos[0],  buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0]+1.0,  buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0]+1.0,  buildPos[1]+1.0, buildPos[2],
+
+	// Bottom face
+	buildPos[0], buildPos[1], buildPos[2],
+	buildPos[0]+1.0, buildPos[1], buildPos[2],
+	buildPos[0]+1.0, buildPos[1],buildPos[2]+1.0,
+	buildPos[0], buildPos[1],buildPos[2]+1.0,
+
+	// Right face
+	buildPos[0]+1.0, buildPos[1],buildPos[2],
+	buildPos[0]+1.0, buildPos[1]+1.0, buildPos[2],
+	buildPos[0]+1.0, buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0]+1.0, buildPos[1],buildPos[2]+1.0,
+
+	// Left face
+	buildPos[0], buildPos[1], buildPos[2],
+	buildPos[0], buildPos[1],buildPos[2]+1.0,
+	buildPos[0], buildPos[1]+1.0,buildPos[2]+1.0,
+	buildPos[0], buildPos[1]+1.0, buildPos[2],
+	]);
+
+			
 	//Camera constraint
 	
 	//Loop camera X if over or under max
@@ -366,7 +394,7 @@ function playerControl(){
 		cullWorker.postMessage({
 			id : "bigSphere",
 			blockBuild : blockBuild,
-			cam : cam,
+			cam : buildPos,
 		});
 	}
 	
@@ -377,15 +405,15 @@ function playerControl(){
 			switch(playerCrouched){
 			//Uncrouched
 			case 0:
-			mom=-0.5;solid=0;
+			momentum=-0.5;solid=0;
 			break;
 			//Crouched
 			case 1:
-			mom-=0.7;solid=0;
+			momentum-=0.7;solid=0;
 			break;
 			//Proned
 			case 2:
-			mom-=0.2;solid=0;
+			momentum-=0.2;solid=0;
 			break;
 			}
 		}
@@ -401,19 +429,21 @@ function playerControl(){
 		cullWorker.postMessage({
 			id : "bigDelete",
 			blockDel : blockDel,
-			cam : cam,
+			cam : buildPos,
 		});
 	}
 	
 	//Move camera for crouching/proning & uncrouching 
 	
 	switch(playerCrouched){
+		//Uncrouched set camHeight to 0
 		case 0:
 			if(camHeightChange>0){
 				camHeightChange-=0.1;
 			}
 		break;
 		case 1:
+		//Crouched set camHeight to 15
 			if(camHeightChange<1.5){
 				camHeightChange+=0.1;
 			}
@@ -422,6 +452,7 @@ function playerControl(){
 			}
 		break;
 		case 2:
+		//Proned set camHeight to 2.3
 			if(camHeightChange<2.3){
 				camHeightChange+=0.1;
 			}
@@ -468,34 +499,38 @@ function playerControl(){
 	//Sprint
 	var speed=pspeed;
 
-	//Sprint if uncrouched & on solid ground
-	if(playerCrouched==0 && solid==1.0){
-		if(keys['SHIFT']==1 || keys['Q']==1){
-			 speed=pspeed*1.5;
+	
+	//Speed modifiers for sprinting/crouching/proning
+	if(solid==1){
+		switch(playerCrouched){
+			case 0:
+			//Uncrouched
+				if(keys['SHIFT']==1){
+					 speed=pspeed*1.5;
+				}
+			break;
+			//Crouched
+			case 1:
+				speed*=0.6;
+			break;
+			//Prone
+			case 2:
+				speed*=0.3;
+			break;
 		}
 	}
-	
-	
-	if(playerCrouched==1 && solid==1.0){
-		speed*=0.6;
-	}
-	if(playerCrouched==2){
-		speed*=0.3;
-	}
 
 
-	//Cam Up
+	//Cam Up 
 	if(gravity==0){
-	if(keys['O']==1){
-		cam[2]-=speed;
-
-	}
+		if(keys['O']==1){
+			cam[2]-=speed;
+		}
 
 	//Cam Down
-	if(keys['P']==1){
-		cam[2]+=speed;
-
-	}
+		if(keys['P']==1){
+			cam[2]+=speed;
+		}
 	}
 
 
@@ -526,7 +561,7 @@ function playerControl(){
 	
 	//WASD falling 
 	if(solid==0 && gravity==1){
-		if(playerWallRunning==1.0){
+		if(playerWallRunning==0.5){
 			if(forwardSpeed> -speed){	
 				forwardSpeed-=Math.abs(forwardSpeed/25)+accel;
 			}
@@ -569,10 +604,11 @@ function playerControl(){
 	}
 	
 
-
+	//Move player on X,Y forward
 	forwardChange=Math.abs(1/forwardSpeed);
 	move_player(forwardSpeed,0.0,0.0);
 	move_player(0.0,forwardSpeed,0.0);
+	//Move player on X,Y strafe
 	forwardChange=Math.abs(1/strafeSpeed);
 	move_player(strafeSpeed,0.0,1.57);
 	move_player(0.0,strafeSpeed,1.57);
@@ -580,79 +616,79 @@ function playerControl(){
 	
 	//Test surrounding blocks for collision, it checks a 3x3 block around the player for top and bottom collisions
 	
-	for(var xTest=-1;xTest<=1;xTest++){
-	for(var yTest=-1;yTest<=1;yTest++){
-
-
 	//If falling down
-	if(gravity==1 && mom>=0){	
-		//Block below your feet
-		var loc = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.ceil(cam[2]+3))
-		//Block playerAbove that one
-		var loc2 = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.ceil(cam[2]+2))
-		//If there is no block below you, Or there is a block playerAbove the block below you
-		if(loc==-1 || loc2!=-1){
-			if(playerWallRunning==0 || forwardSpeed==0.0){
-			mom+=0.001;
-			}else{
-			mom+=Math.min(0.00005/Math.abs(forwardSpeed),0.001)
-			}
-			solid=0;
-			if(mom>0.7){
-				mom=0.7;
-			}
-		}else{
-		//If there is a block
-			//Stop vertical momenum
-			mom=0;
-			cam[2]=Math.round(cam[2])+0.2;
-			//Set solid ground to 1
-			solid=1;
-			//Stop the test
-			xTest=9;
-			yTest=9;
-			}
-	}
-	
-	//If jumping up
-	if(gravity==1 && mom<0){
-		//Block playerAbove you
-		var loc = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.floor(cam[2]+Math.ceil(camHeightChange)))
-		//Block below that block playerAbove you
-		var loc2 = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.floor(cam[2]+1+Math.ceil(camHeightChange)))
-		//If there is no block playerAbove you or there is a block below the block playerAbove you
-		if(loc==1 && loc2!=1){
-		//If thee is a block playerAbove you
-			//Stop vertical momentum	
-			mom=0;
-			//Stop the test
-			xTest=9;
-			yTest=9;
-		}
-	}
+	if(gravity==1 && momentum>=0){	
+		for(var xTest=-1;xTest<=1;xTest++){
+		for(var yTest=-1;yTest<=1;yTest++){
 
-	}}
+				//Block below your feet
+				var loc = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.ceil(cam[2]+3))
+				//Block playerAbove that one
+				var loc2 = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.ceil(cam[2]+2))
+				//If there is no block below you, Or there is a block playerAbove the block below you
+				if(loc==-1 || loc2!=-1){
+					if(playerWallRunning==0 || forwardSpeed==0.0){
+					momentum+=0.001;
+					}else{
+					momentum+=Math.min(0.00005/Math.abs(forwardSpeed),0.001)
+					}
+					solid=0;
+					if(momentum>0.7){
+						momentum=0.7;
+					}
+				}else{
+				//If there is a block
+					//Stop vertical momenum
+					momentum=0;
+					cam[2]=Math.round(cam[2])+0.2;
+					//Set solid ground to 1
+					solid=1;
+					//Stop the test
+					xTest=9;
+					yTest=9;
+					}
+			
+			//If jumping up
+			if(gravity==1 && momentum<0){
+				//Block playerAbove you
+				var loc = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.floor(cam[2]+Math.ceil(camHeightChange)))
+				//Block below that block playerAbove you
+				var loc2 = check_block(Math.round(cam[0]+xTest),Math.round(cam[1]+yTest),Math.floor(cam[2]+1+Math.ceil(camHeightChange)))
+				//If there is no block playerAbove you or there is a block below the block playerAbove you
+				if(loc==1 && loc2!=1){
+				//If thee is a block playerAbove you
+					//Stop vertical momentum	
+					momentum=0;
+					//Stop the test
+					xTest=9;
+					yTest=9;
+				}
+			}
+
+		}}
+	
+	}
 
 
 	//if gravity is enabled
 	if(gravity==1){
 		
 		//Gravity cap
-		if(mom>5){
-			mom=5;
+		if(momentum>5){
+			momentum=5;
 		}
 		
 		//Do gravity
-		cam[2]+=mom;
+		cam[2]+=momentum;
 		
 		//Slow down gravity from juump
-		if(mom<0){
-		mom*=0.88;
+		if(momentum<0){
+		momentum*=0.88;
 		}
 	
 		//Set gravity to 0 when its really low
-		if(mom<0 && mom>-0.05){
-			mom=0;
+		if(momentum<0 && momentum>-0.05){
+			momentum=0;
 		}
 	}
 	
