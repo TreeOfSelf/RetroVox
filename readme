@@ -1,0 +1,62 @@
+  _____      _         __      __         _____                _                
+ |  __ \    | |        \ \    / /        |  __ \              | |               
+ | |__) |___| |_ _ __ __\ \  / /____  __ | |__) |___  __ _  __| |_ __ ___   ___ 
+ |  _  // _ \ __| '__/ _ \ \/ / _ \ \/ / |  _  // _ \/ _` |/ _` | '_ ` _ \ / _ \
+ | | \ \  __/ |_| | | (_) \  / (_) >  <  | | \ \  __/ (_| | (_| | | | | | |  __/
+ |_|  \_\___|\__|_|  \___/ \/ \___/_/\_\ |_|  \_\___|\__,_|\__,_|_| |_| |_|\___|
+                                                                                
+
+Culling:
+
+All blocks created will be checked for culling.
+Culling happens when a block is completely surrounded by other blocks. If blocks are deleted, the blocks around
+the deleted blocks are re-checked for culling to see if they are uncovered.
+When building, the blocks around the built block will  also be checked, to see if they are now covered.
+																		
+Block Creation: 
+block_create(x,y,z,dontCull)
+
+1. Creates the block 
+2. Sends the block data to the buildBuffer to be culled, if dontCull is 0, set dontCull to 1 if this block will certaintly 
+be culled 
+3. Each frame the entire buildBuffer & deleteBuffer are sent to the culling
+4. Culling receives information on new blocks and decides which chunks at which layers need to be reculled. 
+5. Culling sends chunkData back, chunks are set to be reDrawn and layers are specifically marked.
+6. Each frame each chunk drawn is checked if it needs to be drawn, if it does, it goes through each layer and
+ re-draws it if needed using chunk_layer_draw
+
+
+							--------------
+							BLOCK CREATION
+							--------------
+							/         \
+						  /            \
+						/               \
+					--------------       \
+					BLOCK IS BUILT        -------------------
+					IN GAME					BLOCK IS SENT TO
+					--------------			CULL WORKER
+										  -------------------
+										 /
+									    /
+									  /
+								---------------------
+								 CULLWORKER SENDS DATA
+								 CHUNKS & LAYERS MARKED
+								 TO BE REDRAWN
+								 ----------------------
+					      /
+						/
+				      /
+		--------------------------
+		EVERY FRAME, CHUNKS DRAWN
+		ARE CHECKED TO BE REDRAWN, IF 
+		THEY ARE, EACH CHUNK NEEDED
+		IS REDRAWN AND A NEW LIST IS MADE
+		-----------------------------
+		
+		
+Seaming of the triangle strips happens at 
+1. Inside of the chunk_layer_draw (to seam all blocks in a given layer)
+2. at draw_chunk to seam the whole chunk together
+3. bufferSubdata to seam chunks together 
