@@ -12,7 +12,6 @@ Also takes care of the build & delete buffers.
 //Block counter
 var blockCount=0;
 
-
 //list of active chunks
 var activeChunks=[];
 
@@ -30,7 +29,6 @@ var zLimit = 4;
 
 //Chunk List
 var chunk=[];
-
 var sector=[];
 
 //Empty chunk 
