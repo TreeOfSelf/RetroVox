@@ -82,8 +82,9 @@ uniform mat4 uMatrix;
 //Orthographic
 uniform int uOrtho;
 
+
 out lowp vec4 vPixelColor;
-out lowp float vSize;
+out lowp float vColor;
 void main() {
 
 
@@ -92,23 +93,25 @@ void main() {
 	
 
 	//Size based on distance for shading
-	vSize =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPixelPosition[0],aPixelPosition[1],aPixelPosition[2]))*0.2);	
-	if(vSize>75.0){
-		vSize=max(min(vSize*0.008,0.9),0.7);
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPixelPosition[0],aPixelPosition[1],aPixelPosition[2]))*0.2);	
+	if(vColor>75.0){
+		vColor=max(min(vColor*0.008,0.9),0.7);
 	}else{
-		if(vSize>30.0){
-		vSize=max(min(vSize*0.015,0.7),0.5);	
+		if(vColor>30.0){
+		vColor=max(min(vColor*0.015,0.7),0.5);	
 		}else{
-		vSize=min(vSize*0.030,0.5);
+		vColor=min(vColor*0.030,0.5);
 		}
 	}
 
+	//Different depth depending on orthographic/perspective
 	if(uOrtho==1){
 		gl_Position[2]*=0.5;
 	}else{
 		gl_Position[2]*=0.1;
 	}
 
+	//Set color 0-1 based on 255 values
 	vPixelColor = vec4(aPixelColor[0]/255.0,aPixelColor[1]/255.0,aPixelColor[2]/255.0,1.0);
 
 }
@@ -117,16 +120,13 @@ void main() {
 //Fragment Shader
 const fsSourceCube = `#version 300 es
 in lowp vec4 vPixelColor;
-in lowp float vSize;
+in lowp float vColor;
 
 out lowp vec4 fragColor;
 
 void main() {
 	//Mix color with shading
-	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vSize);
-	//fragColor = vPixelColor;
-	//fragColor = vec4(gl_FragCoord.z,gl_FragCoord.z,gl_FragCoord.z,1.0);
-	//gl_FragColor=vPixelColor;
+	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
 }
 `;
 
@@ -138,9 +138,9 @@ const programInfoCube = {
 	program: shaderProgramCube,
 	
 	attribLocations: {
-		//Voxel Position 3v
+	//Voxel Position 3v (shorts only)
 	  voxelPosition: gl.getAttribLocation(shaderProgramCube, 'aPixelPosition'),
-	  //Voxel Color 3v
+	  //Voxel Color 3v (works on 255 scale)
 	  voxelColor : gl.getAttribLocation(shaderProgramCube, 'aPixelColor'),
 	},
 	

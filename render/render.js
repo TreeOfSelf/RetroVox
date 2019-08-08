@@ -213,7 +213,7 @@ function drawScene(now) {
 		sectorCoords =[ camSector[0]+xCheck, camSector[1]+yCheck,camSector[2]+zCheck];
 		//Return ID for the sector
 		var sectorID = return_sectorID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
-		
+
 		//If the sector exists
 		if(sector[sectorID]!=null){
 				
@@ -229,10 +229,10 @@ function drawScene(now) {
 			
 			//Dont frustrum cull in orthographic view 
 			if(ortho==1){      //Sector ID      Distance from camera
-				drawList.push([sectorID,distance(sectorCoords,camSec)]);
+				drawList.push([sectorID,distance(sectorCoords,camSector)]);
 			}else{
 				//Distance from camera
-				var dist=distance(sectorCoords,camSec);
+				var dist=distance(sectorCoords,camSector);
 				
 				//Don't cull out sectors that are super close
 				if(dist <=1.0 ||
