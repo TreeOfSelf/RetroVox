@@ -35,9 +35,6 @@ var playerAbove = [0,0,0]
 //Position infront of you to build
 var buildPos=[0,0,0];
 
-//Whether or not you are in block placing mode
-var buildMode=0;
-
 //Offset for the build positions
 var buildOffset = [0,0,0]
 
@@ -185,12 +182,12 @@ document.onkeydown=function(e){
 	e =  e || window.event;
 	e.preventDefault(); e.stopPropagation();
 	
-	//Buildmode toggle
+	//wireFrame toggle
 	if(e.key=='n' || e.key=='N'){
-		if(buildMode==0){
-			buildMode=1;
+		if(wireFrame==0){
+			wireFrame=1;
 		}else{
-			buildMode=0;
+			wireFrame=0;
 		}
 	}
 	
@@ -464,7 +461,6 @@ function playerControl(){
 
 	//Arrow key look
 
-	if(buildMode==0){
 		if(keys['ARROWLEFT']==1){
 			camRotate[0]-=0.02;
 		}
@@ -477,25 +473,6 @@ function playerControl(){
 		if(keys['ARROWUP']==1){
 			camRotate[1]-=0.02;
 		}
-	
-	//Build offset
-	}else{
-		if(keys['ARROWLEFT']==1){
-			buildOffset[0]-=Math.sin(camRotate[0]+1.57)*0.07;
-			buildOffset[1]+=Math.cos(camRotate[0]+1.57)*0.07;
-		}
-		if(keys['ARROWRIGHT']==1){
-			buildOffset[0]+=Math.sin(camRotate[0]+1.57)*0.07;
-			buildOffset[1]-=Math.cos(camRotate[0]+1.57)*0.07;
-		}
-		if(keys['ARROWDOWN']==1){
-			buildOffset[2]+=0.07;
-		}
-		if(keys['ARROWUP']==1){
-			buildOffset[2]-=0.07;
-		}	
-	}
-
 	//Sprint
 	var speed=pspeed;
 
@@ -506,7 +483,11 @@ function playerControl(){
 			case 0:
 			//Uncrouched
 				if(keys['SHIFT']==1){
-					 speed=pspeed*1.5;
+					if(gravity==1){
+						speed=pspeed*1.5;
+					}else{
+						speed=pspeed*5.0;	
+					}
 				}
 			break;
 			//Crouched

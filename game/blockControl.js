@@ -33,8 +33,8 @@ var chunkZ=64;
 
 //Sector Dimensions 
 var sectorSpace=64;
-var sectorXY=3;
-var sectorZ=3;
+var sectorXY=10;
+var sectorZ=10;
 
 
 

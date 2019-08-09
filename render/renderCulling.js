@@ -356,7 +356,6 @@ draw_chunk =function(chunkID){
 	var chunkPos = [(chunk[chunkID].coords[0]*chunkXY),(chunk[chunkID].coords[1]*chunkXY),(chunk[chunkID].coords[2]*chunkZ)];
 	//Mesh the blocklist 
 	var get = greedy(chunk[chunkID].blockList,chunkPos);;
-	console.log(get);
 	//Add draw data to send list
 	sendList.push({
 		coords: [chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2]],
@@ -413,7 +412,7 @@ self.addEventListener('message', function(e) {
 		//For x & y out to the blockBuild variable, and a Z to the ground making a giant cube
 		for(var xx=-blockBuild;xx<=blockBuild;xx++){
 			for(var yy=-blockBuild;yy<=blockBuild;yy++){
-				for(var zz=0;zz<blockBuild/3;zz++){
+				for(var zz=0;zz<blockBuild;zz++){
 				
 				if(zz!=0){
 					color=2;
@@ -422,7 +421,7 @@ self.addEventListener('message', function(e) {
 				}
 				
 				//If the block is at the edge of the cube, it needs to be culled checked.
-				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=(blockBuild/3)-0.7){
+				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=blockBuild){
 					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz+4),0);
 				}else{
 				//If the block is not at the edge, it doesn't need to be culled check because it is certaintly covered.

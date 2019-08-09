@@ -16,7 +16,8 @@ var drawList=[];
 //How many verts we are drawing
 var drawLength=0;
 
-
+//Wireframe toggle
+var wireFrame=0;
 //Orthographic toggle
 var ortho = 0;
 //Orthographic zoom
@@ -67,9 +68,9 @@ function loadTexture(gl,url){
 
 //Depth testing
 gl.enable(gl.DEPTH_TEST);
- 
+
 //Back face culling   
-//gl.enable(gl.CULL_FACE);
+gl.enable(gl.CULL_FACE);
 gl.cullFace(gl.BACK);
 //No alpha blending          
 gl.disable(gl.BLEND);
@@ -82,10 +83,11 @@ var indexBuffer = gl.createBuffer();
 //Premade indice buffer
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
 var indice=[];
-for(var k=0;k<=99999;k++){
+for(var k=0;k<=999999;k++){
 	var q=k*4;
 	indice.push(q,q+1,q+2,q,q+2,q+3);
 }
+console.log("%c indice size: %c" + indice.length,"color:grey","color:red");
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
 
 //Background color
@@ -317,7 +319,13 @@ function drawScene(now) {
 				//Bind VAO
 				gl.bindVertexArray(sectorRef.vao);
 				//Draw
-				gl.drawElements(gl.TRIANGLES, sectorRef.buffers.size,gl.UNSIGNED_SHORT,0);
+				if(wireFrame==0){
+					gl.drawElements(gl.TRIANGLES, sectorRef.buffers.size,gl.UNSIGNED_SHORT,0);
+				}else{
+					gl.lineWidth(15.0);
+					gl.drawElements(gl.LINES, sectorRef.buffers.size,gl.UNSIGNED_SHORT,0);				
+						
+				}
 			}
 		
 	}
