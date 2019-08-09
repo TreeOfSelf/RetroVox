@@ -88,7 +88,7 @@ for(var k=0;k<=999999;k++){
 	indice.push(q,q+1,q+2,q,q+2,q+3);
 }
 console.log("%c indice size: %c" + indice.length,"color:grey","color:red");
-gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(indice), gl.STATIC_DRAW)
 
 //Background color
 gl.clearColor(0.10, 0.0, 0.1, 1.0);  
@@ -320,10 +320,10 @@ function drawScene(now) {
 				gl.bindVertexArray(sectorRef.vao);
 				//Draw
 				if(wireFrame==0){
-					gl.drawElements(gl.TRIANGLES, sectorRef.buffers.size,gl.UNSIGNED_SHORT,0);
+					gl.drawElements(gl.TRIANGLES, sectorRef.buffers.size,gl.UNSIGNED_INT,0);
 				}else{
 					gl.lineWidth(15.0);
-					gl.drawElements(gl.LINES, sectorRef.buffers.size,gl.UNSIGNED_SHORT,0);				
+					gl.drawElements(gl.LINES, sectorRef.buffers.size,gl.UNSIGNED_INT,0);				
 						
 				}
 			}

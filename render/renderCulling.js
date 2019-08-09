@@ -437,7 +437,7 @@ self.addEventListener('message', function(e) {
 		console.table([message]);
 		chunkXY = message.chunkXY;
 		chunkZ = message.chunkZ;
-		viewDist = message.viewDist;
+		viewDist = message.viewDist*20;
 		zView = message.zView;
 		xx=-viewDist;
 		yy=-viewDist;
@@ -479,7 +479,7 @@ self.addEventListener('message', function(e) {
 		//Camera update interval
 		case "camera":
 		cam = message.cam;
-		viewDist = message.viewDist;
+		viewDist = message.viewDist*20;
 		zView = message.zView;
 		break;		
 	}

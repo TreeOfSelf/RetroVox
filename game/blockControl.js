@@ -26,15 +26,15 @@ var sector=[];
 
 //Chunk Dimensions
 var chunkSpace=64;
-var chunkXY=64;
-var chunkZ=64;
+var chunkXY=32;
+var chunkZ=32;
 						    //X    Y         Z
 //Sector contains chunks sectorXY*sectorXY*sectorZ
 
 //Sector Dimensions 
 var sectorSpace=64;
-var sectorXY=10;
-var sectorZ=10;
+var sectorXY=20;
+var sectorZ=20;
 
 
 

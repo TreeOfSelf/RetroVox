@@ -478,7 +478,7 @@ function playerControl(){
 
 	
 	//Speed modifiers for sprinting/crouching/proning
-	if(solid==1){
+	if(solid==1 || gravity==0){
 		switch(playerCrouched){
 			case 0:
 			//Uncrouched
