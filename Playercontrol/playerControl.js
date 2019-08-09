@@ -614,8 +614,8 @@ function playerControl(){
 					momentum+=Math.min(0.00005/Math.abs(forwardSpeed),0.001)
 					}
 					solid=0;
-					if(momentum>0.7){
-						momentum=0.7;
+					if(momentum>2.0){
+						momentum=2.0;
 					}
 				}else{
 				//If there is a block

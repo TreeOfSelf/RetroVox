@@ -422,10 +422,10 @@ self.addEventListener('message', function(e) {
 				
 				//If the block is at the edge of the cube, it needs to be culled checked.
 				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=blockBuild){
-					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz+4),0);
+					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);
 				}else{
 				//If the block is not at the edge, it doesn't need to be culled check because it is certaintly covered.
-					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz+4),1);					
+					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),1);					
 				}
 			}
 			}
