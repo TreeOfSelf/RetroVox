@@ -152,12 +152,16 @@ block_exists = function ( x,y,z ) {
 
 
 block_create = function(x,y,z,dontCull){
+	
+
 	//get Chunk locationd
 	var chunkRef = chunk_get(x,y,z);
 	var chunkID = return_chunkID(chunkRef[0],chunkRef[1],chunkRef[2]);
 
 	//get relative location in chunk
 	var blockLoc = [x - (chunkRef[0]*chunkXY), y - (chunkRef[1]*chunkXY),z - (chunkRef[2]*chunkZ)]
+	
+	
 	//get index from relative location
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXY+blockLoc[2]*chunkXY*chunkXY;
 	//Generate chunk if it doesn't exists
@@ -175,27 +179,25 @@ block_create = function(x,y,z,dontCull){
 		//Set chunk to be redrawn
 		chunk[chunkID].chunkreDraw=1;	
 		
+		if(dontCull==0){
 		//If we are set to cull
-		if(dontCull==0 || true){
 		block_culled(x,y,z-1);
 		block_culled(x,y,z+1);
 		block_culled(x,y-1,z);				
 		block_culled(x,y+1,z);		
 		block_culled(x-1,y,z);
 		block_culled(x+1,y,z);	
-		}
 		block_culled(x,y,z);	
+		}
 		
 		
 	}else{
-		if(dontCull==1 || true){
-			block_culled(x,y,z-1);
-			block_culled(x,y,z+1);
-			block_culled(x,y-1,z);				
-			block_culled(x,y+1,z);		
-			block_culled(x-1,y,z);
-			block_culled(x+1,y,z);				
-		}
+		block_culled(x,y,z-1);
+		block_culled(x,y,z+1);
+		block_culled(x,y-1,z);				
+		block_culled(x,y+1,z);		
+		block_culled(x-1,y,z);
+		block_culled(x+1,y,z);	
 		block_culled(x,y,z);
 	}		
 }
@@ -485,20 +487,19 @@ self.addEventListener('message', function(e) {
 		//For x & y out to the blockBuild variable, and a Z to the ground making a giant cube
 		for(var xx=-blockBuild;xx<=blockBuild;xx++){
 			for(var yy=-blockBuild;yy<=blockBuild;yy++){
-				for(var zz=0;zz<blockBuild*2;zz++){
+				for(var zz=0;zz<blockBuild;zz++){
 				
 				if(zz!=0){
 					color=2;
 				}else{
 					color=5;
 				}
-				
 				//If the block is at the edge of the cube, it needs to be culled checked.
-				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=blockBuild*2){
+				if(Math.abs(xx)>=blockBuild || Math.abs(yy)>=blockBuild || zz<=0 || zz>=(blockBuild)){
 					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);
 				}else{
 				//If the block is not at the edge, it doesn't need to be culled check because it is certaintly covered.
-					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),1);					
+					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);					
 				}
 			}
 			}
