@@ -64,7 +64,8 @@ chunk_create = function(x,y,z){
 			coords : [x,y,z],
 			//list of blocks
 			blockList : chunkList.slice(),
-
+			//0/1 culled list
+			culledList : chunkList.slice(),
 			//Whether the chunk needs to be redrawn
 			chunkreDraw : 0,	
 		}
@@ -95,6 +96,47 @@ location_block = function(x,y,z){
 	
 }
 	
+//Checks a blocks culled status and sets it
+block_culled = function(x,y,z){
+	//get ID from xyz
+	var blockId = location_block(x,y,z);
+	//If the chunk exists
+	if(blockId!=-1){
+		//If the block eists
+		if(chunk[blockId[0]].blockList[blockId[1]]!=0){
+				
+			var hit=0;
+			hit+=block_exists(x,y,z-1);
+			hit+=block_exists(x,y,z+1);
+			hit+=block_exists(x,y-1,z);				
+			hit+=block_exists(x,y+1,z);		
+			hit+=block_exists(x-1,y,z);
+			hit+=block_exists(x+1,y,z);		
+			if(hit>=6){
+				chunk[blockId[0]].culledList[blockId[1]]=1;
+				
+			}else{
+				chunk[blockId[0]].culledList[blockId[1]]=chunk[blockId[0]].blockList[blockId[1]];				
+			}
+			chunk[blockId[0]].chunkreDraw=1;
+		}
+	}		
+}
+
+//Unculls a block at x,y,z
+block_uncull = function(x,y,z){
+	//get ID from xyz
+	var blockId = location_block(x,y,z);
+	//If the chunk exists
+	if(blockId!=-1){
+		//If the block eists
+		if(chunk[blockId[0]].blockList[blockId[1]]!=0){
+			chunk[blockId[0]].culledList[blockId[1]]=chunk[blockId[0]].blockList[blockId[1]];
+			chunk[blockId[0]].chunkreDraw=1;			
+		}
+	}		
+}
+
 
 //Checks if block exists from XYZ
 block_exists = function ( x,y,z ) {
@@ -103,9 +145,9 @@ block_exists = function ( x,y,z ) {
 	//If the chunk exists
 	if(blockId!=-1){
 	//If the block exists
-	if(chunk[blockId[0]].blockList[blockId[1]]!=0){return(true);}
+		if(chunk[blockId[0]].blockList[blockId[1]]!=0){return(1);}
 	}
-	return(false);//Doesn't exist
+	return(0);//Doesn't exist
 }
 
 
@@ -132,7 +174,30 @@ block_create = function(x,y,z,dontCull){
 		chunk[chunkID].blockList[blockIndex]=color;
 		//Set chunk to be redrawn
 		chunk[chunkID].chunkreDraw=1;	
-	}	
+		
+		//If we are set to cull
+		if(dontCull==0 || true){
+		block_culled(x,y,z-1);
+		block_culled(x,y,z+1);
+		block_culled(x,y-1,z);				
+		block_culled(x,y+1,z);		
+		block_culled(x-1,y,z);
+		block_culled(x+1,y,z);	
+		}
+		block_culled(x,y,z);	
+		
+		
+	}else{
+		if(dontCull==1 || true){
+			block_culled(x,y,z-1);
+			block_culled(x,y,z+1);
+			block_culled(x,y-1,z);				
+			block_culled(x,y+1,z);		
+			block_culled(x-1,y,z);
+			block_culled(x+1,y,z);				
+		}
+		block_culled(x,y,z);
+	}		
 }
 
 
@@ -152,11 +217,20 @@ block_delete = function(x,y,z){
 
 			//Set block to non-solid
 			chunk[chunkID].blockList[blockIndex]=0;
+			chunk[chunkID].culledList[blockIndex]=0;
 			//redraw chunk
 			chunk[chunkID].chunkreDraw=1;
+			
+			block_uncull(x,y,z-1);
+			block_uncull(x,y,z+1);
+			block_uncull(x,y-1,z);				
+			block_uncull(x,y+1,z);		
+			block_uncull(x-1,y,z);
+			block_uncull(x+1,y,z);		
 		}
 		
 	}
+
 
 }
 
@@ -199,9 +273,9 @@ return_color = function(a){
 //Greedy meshing
 
 var mask = new Int32Array(4096);
-
-greedy = function(volume,chunkPos) {
-	dims=[chunkXY,chunkXY,chunkZ];
+greedy = function(chunkID,chunkPos) {
+	var volume=chunk[chunkID].culledList;
+	var dims=[chunkXY,chunkXY,chunkZ];
   function f(i,j,k) {
     return volume[i + dims[0] * (j + dims[1] * k)];
   }
@@ -237,7 +311,6 @@ greedy = function(volume,chunkPos) {
           , b = (x[d] <  dims[d]-1 ? f(x[0]+q[0], x[1]+q[1], x[2]+q[2]) : 0);
 		  
 
-		  
 		  //If they are the same, or are both 0  (because if they are the same, there isn't a face between)
         if((!!a) === (!!b)) {
           mask[n] = 0;
@@ -355,7 +428,7 @@ draw_chunk =function(chunkID){
 	//Get chunk position to displace blocks with inside of the meth
 	var chunkPos = [(chunk[chunkID].coords[0]*chunkXY),(chunk[chunkID].coords[1]*chunkXY),(chunk[chunkID].coords[2]*chunkZ)];
 	//Mesh the blocklist 
-	var get = greedy(chunk[chunkID].blockList,chunkPos);;
+	var get = greedy(chunkID,chunkPos);;
 	//Add draw data to send list
 	sendList.push({
 		coords: [chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2]],
@@ -412,7 +485,7 @@ self.addEventListener('message', function(e) {
 		//For x & y out to the blockBuild variable, and a Z to the ground making a giant cube
 		for(var xx=-blockBuild;xx<=blockBuild;xx++){
 			for(var yy=-blockBuild;yy<=blockBuild;yy++){
-				for(var zz=0;zz<blockBuild;zz++){
+				for(var zz=0;zz<blockBuild*2;zz++){
 				
 				if(zz!=0){
 					color=2;
@@ -421,7 +494,7 @@ self.addEventListener('message', function(e) {
 				}
 				
 				//If the block is at the edge of the cube, it needs to be culled checked.
-				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=blockBuild){
+				if(Math.abs(xx)==blockBuild || Math.abs(yy)==blockBuild || zz==0 || zz>=blockBuild*2){
 					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);
 				}else{
 				//If the block is not at the edge, it doesn't need to be culled check because it is certaintly covered.

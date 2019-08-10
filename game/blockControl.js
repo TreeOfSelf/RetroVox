@@ -288,9 +288,9 @@ draw_sector = function(x,y,z){
 	//Set data
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 	gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
-	gl.bufferData(gl.ARRAY_BUFFER,sector[sectorID].blockDraws.position,gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER,sector[sectorID].blockDraws.position,gl.DYNAMIC_DRAW);
 	gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
-	gl.bufferData(gl.ARRAY_BUFFER,sector[sectorID].blockDraws.color,gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER,sector[sectorID].blockDraws.color,gl.DYNAMIC_DRAW);
 	//Clear working arrays now that the buffers are set
 	sector[sectorID].blockDraws.position=0;
 	sector[sectorID].blockDraws.color=0;
