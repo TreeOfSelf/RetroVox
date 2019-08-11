@@ -93,6 +93,7 @@ document.getElementById('loadFile').onchange = function(event) {
 				coords : loadData[h][0],
 				blockList : loadData[h][1],
 				culledList : loadData[h][2],
+				compressType : loadData[h][3],
 			});
 			
 			//new Uint8Array(LZMA.decompress(loadData[h][1]).split(','))

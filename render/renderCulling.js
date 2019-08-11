@@ -69,6 +69,7 @@ function newCompressionWorker(){
 			chunk[message.chunkID].blockListCompressed = message.blockListCompressed;
 			chunk[message.chunkID].culledListCompressed = message.culledListCompressed;
 			chunk[message.chunkID].chunkreCompress = 0;
+			chunk[message.chunkID].compressType=0;
 		break;
 	  }
 	});
@@ -101,6 +102,7 @@ chunk_create = function(x,y,z){
 			//Whether the chunk needs to be redrawn
 			chunkreDraw : 0,	
 			chunkreCompress : 0,
+			compressType : 0,
 			blockListCompressed : [],
 			culledListCompressed :[],
 		}
@@ -542,14 +544,16 @@ self.addEventListener('message', function(e) {
 			
 			if(chunk[activeChunks[h]].blockListCompressed.length<=0 || chunk[activeChunks[h]].chunkreCompress>0){
 				chunk[activeChunks[h]].chunkreCompress=0;
-				chunk[activeChunks[h]].culledListCompressed=LZMA.compress(chunk[activeChunks[h]].culledList.toString(),1);
-				chunk[activeChunks[h]].blockListCompressed=LZMA.compress(chunk[activeChunks[h]].blockList.toString(),1);
+				chunk[activeChunks[h]].compressType=1;
+				chunk[activeChunks[h]].culledListCompressed=LZString.compress(chunk[activeChunks[h]].culledList.toString());
+				chunk[activeChunks[h]].blockListCompressed=LZString.compress(chunk[activeChunks[h]].blockList.toString());
 			}
 			
 			saveData.push([
 			chunk[activeChunks[h]].coords,
 			chunk[activeChunks[h]].blockListCompressed,
 			chunk[activeChunks[h]].culledListCompressed,
+			chunk[activeChunks[h]].compressType,
 			]);
 		}
 		saveData = JSON.stringify(saveData);
@@ -574,9 +578,17 @@ self.addEventListener('message', function(e) {
 		var chunkID = chunk_create(coords[0],coords[1],coords[2]);
 		chunk[chunkID].blockListCompressed = message.blockList;
 		chunk[chunkID].culledListCompressed = message.culledList;
+		
+		if(message.compressType==0){
 		chunk[chunkID].blockList = new Uint8Array(LZMA.decompress(message.blockList).split(','));
 		chunk[chunkID].culledList = new Uint8Array(LZMA.decompress(message.culledList).split(','));
+		}else{
+		chunk[chunkID].blockList = new Uint8Array(LZString.decompress(message.blockList).split(','));
+		chunk[chunkID].culledList = new Uint8Array(LZString.decompress(message.culledList).split(','));	
+		chunk[chunkID].compressType=1;
+		}
 		chunk[chunkID].chunkreDraw=2;
+
 		break;
 		//Init for when receiving chunk data (size of chunks, view distance)
 		case "start":
@@ -669,7 +681,7 @@ var cullProc =function(){
 					if(chunkRef.chunkreCompress>0 && chunkRef.chunkreCompress<5){
 						chunkRef.chunkreCompress+=1;
 						
-						if(chunkRef.chunkreCompress=10){
+						if(chunkRef.chunkreCompress==10){
 							compressionWorker.postMessage({
 								id : "chunkData",
 								chunkID : chunkID,
