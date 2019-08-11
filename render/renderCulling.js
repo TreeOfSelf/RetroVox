@@ -13,8 +13,8 @@ Seperate culling process that gets created as a worker. Goes through nearby chun
 
 //Changes to 1 after init
 var start = 0;
-
-
+//Length of 1D block array
+var blockLen=0;
 //Camera location
 var cam=[0,0,0];
 //Camera offset
@@ -42,8 +42,7 @@ var chunk=[];
 var chunkInd=[];
 //Empty chunk 
 var chunkList=[];
-//Empty array for doing culling work
-var cullWork=[];
+
 //Draw color
 var color=5;
 
@@ -58,7 +57,6 @@ return_chunkID = function(x,y,z){
 
 
 chunk_create = function(x,y,z){
-
 	//If chunk doesn't already exist
 	var chunkID = return_chunkID(x,y,z);
 	if(chunk[chunkID]==null){
@@ -67,38 +65,44 @@ chunk_create = function(x,y,z){
 			//coordinates
 			coords : [x,y,z],
 			//list of blocks
-			blockList : chunkList.slice(),
+			//blockList : chunkList.slice(),
+			//list of culled blocks
+			//culledList : chunkList.slice(),
 			//Whether the chunk needs to be redrawn
 			chunkreDraw : 0,	
 		}
 		
 	}
+	chunk[chunkID].blockList = 	 new Uint8Array(blockLen);
+	chunk[chunkID].blockList.fill(0);
+	chunk[chunkID].culledList = new Uint8Array(blockLen);
+	chunk[chunkID].culledList.fill(0);
 }
 
 
 chunk_checkCull=function(chunkID){
 	//Loop through culled List 
-	var len = chunk[chunkID].blockList.length;
-	cullWork.fill(0);
+	var len = chunk[chunkID].culledList.length;
 	for(var k=0;k<len;k++){
 		//If block exists and is marked to be culled
-		if(chunk[chunkID].blockList[k]!=0){
+		if(chunk[chunkID].blockList[k]!=0 && chunk[chunkID].culledList[k]==0){
+			
 			//Get real position of block
 			var pos = block_location(chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2],k);
 			//Check surrounding blocks
-			var hit=0;
-			hit+=block_exists(pos[0],pos[1],pos[2]-1);
-			hit+=block_exists(pos[0],pos[1],pos[2]+1);
-			hit+=block_exists(pos[0],pos[1]-1,pos[2]);				
-			hit+=block_exists(pos[0],pos[1]+1,pos[2]);		
-			hit+=block_exists(pos[0]-1,pos[1],pos[2]);
-			hit+=block_exists(pos[0]+1,pos[1],pos[2]);		
-			if(hit>=6){
+			if(
+			block_exists(pos[0],pos[1],pos[2]-1)
+			&& block_exists(pos[0],pos[1],pos[2]+1)
+			&& block_exists(pos[0],pos[1]-1,pos[2])				
+			&& block_exists(pos[0],pos[1]+1,pos[2])		
+			&& block_exists(pos[0]-1,pos[1],pos[2])
+			&&block_exists(pos[0]+1,pos[1],pos[2])		
+			){
 				//Set to culled
-				cullWork[k]=1;
+				chunk[chunkID].culledList[k]=1;
 			}else{
 				//Set to block type
-				cullWork[k]=chunk[chunkID].blockList[k];
+				chunk[chunkID].culledList[k]=chunk[chunkID].blockList[k];
 			}
 		}
 	}
@@ -126,9 +130,26 @@ location_block = function(x,y,z){
 	return( [ chunkID, blockLoc[0]+blockLoc[1]*chunkXY+blockLoc[2]*chunkXY*chunkXY]);
 	
 }
-	
 
+block_setCull=function(x,y,z){
+	//get ID from xyz
+	var blockId = location_block(x,y,z);
+	//If the chunk exists
+	if(blockId!=-1){
+	//set blocked to non-culled
+		chunk[blockId[0]].culledList[blockId[1]]=0;
+	}	
+}
 
+block_cullSurrounding=function(x,y,z){
+	block_setCull(x,y,z-1);
+	block_setCull(x,y,z+1);
+	block_setCull(x,y-1,z);
+	block_setCull(x,y+1,z);
+	block_setCull(x-1,y,z);
+	block_setCull(x+1,y,z);
+	block_setCull(x,y,z);
+}
 
 
 //Checks if block exists from XYZ
@@ -172,9 +193,17 @@ block_create = function(x,y,z,dontCull){
 		//Set chunk to be redrawn
 		chunk[chunkID].chunkreDraw=1;	
 
+		if(dontCull==1){
+			chunk[chunkID].culledList[blockIndex]=1;
+		}else{
+			block_cullSurrounding();
+		}
 		
-		
-	}	
+	}else{
+		if(dontCull==1 && chunk[chunkID].culledList[blockIndex]!=1){
+		block_cullSurrounding(x,y,z);
+		}
+	}
 }
 
 
@@ -194,6 +223,7 @@ block_delete = function(x,y,z){
 
 			//Set block to non-solid
 			chunk[chunkID].blockList[blockIndex]=0;
+			block_cullSurrounding(x,y,z);
 			//redraw chunk
 			chunk[chunkID].chunkreDraw=1;	
 		}
@@ -243,7 +273,7 @@ return_color = function(a){
 
 var mask = new Int32Array(4096);
 greedy = function(chunkID,chunkPos) {
-	var volume=cullWork;
+	var volume=chunk[chunkID].culledList;
 	var dims=[chunkXY,chunkXY,chunkZ];
   function f(i,j,k) {
     return volume[i + dims[0] * (j + dims[1] * k)];
@@ -301,7 +331,6 @@ greedy = function(chunkID,chunkPos) {
 		if(c==-1 || c==1){
 			c=0;
 		}
-		var saveC = mask[n]
         if(!!c) {
           //Compute width
           for(w=1; c === mask[n+w] && i+w<dims[u]; ++w) {
@@ -336,21 +365,21 @@ greedy = function(chunkID,chunkPos) {
 
 		switch(d){
 			case 0:
-			if(saveC>0){
+			if(c>0){
 				col=[col[0]*0.9,col[1]*0.9,col[2]*0.9];		
 			}else{
 				col=[col[0]*0.8,col[1]*0.8,col[2]*0.8];					
 			}	
 			break;
 			case 1:
-			if(saveC>0){
+			if(c>0){
 				col=[col[0]*0.7,col[1]*0.7,col[2]*0.7];		
 			}else{
 				col=[col[0]*0.6,col[1]*0.6,col[2]*0.6];			
 			}			
 			break;
 			case 2:
-			if(saveC>0){
+			if(c>0){
 				//bottom
 				col=[col[0]*0.5,col[1]*0.5,col[2]*0.5];
 			}
@@ -360,7 +389,6 @@ greedy = function(chunkID,chunkPos) {
 			break;
 		}
 		  
-          var vertex_count = vertices.length;
           vertices.push(x[0]+chunkPos[0],             x[1]+chunkPos[1],             x[2]   +chunkPos[2]         );
           vertices.push(x[0]+du[0]+chunkPos[0],       x[1]+du[1]+chunkPos[1],       x[2]+du[2]+chunkPos[2]      );
           vertices.push(x[0]+du[0]+dv[0]+chunkPos[0], x[1]+du[1]+dv[1]+chunkPos[1], x[2]+du[2]+dv[2]+chunkPos[2]);
@@ -478,8 +506,8 @@ self.addEventListener('message', function(e) {
 		console.table([message]);
 		chunkXY = message.chunkXY;
 		chunkZ = message.chunkZ;
-		viewDist = message.viewDist*20;
-		zView = message.zView*20;
+		viewDist = message.viewDist*10;
+		zView = message.zView*10;
 		xx=-viewDist;
 		yy=-viewDist;
 		
@@ -495,11 +523,9 @@ self.addEventListener('message', function(e) {
 		}
 		
 		//Create empty list for each blok in a chunk
-		var len =chunkList.length;
-		chunkList = new Uint8Array(len);
+		blockLen =chunkList.length;
+		chunkList = new Uint8Array(blockLen);
 		chunkList.fill(0);
-		cullWork = new Uint8Array(len);
-		cullWork.fill(0);
 		
 		//Flag start as 1 to start the culling 
 		start=1;
@@ -522,8 +548,8 @@ self.addEventListener('message', function(e) {
 		//Camera update interval
 		case "camera":
 		cam = message.cam;
-		viewDist = message.viewDist*20;
-		zView = message.zView*20;
+		viewDist = message.viewDist*10;
+		zView = message.zView*10;
 		break;		
 	}
 });
@@ -532,8 +558,8 @@ self.addEventListener('message', function(e) {
 
 
 //The actual culling process
-var cullProc = setInterval(function(){
-
+var cullProc =function(){
+	var startTime = new Date();
 	//If we have init already
 	if(start==1){
 	/*
@@ -543,10 +569,12 @@ var cullProc = setInterval(function(){
 		 \___)(______)(____)(____)(____)(_)\_)\___/
 	*/
 		//This will stop looping after it has gone through all the chunks
-		var going=1;
+		var going=25;
 		//Get chunk at camera
 		var camChunk = chunk_get(cam[0],cam[1],cam[2]);
-		while(going==1){
+		while(going>0){
+			going--;
+			var hitter=0;
 			//Get chunk at our current displacement 
 			var chunkID = return_chunkID(camChunk[0]+xx,camChunk[1]+yy,camChunk[2]+zz);
 			//If the chunk we are working at is defined
@@ -556,6 +584,7 @@ var cullProc = setInterval(function(){
 				if(chunkRef.chunkreDraw==1){
 						chunk_checkCull(chunkID);
 						draw_chunk(chunkID);
+						hitter=1;
 				}
 			}
 			//Loop through chunks in area
@@ -576,7 +605,9 @@ var cullProc = setInterval(function(){
 				yy=-viewDist;
 				going=0;
 			}
-
+		if(hitter==1){
+		going=0;
+		}
 		}
 
 }
@@ -586,29 +617,33 @@ if(sendList.length>0){
 	
 	//Send single chunk data at a time
 	
-	/*var sender=[];
+	var sender=[];
 	sender.push(sendList.shift());
 	self.postMessage({
 		
 		id : 'drawData',
 		sendList : sender,
-	});*/
+	});
 	
 	//Send all chunk data at once
 	
-	self.postMessage({
+	/*self.postMessage({
 		id : "drawData",
 		sendList : sendList,
 	});
-	sendList=[];
+	sendList=[];*/
+}
+	var endTime = new Date();
+	return(endTime-startTime);
 }
 
-},1);
+cullTimer = function(amount){
+	setTimeout(function(){
+		var cullAmount = cullProc();
+		cullTimer(cullAmount/2);
+	},amount);
+}
 
 
-
-
-
-
-
+cullTimer(1);
 
