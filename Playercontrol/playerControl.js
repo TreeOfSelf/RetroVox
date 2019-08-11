@@ -67,6 +67,72 @@ var momentum=0;
 //Whether or not on solid ground
 var solid=0;
 
+//File load
+document.getElementById('loadFile').onchange = function(event) {
+	
+	//Clear chunk list
+	chunk=[];
+	sector=[];
+	activeChunks=[];
+	cullWorker.terminate();
+	newCullWorker();	
+	var fileToLoad = event.target.files[0];
+	//If there is a file 
+	if (fileToLoad) {
+		var reader = new FileReader();
+		reader.onload = function(fileLoadedEvent) {
+			var textFromFileLoaded = fileLoadedEvent.target.result;
+			//Parse file content
+			var loadData=JSON.parse(LZString.decompressFromBase64(textFromFileLoaded));
+			//For each chunk in the map
+			var loopLen=loadData.length;
+			for(var h = 0; h<loopLen ; h++){
+			console.log("%cloading map: %c"+h +'/'+(loadData.length-1),"color:black","color:red");
+			
+			
+			cullWorker.postMessage({
+				id : "loadData",
+				coords : loadData[h][0],
+				blockList : new Uint8Array(LZString.decompressFromBase64(loadData[h][1]).split(',')),
+				culledList : new Uint8Array(LZString.decompressFromBase64(loadData[h][2]).split(',')),
+			});
+			
+			
+			}
+    };
+    reader.readAsText(fileToLoad, 'UTF-8');
+  }
+
+}
+ 
+ 
+//Download a file locally to computer 
+function download(filename, text) {
+  var downloadLink = document.createElement('a');
+        downloadLink.download = filename;
+        downloadLink.innerHTML = 'Download File';
+        if ('webkitURL' in window) {
+          // Chrome allows the link to be clicked without actually adding it to the DOM.
+          downloadLink.href = window.webkitURL.createObjectURL(new Blob(["\ufeff",text], { type: 'text/plain', charset: 'utf-8' }));
+        } else {
+          // Firefox requires the link to be added to the DOM before it can be clicked.
+          downloadLink.href = window.URL.createObjectURL(new Blob(["\ufeff",text], { type: 'text/plain', charset: 'utf-8' }));
+          downloadLink.onclick = destroyClickedElement;
+          downloadLink.style.display = 'none';
+          document.body.appendChild(downloadLink);
+        }
+
+        downloadLink.click();
+}
+
+
+//Save map button
+var saveBtn = document.getElementById("saveMap");
+saveBtn.onclick = function(){
+	cullWorker.postMessage({
+	id: "saveMap"});
+
+}
 
 //Function used to move the player in a X/Y direction. 
 function move_player(speedCheckX,speedCheckY,camChange){

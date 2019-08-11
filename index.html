@@ -18,13 +18,15 @@
 
 	<body>
 
-
-
+		<input type="file" id="loadFile" accept=".txt,.csv,.xml">
+		<button id="saveMap" type="button">Save map</button>
 		<canvas id="pandaCanvas"></canvas>
 		
 		<!--gl matrix -->
 		<script src="render/gl-matrix-min.js"></script>
-		
+		<!--lz-string  -->
+		<script src="lib/lz-string.min.js"></script>
+				
 		
 		<!-- Shaders-->
 		<script src="render/renderShaders.js"></script>

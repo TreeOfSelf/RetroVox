@@ -97,7 +97,10 @@ function newCullWorker(){
 	  message = e.data;
 	  switch(message.id){
 
-		  
+			case "downloadData":
+			download('map.txt',message.data);
+			break;
+		
 		  //Receive culling Data
 		  case "drawData":
 		 //For each message the cull buffer received
@@ -165,7 +168,7 @@ setInterval(function(){
 //Create chunk
 chunk_create = function(x,y,z){
 	var chunkID = return_chunkID(x,y,z);
-	
+	activeChunks.push(chunkID);
 	if(chunk[chunkID]==null){
 		//Create new chunk
 		chunk[chunkID]={
