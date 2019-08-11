@@ -83,21 +83,19 @@ document.getElementById('loadFile').onchange = function(event) {
 		reader.onload = function(fileLoadedEvent) {
 			var textFromFileLoaded = fileLoadedEvent.target.result;
 			//Parse file content
-			var loadData=JSON.parse(LZString.decompressFromBase64(textFromFileLoaded));
+			var loadData=JSON.parse(LZMA.decompress(new Uint8Array(textFromFileLoaded.split(','))));
 			//For each chunk in the map
 			var loopLen=loadData.length;
 			for(var h = 0; h<loopLen ; h++){
 			console.log("%cloading map: %c"+h +'/'+(loadData.length-1),"color:black","color:red");
-			
-			
 			cullWorker.postMessage({
 				id : "loadData",
 				coords : loadData[h][0],
-				blockList : new Uint8Array(LZString.decompressFromBase64(loadData[h][1]).split(',')),
-				culledList : new Uint8Array(LZString.decompressFromBase64(loadData[h][2]).split(',')),
+				blockList : loadData[h][1],
+				culledList : loadData[h][2],
 			});
 			
-			
+			//new Uint8Array(LZMA.decompress(loadData[h][1]).split(','))
 			}
     };
     reader.readAsText(fileToLoad, 'UTF-8');
