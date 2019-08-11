@@ -26,15 +26,15 @@ var sector=[];
 
 //Chunk Dimensions
 var chunkSpace=64;
-var chunkXY=128;
-var chunkZ=128;
+var chunkXY=64;
+var chunkZ=64;
 						    //X    Y         Z
 //Sector contains chunks sectorXY*sectorXY*sectorZ
 
 //Sector Dimensions 
 var sectorSpace=64;
-var sectorXY=20;
-var sectorZ=20;
+var sectorXY=10;
+var sectorZ=10;
 
 
 
@@ -343,7 +343,11 @@ check_frustrum= function(point){
 		posVec = glMatrix.vec3.fromValues(point[0],point[1],point[2]);
 	
 		//If anything falls out of our view frustrum outside of padding
-		if((-glMatrix.vec3.dot(leftN,posVec) - leftD)<amountXY ||  glMatrix.vec3.dot(rightN,posVec) + rightD<amountXY  || (-glMatrix.vec3.dot(topN,posVec)+topD)<amountZ  ||  (glMatrix.vec3.dot(bottomN,posVec) + bottomD)<amountZ ||  (-glMatrix.vec3.dot(nearN,posVec) + nearD)<amountXY){
+		if((-glMatrix.vec3.dot(leftN,posVec) - leftD)<amountXY ||  
+		glMatrix.vec3.dot(rightN,posVec) + rightD<amountXY  || 
+		(-glMatrix.vec3.dot(topN,posVec)+topD)<amountZ  ||  
+		(glMatrix.vec3.dot(bottomN,posVec) + bottomD)<amountZ ||  
+		(-glMatrix.vec3.dot(nearN,posVec) + nearD)<amountXY){
 			return(0);
 		}else{
 			return(1);

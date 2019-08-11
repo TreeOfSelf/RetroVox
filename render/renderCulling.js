@@ -42,6 +42,8 @@ var chunk=[];
 var chunkInd=[];
 //Empty chunk 
 var chunkList=[];
+//Empty array for doing culling work
+var cullWork=[];
 //Draw color
 var color=5;
 
@@ -51,6 +53,8 @@ var color=5;
 return_chunkID = function(x,y,z){
 	return(x+y*chunkSpace+z*chunkSpace*chunkSpace);
 }
+
+
 
 
 chunk_create = function(x,y,z){
@@ -64,12 +68,39 @@ chunk_create = function(x,y,z){
 			coords : [x,y,z],
 			//list of blocks
 			blockList : chunkList.slice(),
-			//0/1 culled list
-			culledList : chunkList.slice(),
 			//Whether the chunk needs to be redrawn
 			chunkreDraw : 0,	
 		}
 		
+	}
+}
+
+
+chunk_checkCull=function(chunkID){
+	//Loop through culled List 
+	var len = chunk[chunkID].blockList.length;
+	cullWork.fill(0);
+	for(var k=0;k<len;k++){
+		//If block exists and is marked to be culled
+		if(chunk[chunkID].blockList[k]!=0){
+			//Get real position of block
+			var pos = block_location(chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2],k);
+			//Check surrounding blocks
+			var hit=0;
+			hit+=block_exists(pos[0],pos[1],pos[2]-1);
+			hit+=block_exists(pos[0],pos[1],pos[2]+1);
+			hit+=block_exists(pos[0],pos[1]-1,pos[2]);				
+			hit+=block_exists(pos[0],pos[1]+1,pos[2]);		
+			hit+=block_exists(pos[0]-1,pos[1],pos[2]);
+			hit+=block_exists(pos[0]+1,pos[1],pos[2]);		
+			if(hit>=6){
+				//Set to culled
+				cullWork[k]=1;
+			}else{
+				//Set to block type
+				cullWork[k]=chunk[chunkID].blockList[k];
+			}
+		}
 	}
 }
 
@@ -96,46 +127,8 @@ location_block = function(x,y,z){
 	
 }
 	
-//Checks a blocks culled status and sets it
-block_culled = function(x,y,z){
-	//get ID from xyz
-	var blockId = location_block(x,y,z);
-	//If the chunk exists
-	if(blockId!=-1){
-		//If the block eists
-		if(chunk[blockId[0]].blockList[blockId[1]]!=0){
-				
-			var hit=0;
-			hit+=block_exists(x,y,z-1);
-			hit+=block_exists(x,y,z+1);
-			hit+=block_exists(x,y-1,z);				
-			hit+=block_exists(x,y+1,z);		
-			hit+=block_exists(x-1,y,z);
-			hit+=block_exists(x+1,y,z);		
-			if(hit>=6){
-				chunk[blockId[0]].culledList[blockId[1]]=1;
-				
-			}else{
-				chunk[blockId[0]].culledList[blockId[1]]=chunk[blockId[0]].blockList[blockId[1]];				
-			}
-			chunk[blockId[0]].chunkreDraw=1;
-		}
-	}		
-}
 
-//Unculls a block at x,y,z
-block_uncull = function(x,y,z){
-	//get ID from xyz
-	var blockId = location_block(x,y,z);
-	//If the chunk exists
-	if(blockId!=-1){
-		//If the block eists
-		if(chunk[blockId[0]].blockList[blockId[1]]!=0){
-			chunk[blockId[0]].culledList[blockId[1]]=chunk[blockId[0]].blockList[blockId[1]];
-			chunk[blockId[0]].chunkreDraw=1;			
-		}
-	}		
-}
+
 
 
 //Checks if block exists from XYZ
@@ -178,28 +171,10 @@ block_create = function(x,y,z,dontCull){
 		chunk[chunkID].blockList[blockIndex]=color;
 		//Set chunk to be redrawn
 		chunk[chunkID].chunkreDraw=1;	
-		
-		if(dontCull==0){
-		//If we are set to cull
-		block_culled(x,y,z-1);
-		block_culled(x,y,z+1);
-		block_culled(x,y-1,z);				
-		block_culled(x,y+1,z);		
-		block_culled(x-1,y,z);
-		block_culled(x+1,y,z);	
-		block_culled(x,y,z);	
-		}
+
 		
 		
-	}else{
-		block_culled(x,y,z-1);
-		block_culled(x,y,z+1);
-		block_culled(x,y-1,z);				
-		block_culled(x,y+1,z);		
-		block_culled(x-1,y,z);
-		block_culled(x+1,y,z);	
-		block_culled(x,y,z);
-	}		
+	}	
 }
 
 
@@ -219,16 +194,8 @@ block_delete = function(x,y,z){
 
 			//Set block to non-solid
 			chunk[chunkID].blockList[blockIndex]=0;
-			chunk[chunkID].culledList[blockIndex]=0;
 			//redraw chunk
-			chunk[chunkID].chunkreDraw=1;
-			
-			block_uncull(x,y,z-1);
-			block_uncull(x,y,z+1);
-			block_uncull(x,y-1,z);				
-			block_uncull(x,y+1,z);		
-			block_uncull(x-1,y,z);
-			block_uncull(x+1,y,z);		
+			chunk[chunkID].chunkreDraw=1;	
 		}
 		
 	}
@@ -276,7 +243,7 @@ return_color = function(a){
 
 var mask = new Int32Array(4096);
 greedy = function(chunkID,chunkPos) {
-	var volume=chunk[chunkID].culledList;
+	var volume=cullWork;
 	var dims=[chunkXY,chunkXY,chunkZ];
   function f(i,j,k) {
     return volume[i + dims[0] * (j + dims[1] * k)];
@@ -487,7 +454,7 @@ self.addEventListener('message', function(e) {
 		//For x & y out to the blockBuild variable, and a Z to the ground making a giant cube
 		for(var xx=-blockBuild;xx<=blockBuild;xx++){
 			for(var yy=-blockBuild;yy<=blockBuild;yy++){
-				for(var zz=0;zz<blockBuild;zz++){
+				for(var zz=0;zz<=blockBuild;zz++){
 				
 				if(zz!=0){
 					color=2;
@@ -495,11 +462,11 @@ self.addEventListener('message', function(e) {
 					color=5;
 				}
 				//If the block is at the edge of the cube, it needs to be culled checked.
-				if(Math.abs(xx)>=blockBuild || Math.abs(yy)>=blockBuild || zz<=0 || zz>=(blockBuild)){
+				if(Math.abs(xx)>=blockBuild || Math.abs(yy)>=blockBuild || zz<=0 || zz>=(blockBuild-1)){
 					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);
 				}else{
 				//If the block is not at the edge, it doesn't need to be culled check because it is certaintly covered.
-					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),0);					
+					block_create(Math.round(cam[0]+xx),Math.round(cam[1]+yy),Math.round(cam[2]+zz),1);					
 				}
 			}
 			}
@@ -512,7 +479,7 @@ self.addEventListener('message', function(e) {
 		chunkXY = message.chunkXY;
 		chunkZ = message.chunkZ;
 		viewDist = message.viewDist*20;
-		zView = message.zView;
+		zView = message.zView*20;
 		xx=-viewDist;
 		yy=-viewDist;
 		
@@ -531,6 +498,8 @@ self.addEventListener('message', function(e) {
 		var len =chunkList.length;
 		chunkList = new Uint8Array(len);
 		chunkList.fill(0);
+		cullWork = new Uint8Array(len);
+		cullWork.fill(0);
 		
 		//Flag start as 1 to start the culling 
 		start=1;
@@ -554,7 +523,7 @@ self.addEventListener('message', function(e) {
 		case "camera":
 		cam = message.cam;
 		viewDist = message.viewDist*20;
-		zView = message.zView;
+		zView = message.zView*20;
 		break;		
 	}
 });
@@ -585,6 +554,7 @@ var cullProc = setInterval(function(){
 				var chunkRef = chunk[chunkID];
 				//If it needs to be redrawn, redraw it
 				if(chunkRef.chunkreDraw==1){
+						chunk_checkCull(chunkID);
 						draw_chunk(chunkID);
 				}
 			}
