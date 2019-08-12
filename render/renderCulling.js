@@ -561,16 +561,7 @@ self.addEventListener('message', function(e) {
 		for(var h = 0 ; h<loopLen;h++){
 	
 			if(chunk[activeChunks[h]].needsDecompress>0){
-				chunk[activeChunks[h]].needsDecompress=0;
-				chunk[activeChunks[h]].chunkreDraw=2;
-				if(chunk[activeChunks[h]].compressType==0){
-				chunk[activeChunks[h]].blockList = new Uint8Array(LZMA.decompress(chunk[activeChunks[h]].blockListCompressed).split(','));
-				chunk[activeChunks[h]].culledList = new Uint8Array(LZMA.decompress(chunk[activeChunks[h]].culledListCompressed).split(','));
-				}else{
-				chunk[activeChunks[h]].blockList = new Uint8Array(LZString.decompress(chunk[activeChunks[h]].blockListCompressed).split(','));
-				chunk[activeChunks[h]].culledList = new Uint8Array(LZString.decompress(chunk[activeChunks[h]].culledListCompressed).split(','));	
-				}
-				
+				chunk[activeChunks[h]].chunkreDraw=0;	
 			}
 	
 	
