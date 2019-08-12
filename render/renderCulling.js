@@ -65,6 +65,12 @@ function newCompressionWorker(){
 	compressionWorker.addEventListener('message', function(e) {
 	  message = e.data;
 	  switch(message.id){
+		 case "finish":
+		 chunk[message.chunkID].blockList = message.blockList;
+		 chunk[message.chunkID].culledList = message.culledList;
+		 chunk[message.chunkID].chunkreDraw=2;
+		 		 
+		 break;
 		case "chunkData":
 			chunk[message.chunkID].blockListCompressed = message.blockListCompressed;
 			chunk[message.chunkID].culledListCompressed = message.culledListCompressed;
@@ -103,6 +109,7 @@ chunk_create = function(x,y,z){
 			chunkreDraw : 0,	
 			chunkreCompress : 0,
 			compressType : 0,
+			needsDecompress : 0,
 			blockListCompressed : [],
 			culledListCompressed :[],
 		}
@@ -118,6 +125,7 @@ chunk_create = function(x,y,z){
 
 chunk_checkCull=function(chunkID){
 	//Loop through culled List 
+	var changed=0;
 	var len = chunk[chunkID].culledList.length;
 	for(var k=0;k<len;k++){
 		//If block exists and is marked to be culled
@@ -135,13 +143,20 @@ chunk_checkCull=function(chunkID){
 			&&block_exists(pos[0]+1,pos[1],pos[2])		
 			){
 				//Set to culled
+				if(chunk[chunkID].culledList[k]>1){
+					changed=1;
+				}
 				chunk[chunkID].culledList[k]=1;
 			}else{
 				//Set to block type
+				if(chunk[chunkID].culledList[k]!=chunk[chunkID].blockList[k]){
+					changed=1;
+				}
 				chunk[chunkID].culledList[k]=chunk[chunkID].blockList[k];
 			}
 		}
 	}
+	return(changed);
 }
 
 
@@ -261,7 +276,7 @@ block_delete = function(x,y,z){
 			chunk[chunkID].blockList[blockIndex]=0;
 			block_cullSurrounding(x,y,z);
 			//redraw chunk
-			chunk[chunkID].chunkreDraw=1;	
+			chunk[chunkID].chunkreDraw=3;	
 		}
 		
 	}
@@ -310,6 +325,10 @@ return_color = function(a){
 var mask = new Int32Array(4096);
 greedy = function(chunkID,chunkPos) {
 	var volume=chunk[chunkID].culledList;
+	if(volume==undefined){
+		console.log(chunkID);
+		console.log(chunk[chunkID]);
+	}
 	var dims=[chunkXY,chunkXY,chunkZ];
   function f(i,j,k) {
     return volume[i + dims[0] * (j + dims[1] * k)];
@@ -540,15 +559,35 @@ self.addEventListener('message', function(e) {
 		var saveData = [];
 		var loopLen=activeChunks.length;
 		for(var h = 0 ; h<loopLen;h++){
-			console.log("%csaving map: %c"+h +'/'+(loopLen-1),"color:black","color:green");		
-			
+	
+			if(chunk[activeChunks[h]].needsDecompress>0){
+				chunk[activeChunks[h]].needsDecompress=0;
+				chunk[activeChunks[h]].chunkreDraw=2;
+				if(chunk[activeChunks[h]].compressType==0){
+				chunk[activeChunks[h]].blockList = new Uint8Array(LZMA.decompress(chunk[activeChunks[h]].blockListCompressed).split(','));
+				chunk[activeChunks[h]].culledList = new Uint8Array(LZMA.decompress(chunk[activeChunks[h]].culledListCompressed).split(','));
+				}else{
+				chunk[activeChunks[h]].blockList = new Uint8Array(LZString.decompress(chunk[activeChunks[h]].blockListCompressed).split(','));
+				chunk[activeChunks[h]].culledList = new Uint8Array(LZString.decompress(chunk[activeChunks[h]].culledListCompressed).split(','));	
+				}
+				
+			}
+	
+	
+			if(chunk[activeChunks[h]].chunkreDraw>0){
+				chunk_checkCull(activeChunks[h]);
+				draw_chunk(activeChunks[h]);
+				
+			}
+	
 			if(chunk[activeChunks[h]].blockListCompressed.length<=0 || chunk[activeChunks[h]].chunkreCompress>0){
 				chunk[activeChunks[h]].chunkreCompress=0;
 				chunk[activeChunks[h]].compressType=1;
 				chunk[activeChunks[h]].culledListCompressed=LZString.compress(chunk[activeChunks[h]].culledList.toString());
 				chunk[activeChunks[h]].blockListCompressed=LZString.compress(chunk[activeChunks[h]].blockList.toString());
 			}
-			
+			console.log("%csaving map: %c"+h +'/'+(loopLen-1)+" compressType: "+chunk[activeChunks[h]].compressType,"color:black","color:green");		
+						
 			saveData.push([
 			chunk[activeChunks[h]].coords,
 			chunk[activeChunks[h]].blockListCompressed,
@@ -579,14 +618,22 @@ self.addEventListener('message', function(e) {
 		chunk[chunkID].blockListCompressed = message.blockList;
 		chunk[chunkID].culledListCompressed = message.culledList;
 		
-		if(message.compressType==0){
-		chunk[chunkID].blockList = new Uint8Array(LZMA.decompress(message.blockList).split(','));
-		chunk[chunkID].culledList = new Uint8Array(LZMA.decompress(message.culledList).split(','));
-		}else{
-		chunk[chunkID].blockList = new Uint8Array(LZString.decompress(message.blockList).split(','));
-		chunk[chunkID].culledList = new Uint8Array(LZString.decompress(message.culledList).split(','));	
-		chunk[chunkID].compressType=1;
-		}
+
+
+		/*if(distance(chunk[chunkID].coords,camChunk)<=1){
+		
+			if(message.compressType==0){
+			chunk[chunkID].blockList = new Uint8Array(LZMA.decompress(message.blockList).split(','));
+			chunk[chunkID].culledList = new Uint8Array(LZMA.decompress(message.culledList).split(','));
+			}else{
+			chunk[chunkID].blockList = new Uint8Array(LZString.decompress(message.blockList).split(','));
+			chunk[chunkID].culledList = new Uint8Array(LZString.decompress(message.culledList).split(','));	
+			chunk[chunkID].compressType=1;
+			}
+		}else{*/
+		chunk[chunkID].needsDecompress=1;
+		//}
+		chunk[chunkID].compressType = message.compressType;
 		chunk[chunkID].chunkreDraw=2;
 
 		break;
@@ -595,11 +642,11 @@ self.addEventListener('message', function(e) {
 		console.table([message]);
 		chunkXY = message.chunkXY;
 		chunkZ = message.chunkZ;
-		viewDist = message.viewDist*10;
-		zView = message.zView*10;
+		viewDist = message.viewDist*6.0;
+		zView = message.zView*6.0;
 		xx=-viewDist;
 		yy=-viewDist;
-		
+		camChunk = [0,0,0];
 		
 		//Generate lists with new chunk info
 		for(var zz=0;zz<chunkZ;zz++){
@@ -637,8 +684,8 @@ self.addEventListener('message', function(e) {
 		//Camera update interval
 		case "camera":
 		cam = message.cam;
-		viewDist = message.viewDist*10;
-		zView = message.zView*10;
+		viewDist = message.viewDist*6.0;
+		zView = message.zView*6.0;
 		break;		
 	}
 });
@@ -657,31 +704,90 @@ var cullProc =function(){
 		( (__  )(__)(  )(__  )(__  _)(_  )  (( (_-.
 		 \___)(______)(____)(____)(____)(_)\_)\___/
 	*/
-		//This will stop looping after it has gone through all the chunks
-		var going=20;
+
+		var timeMod=0;
 		//Get chunk at camera
-		var camChunk = chunk_get(cam[0],cam[1],cam[2]);
+		camChunk = chunk_get(cam[0],cam[1],cam[2]);
+			
+		var chunkCullList=[];
+		for(var xx=-viewDist;xx<=viewDist;xx++){
+		for(var yy=-viewDist;yy<=viewDist;yy++){
+		for(var zz=-zView;zz<=zView;zz++){
+			var chunkID = return_chunkID(camChunk[0]+xx,camChunk[1]+yy,camChunk[2]+zz);
+			if(chunk[chunkID]!=null){	
+			
+				var chunkRef=chunk[chunkID];
+				chunkCullList.push([chunkID,distance(chunkRef.coords,camChunk)]);
+			}
+		}
+		}
+		}
+		chunkCullList.sort(function(a,b){
+			return(a[1]-b[1]);
+		});
+		var chunkIndex=0;
+		
+		var going=25;
+		if(chunkCullList.length==0){
+			going=0;
+		}
+		
 		while(going>0){
-			going--;
+
 			var hitter=0;
 			//Get chunk at our current displacement 
-			var chunkID = return_chunkID(camChunk[0]+xx,camChunk[1]+yy,camChunk[2]+zz);
+			var chunkID = chunkCullList[chunkIndex][0];
 			//If the chunk we are working at is defined
 			if(chunk[chunkID]!=null){
 				var chunkRef = chunk[chunkID];
 				//If it needs to be redrawn, redraw it
-				if(chunkRef.chunkreDraw==1 || chunkRef.chunkreDraw==2){
-						if(chunkRef.chunkreDraw==1){
-							chunkRef.chunkreCompress=1;
-						}
-						chunk_checkCull(chunkID);
-						draw_chunk(chunkID);
-						hitter=1;
-				}else{
-					if(chunkRef.chunkreCompress>0 && chunkRef.chunkreCompress<5){
-						chunkRef.chunkreCompress+=1;
+				if(chunkRef.chunkreDraw>0){
+						if(chunkRef.needsDecompress==1){
+							chunkRef.needsDecompress=0;
+							chunkRef.chunkreDraw=0;
+							
+							compressionWorker.postMessage({
+								id : "decompress",
+								chunkID : chunkID,
+								blockList : chunk[chunkID].blockListCompressed,
+								culledList : chunk[chunkID].culledListCompressed,
+								compressType : chunkRef.compressType,
+							});
+							
+							/*if(chunkRef.compressType==1){
+								
+								chunk[chunkID].blockList = new Uint8Array(LZString.decompress(chunk[chunkID].blockListCompressed).split(','));
+								chunk[chunkID].culledList = new Uint8Array(LZString.decompress(chunk[chunkID].culledListCompressed).split(','));
+							}else{
+								chunk[chunkID].blockList = new Uint8Array(LZMA.decompress(chunk[chunkID].blockListCompressed).split(','));
+								chunk[chunkID].culledList = new Uint8Array(LZMA.decompress(chunk[chunkID].culledListCompressed).split(','));							
+							}*/
+							hitter=1;
+						}else{
 						
-						if(chunkRef.chunkreCompress==10){
+						var testChange=1;
+						if(chunkRef.chunkreDraw!=2){
+							chunkRef.chunkreCompress=1;
+							testChange = chunk_checkCull(chunkID);
+						}
+
+						if(testChange==1){
+							if(chunkCullList[chunkIndex][1]>1){
+							timeMod+=chunkCullList[chunkIndex][1]*130
+							}
+							draw_chunk(chunkID);
+						}else{
+							chunkRef.chunkreCompress=0;
+						}
+						
+						hitter=1;
+						}
+				}else{
+					if(chunkRef.chunkreCompress>0){
+						chunkRef.chunkreCompress+=1;
+						if(chunkRef.chunkreCompress==60){
+							hitter=1;
+							timeMod+=chunkCullList[chunkIndex][1]*130
 							compressionWorker.postMessage({
 								id : "chunkData",
 								chunkID : chunkID,
@@ -692,28 +798,16 @@ var cullProc =function(){
 					}
 				}
 			}
-			//Loop through chunks in area
-			xx+=1;
-			if(xx>viewDist){
-				xx=-viewDist;
-				yy+=1;
-
-			}
-			if(yy>viewDist){
-				xx=-viewDist;
-				yy=-viewDist;
-				zz+=1;
-			}
-			if(zz>zView){
-				zz=-zView;
-				xx=-viewDist;
-				yy=-viewDist;
+			if(hitter==1){
 				going=0;
 			}
-		if(hitter==1){
-		going=0;
+			chunkIndex+=1;
+			if(chunkIndex>=chunkCullList.length){
+				going=0;
+			}
+			going--;
 		}
-		}
+			//Loop through chunks in area
 
 }
 
@@ -739,13 +833,16 @@ if(sendList.length>0){
 	sendList=[];
 }
 	var endTime = new Date();
-	return(endTime-startTime);
+	return(endTime-startTime+timeMod);
 }
 
 cullTimer = function(amount){
 	setTimeout(function(){
 		var cullAmount = cullProc();
-		cullTimer(cullAmount/10);
+		if(cullAmount<200){
+			cullAmount=200
+		}
+		cullTimer(cullAmount*0.5);
 	},amount);
 }
 
