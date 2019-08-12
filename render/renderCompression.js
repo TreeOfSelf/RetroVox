@@ -13,8 +13,26 @@ self.addEventListener('message', function(e) {
 	var message = e.data;
 	switch(message.id){
 		case "chunkData":
-		message.blockList = LZMA.compress(message.blockList.toString(),1);
-		message.culledList = LZMA.compress(message.culledList.toString(),1);
+		
+		
+		
+	/*	message.blockList = LZMA.compress(message.blockList.toString(),1,function(result){
+			message.blockList=result;
+			message.culledList = LZMA.compress(message.culledList.toString(),1,function(result){
+				console.log(message.chunkID);
+				self.postMessage({
+					id : "chunkData",
+					blockListCompressed : message.blockList,
+					culledListCompressed : result,
+					chunkID : message.chunkID,
+				});
+			});
+		});*/
+
+		
+		
+		message.blockList = LZString.compress(message.blockList.toString());
+		message.culledList = LZString.compress(message.culledList.toString());
 		self.postMessage({
 			id : "chunkData",
 			blockListCompressed : message.blockList,
@@ -24,12 +42,26 @@ self.addEventListener('message', function(e) {
 		break;
 		case "decompress":
 		if(message.compressType==0){
-			self.postMessage({
+			LZMA.decompress(message.blockList,function(result){
+				var blockList = result;
+			LZMA.decompress(message.culledList,function(result){
+				var culledList = result;
+				self.postMessage({
+					id : "finish",
+					chunkID : message.chunkID,
+					blockList : new Uint8Array(blockList.split(',')),
+					culledList : new Uint8Array(message.culledList.split(',')),
+				});
+			});
+			})
+			
+			
+			/*self.postMessage({
 				id : "finish",
 				chunkID : message.chunkID,
 				blockList : new Uint8Array(LZMA.decompress(message.blockList).split(',')),
 				culledList : new Uint8Array(LZMA.decompress(message.culledList).split(',')),
-			});
+			});*/
 		}else{
 			self.postMessage({
 				id : "finish",
