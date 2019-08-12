@@ -238,7 +238,7 @@ block_create = function(x,y,z,dontCull){
 
 	
 	//If there is not a block at this location
-	if(chunk[chunkID].blockList[blockIndex]==0){
+	if(chunk[chunkID].blockList[blockIndex]==0 && chunk[chunkID].needsDecompress==0){
 		
 		//Set block to solid
 		chunk[chunkID].blockList[blockIndex]=color;
@@ -252,7 +252,7 @@ block_create = function(x,y,z,dontCull){
 		}
 		
 	}else{
-		if(dontCull==1 && chunk[chunkID].culledList[blockIndex]!=1){
+		if(dontCull==1 && chunk[chunkID].culledList[blockIndex]!=1 && chunk[chunkID].needsDecompress==0){
 		block_cullSurrounding(x,y,z);
 		}
 	}
@@ -271,7 +271,7 @@ block_delete = function(x,y,z){
 
 	if(chunk[chunkID]!=null) {
 		//If there is a block 
-		if(chunk[chunkID].blockList[blockIndex]!=0){
+		if(chunk[chunkID].blockList[blockIndex]!=0 && chunk[chunkID].needsDecompress<1){
 
 			//Set block to non-solid
 			chunk[chunkID].blockList[blockIndex]=0;
