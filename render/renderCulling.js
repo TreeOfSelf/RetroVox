@@ -567,10 +567,7 @@ self.addEventListener('message', function(e) {
 		if(message.file.length!=0){
 			message.file=JSON.parse(message.file);
 
-			
-			var testy = message.file.findIndex(function(l){
-				return (l[0][0]==0 && l[0][1]==0 && l[0][2]==0);
-			});
+
 		}
 
 		
@@ -583,7 +580,7 @@ self.addEventListener('message', function(e) {
 				var findIndex = message.file.findIndex(function(l){
 				return (l[0][0]==chunk[activeChunks[h]].coords[0] && l[0][1]==chunk[activeChunks[h]].coords[1] && l[0][2]==chunk[activeChunks[h]].coords[2]);
 				});
-				if(findIndex!=-1){
+				if(findIndex>=0){
 					message.file.splice(findIndex,1);
 				}
 				
@@ -635,22 +632,7 @@ self.addEventListener('message', function(e) {
 		chunk[chunkID].blockListCompressed = message.blockList;
 		chunk[chunkID].culledListCompressed = message.culledList;
 		chunk[chunkID].chunkChanged=0;
-		
-
-
-		/*if(distance(chunk[chunkID].coords,camChunk)<=1){
-		
-			if(message.compressType==0){
-			chunk[chunkID].blockList = new Uint8Array(LZMA.decompress(message.blockList).split(','));
-			chunk[chunkID].culledList = new Uint8Array(LZMA.decompress(message.culledList).split(','));
-			}else{
-			chunk[chunkID].blockList = new Uint8Array(LZString.decompress(message.blockList).split(','));
-			chunk[chunkID].culledList = new Uint8Array(LZString.decompress(message.culledList).split(','));	
-			chunk[chunkID].compressType=1;
-			}
-		}else{*/
 		chunk[chunkID].needsDecompress=1;
-		//}
 		chunk[chunkID].compressType = message.compressType;
 		chunk[chunkID].chunkreDraw=2;
 

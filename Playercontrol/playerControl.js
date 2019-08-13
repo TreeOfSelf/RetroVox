@@ -70,6 +70,7 @@ var solid=0;
 //File load
 loadFile = document.getElementById('loadFile')
 loadFile.onchange = function(event) {
+	usingMap=0;
 	
 	//Clear chunk list
 	chunk=[];
@@ -96,8 +97,7 @@ loadFile.onchange = function(event) {
 				culledList : loadData[h][2],
 				compressType : loadData[h][3],
 			});
-			
-			//new Uint8Array(LZMA.decompress(loadData[h][1]).split(','))
+
 			}
     };
     reader.readAsText(fileToLoad, 'UTF-8');
@@ -131,23 +131,45 @@ var saveBtn = document.getElementById("saveMap");
 saveBtn.onclick = function(){
 	//Get map data
 	
-	var fileToLoad = loadFile.files[0];
-	//If there is a file 
-	if (fileToLoad) {
-		var reader = new FileReader();
-		reader.onload = function(fileLoadedEvent) {
-			cullWorker.postMessage({
-				id : "saveMap",
-				file : fileLoadedEvent.target.result,
-			});
-			}
-    reader.readAsText(fileToLoad, 'UTF-8');
+	if(usingMap==0){
+	
+		var fileToLoad = loadFile.files[0];
+		//If there is a file 
+		if (fileToLoad) {
+			var reader = new FileReader();
+			reader.onload = function(fileLoadedEvent) {
+				cullWorker.postMessage({
+					id : "saveMap",
+					file : fileLoadedEvent.target.result,
+				});
+				}
+		reader.readAsText(fileToLoad, 'UTF-8');
+		}else{
+			//No save file
+				cullWorker.postMessage({
+					id : "saveMap",
+					file : [],
+				});		
+		}
+	
 	}else{
-		//No save file
-			cullWorker.postMessage({
-				id : "saveMap",
-				file : [],
-			});		
+	fetch('./map.txt')
+	  .then(function(response){
+		  if(response.status!=404){
+			  return(response.text());
+		  }else{
+			  return("404");
+		  }
+	  })
+	  .then(function(response){
+		if(response!=404){
+				cullWorker.postMessage({
+					id : "saveMap",
+					file : response,
+				});			
+			
+		}
+	  })	
 	}
 }
 
@@ -758,7 +780,7 @@ function playerControl(){
 	
 }
 
-
+var usingMap=0;
 //Load prexisting map
 setTimeout(function(){
 	fetch('./map.txt')
@@ -772,6 +794,7 @@ setTimeout(function(){
 
 	  .then(function(response){
 		if(response!=404){
+			usingMap=1;
 			//Parse
 			var loadData=JSON.parse(response);
 			//For each chunk in the map
