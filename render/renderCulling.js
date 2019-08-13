@@ -69,6 +69,7 @@ function newCompressionWorker(){
 		 chunk[message.chunkID].blockList = message.blockList;
 		 chunk[message.chunkID].culledList = message.culledList;
 		 chunk[message.chunkID].chunkreDraw=2;
+		 chunk[message.chunkID].needsDecompress=0;
 		 		 
 		 break;
 		case "chunkData":
@@ -111,6 +112,7 @@ chunk_create = function(x,y,z){
 			compressType : 0,
 			needsDecompress : 0,
 			drawLength : 0,
+			chunkChanged : 1,
 			blockListCompressed : [],
 			culledListCompressed :[],
 		}
@@ -244,7 +246,7 @@ block_create = function(x,y,z,dontCull){
 		chunk[chunkID].blockList[blockIndex]=color;
 		//Set chunk to be redrawn
 		chunk[chunkID].chunkreDraw=1;	
-
+		chunk[chunkID].chunkChanged=1;
 		if(dontCull==1){
 			chunk[chunkID].culledList[blockIndex]=1;
 		}else{
@@ -278,6 +280,7 @@ block_delete = function(x,y,z){
 			block_cullSurrounding(x,y,z);
 			//redraw chunk
 			chunk[chunkID].chunkreDraw=3;	
+			chunk[chunkID].chunkChanged=1;
 		}
 		
 	}
@@ -559,40 +562,63 @@ self.addEventListener('message', function(e) {
 		}
 		break;
 		case "saveMap":
+		
+		//Decompress save data if it exists
+		if(message.file.length!=0){
+			message.file=JSON.parse(LZMA.decompress(new Uint8Array(message.file.split(','))));
+
+			
+			var testy = message.file.findIndex(function(l){
+				return (l[0][0]==0 && l[0][1]==0 && l[0][2]==0);
+			});
+		}
+
+		
 		console.log("saving map");
-		var saveData = [];
 		var loopLen=activeChunks.length;
 		for(var h = 0 ; h<loopLen;h++){
-	
-			if(chunk[activeChunks[h]].needsDecompress>0){
-				chunk[activeChunks[h]].chunkreDraw=0;	
-			}
-	
-	
-			if(chunk[activeChunks[h]].chunkreDraw>0 || chunk[activeChunks[h]].drawLength==0){
-				chunk_checkCull(activeChunks[h]);
-				draw_chunk(activeChunks[h]);
+			//if chunk has changed
+			if(chunk[activeChunks[h]].chunkChanged==1){
 				
+				var findIndex = message.file.findIndex(function(l){
+				return (l[0][0]==chunk[activeChunks[h]].coords[0] && l[0][1]==chunk[activeChunks[h]].coords[1] && l[0][2]==chunk[activeChunks[h]].coords[2]);
+				});
+				if(findIndex!=-1){
+					message.file.splice(findIndex,1);
+				}
+				
+				
+				
+				if(chunk[activeChunks[h]].needsDecompress>0){
+					chunk[activeChunks[h]].chunkreDraw=0;	
+				}
+		
+		
+				if(chunk[activeChunks[h]].chunkreDraw>0 || chunk[activeChunks[h]].drawLength==0){
+					chunk_checkCull(activeChunks[h]);
+					draw_chunk(activeChunks[h]);
+					chunk[activeChunks[h]].chunkreCompress=1;
+					
+				}
+		
+				if(chunk[activeChunks[h]].blockListCompressed.length<=0 || chunk[activeChunks[h]].chunkreCompress>0){
+					chunk[activeChunks[h]].chunkreCompress=0;
+					chunk[activeChunks[h]].compressType=1;
+					chunk[activeChunks[h]].culledListCompressed=LZString.compress(chunk[activeChunks[h]].culledList.toString());
+					chunk[activeChunks[h]].blockListCompressed=LZString.compress(chunk[activeChunks[h]].blockList.toString());
+				}
+				console.log("%csaving map: %c"+h +'/'+(loopLen-1)+" compressType: "+chunk[activeChunks[h]].compressType,"color:black","color:green");		
+							
+				message.file.push([
+				chunk[activeChunks[h]].coords,
+				chunk[activeChunks[h]].blockListCompressed,
+				chunk[activeChunks[h]].culledListCompressed,
+				chunk[activeChunks[h]].compressType,
+				]);
 			}
-	
-			if(chunk[activeChunks[h]].blockListCompressed.length<=0 || chunk[activeChunks[h]].chunkreCompress>0){
-				chunk[activeChunks[h]].chunkreCompress=0;
-				chunk[activeChunks[h]].compressType=1;
-				chunk[activeChunks[h]].culledListCompressed=LZString.compress(chunk[activeChunks[h]].culledList.toString());
-				chunk[activeChunks[h]].blockListCompressed=LZString.compress(chunk[activeChunks[h]].blockList.toString());
-			}
-			console.log("%csaving map: %c"+h +'/'+(loopLen-1)+" compressType: "+chunk[activeChunks[h]].compressType,"color:black","color:green");		
-						
-			saveData.push([
-			chunk[activeChunks[h]].coords,
-			chunk[activeChunks[h]].blockListCompressed,
-			chunk[activeChunks[h]].culledListCompressed,
-			chunk[activeChunks[h]].compressType,
-			]);
 		}
-		saveData = JSON.stringify(saveData);
-		//saveData = LZString.compressToBase64(saveData);
-		saveData = LZMA.compress(saveData,1,function(result){
+		message.file = JSON.stringify(message.file);
+		message.file = LZMA.compress(message.file,1,function(result){
 			self.postMessage({
 				
 				id : 'downloadData',
@@ -612,6 +638,7 @@ self.addEventListener('message', function(e) {
 		var chunkID = chunk_create(coords[0],coords[1],coords[2]);
 		chunk[chunkID].blockListCompressed = message.blockList;
 		chunk[chunkID].culledListCompressed = message.culledList;
+		chunk[chunkID].chunkChanged=0;
 		
 
 
@@ -738,7 +765,7 @@ var cullProc =function(){
 				//If it needs to be redrawn, redraw it
 				if(chunkRef.chunkreDraw>0){
 						if(chunkRef.needsDecompress==1){
-							chunkRef.needsDecompress=0;
+							chunkRef.needsDecompress=2;
 							chunkRef.chunkreDraw=0;
 							
 							compressionWorker.postMessage({
@@ -769,6 +796,9 @@ var cullProc =function(){
 						if(testChange==1 || chunkRef.chunkreDraw==3){
 							timeMod+=chunkCullList[chunkIndex][1]*130
 							draw_chunk(chunkID);
+
+							
+							
 						}else{
 							chunkRef.chunkreCompress=0;
 						}

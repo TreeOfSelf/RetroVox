@@ -68,7 +68,8 @@ var momentum=0;
 var solid=0;
 
 //File load
-document.getElementById('loadFile').onchange = function(event) {
+loadFile = document.getElementById('loadFile')
+loadFile.onchange = function(event) {
 	
 	//Clear chunk list
 	chunk=[];
@@ -128,9 +129,26 @@ function download(filename, text) {
 //Save map button
 var saveBtn = document.getElementById("saveMap");
 saveBtn.onclick = function(){
-	cullWorker.postMessage({
-	id: "saveMap"});
-
+	//Get map data
+	
+	var fileToLoad = loadFile.files[0];
+	//If there is a file 
+	if (fileToLoad) {
+		var reader = new FileReader();
+		reader.onload = function(fileLoadedEvent) {
+			cullWorker.postMessage({
+				id : "saveMap",
+				file : fileLoadedEvent.target.result,
+			});
+			}
+    reader.readAsText(fileToLoad, 'UTF-8');
+	}else{
+		//No save file
+			cullWorker.postMessage({
+				id : "saveMap",
+				file : [],
+			});		
+	}
 }
 
 //Function used to move the player in a X/Y direction. 
