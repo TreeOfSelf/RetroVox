@@ -84,7 +84,7 @@ loadFile.onchange = function(event) {
 		reader.onload = function(fileLoadedEvent) {
 			var textFromFileLoaded = fileLoadedEvent.target.result;
 			//Parse file content
-			var loadData=JSON.parse(LZMA.decompress(new Uint8Array(textFromFileLoaded.split(','))));
+			var loadData=JSON.parse(textFromFileLoaded);
 			//For each chunk in the map
 			var loopLen=loadData.length;
 			for(var h = 0; h<loopLen ; h++){

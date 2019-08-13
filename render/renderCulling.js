@@ -565,7 +565,7 @@ self.addEventListener('message', function(e) {
 		
 		//Decompress save data if it exists
 		if(message.file.length!=0){
-			message.file=JSON.parse(LZMA.decompress(new Uint8Array(message.file.split(','))));
+			message.file=JSON.parse(message.file);
 
 			
 			var testy = message.file.findIndex(function(l){
@@ -618,20 +618,13 @@ self.addEventListener('message', function(e) {
 			}
 		}
 		message.file = JSON.stringify(message.file);
-		var beforeSize = message.file.length;
-		message.file = LZMA.compress(message.file,1,function(result){
-			console.log("size before: " +beforeSize);
-			console.log("final compressed size: "+result.length);	
 			self.postMessage({
 				
 				id : 'downloadData',
-				data : result,
+				data : message.file,
 			});
 			
-		},function(pcent){console.log("%cFinalizing: "+pcent,"color:purple")});
-		//LZMA.compress(string || byte_array, mode, on_finish(result, error) {}, on_progress(percent) {});
 
-		
 
 		
 		break;
