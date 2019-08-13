@@ -192,6 +192,10 @@ block_setCull=function(x,y,z){
 	if(blockId!=-1){
 	//set blocked to non-culled
 		chunk[blockId[0]].culledList[blockId[1]]=0;
+		
+		//this might be too expensive idk  trying to fix error with blocks not being unculled
+		chunk[chunkID].chunkreDraw=3;	
+		chunk[chunkID].chunkChanged=1;
 	}	
 }
 
@@ -586,12 +590,10 @@ self.addEventListener('message', function(e) {
 				
 				
 				
-				if(chunk[activeChunks[h]].needsDecompress>0){
-					chunk[activeChunks[h]].chunkreDraw=0;	
-				}
+				if(chunk[activeChunks[h]].needsDecompress==0){
 		
 		
-				if(chunk[activeChunks[h]].chunkreDraw>0 || chunk[activeChunks[h]].drawLength==0){
+				if(chunk[activeChunks[h]].chunkreDraw>0){
 					chunk_checkCull(activeChunks[h]);
 					draw_chunk(activeChunks[h]);
 					chunk[activeChunks[h]].chunkreCompress=1;
@@ -603,6 +605,7 @@ self.addEventListener('message', function(e) {
 					chunk[activeChunks[h]].compressType=1;
 					chunk[activeChunks[h]].culledListCompressed=LZString.compress(chunk[activeChunks[h]].culledList.toString());
 					chunk[activeChunks[h]].blockListCompressed=LZString.compress(chunk[activeChunks[h]].blockList.toString());
+				}
 				}
 				console.log("%csaving map: %c"+h +'/'+(loopLen-1)+" compressType: "+chunk[activeChunks[h]].compressType,"color:black","color:green");		
 							
