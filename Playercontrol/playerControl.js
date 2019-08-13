@@ -759,5 +759,34 @@ function playerControl(){
 }
 
 
+//Load prexisting map
+setTimeout(function(){
+	fetch('./map.txt')
+	  .then(function(response){
+		  if(response.status!=404){
+			  return(response.text());
+		  }else{
+			  return("404");
+		  }
+	  })
 
-
+	  .then(function(response){
+		if(response!=404){
+			//Parse
+			var loadData=JSON.parse(response);
+			//For each chunk in the map
+			var loopLen=loadData.length;
+			for(var h = 0; h<loopLen ; h++){
+			console.log("%cloading map: %c"+h +'/'+(loadData.length-1),"color:black","color:red");
+			cullWorker.postMessage({
+				id : "loadData",
+				coords : loadData[h][0],
+				blockList : loadData[h][1],
+				culledList : loadData[h][2],
+				compressType : loadData[h][3],
+			});
+			
+			}
+		}
+	  })
+},100);
