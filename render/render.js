@@ -185,7 +185,7 @@ function drawScene(now) {
 		
 		//Set screen size
 		prevSize = [window.innerWidth,window.innerHeight];
-		screenSize = [Math.round(window.innerWidth*(0.97*resolution)),Math.round(window.innerHeight*(0.93*resolution))];
+		screenSize = [Math.round(window.innerWidth*(resolution)),Math.round(window.innerHeight*(resolution))];
 		canvas.width = screenSize[0];
 		canvas.height = screenSize[1];
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

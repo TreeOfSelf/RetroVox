@@ -270,69 +270,36 @@ document.body.ontouchstart = function(e){
 	e.preventDefault();
 	canvas.requestFullscreen();
 	//If there is more than one touch
-	if(e.touches.length>1){
-		if(e.touches[0].screenX < e.touches[1].screenX){
-			touchSet=0;
-			lookPosStart=[e.touches[0].screenX,e.touches[0].screenY];
-			movePosStart=[e.touches[1].screenX,e.touches[1].screenY];		
-			lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
-			movePosEnd=[e.touches[1].screenX,e.touches[1].screenY];				
+	for(var k=0;k<e.changedTouches.length;k++){
+		if(e.changedTouches[k].screenX<window.innerWidth/2){
+			lookPosEnd =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];
+			lookPosStart =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];
 		}else{
-			touchSet=1;
-			lookPosStart=[e.touches[1].screenX,e.touches[1].screenY];
-			movePosStart=[e.touches[0].screenX,e.touches[0].screenY];
-			lookPosEnd=[e.touches[1].screenX,e.touches[1].screenY];
-			movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
-		}
-	}else{
-		if(e.touches[0].screenX < window.innerWidth/2){
-			touchSet=0;
-			lookPosStart=[e.touches[0].screenX,e.touches[0].screenY];
-			lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
-		}else{
-			touchSet=1;
-			movePosStart=[e.touches[0].screenX,e.touches[0].screenY];
-			movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+			movePosEnd =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];
+			movePosStart =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];		
 		}
 	}
 }
 
 document.body.ontouchmove = function(e){
 	e.preventDefault();
-	if(e.touches.length>1){
-		if(touchSet==0){
-		lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];		
-		movePosEnd=[e.touches[1].screenX,e.touches[1].screenY];	
+	for(var k=0;k<e.touches.length;k++){
+		if(e.touches[k].screenX<window.innerWidth/2){
+			lookPosEnd =[e.touches[k].screenX,e.touches[k].screenY];
 		}else{
-		lookPosEnd=[e.touches[1].screenX,e.touches[1].screenY];		
-		movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];			
-		}
-		
-	//Single touch
-	}else{
-		//Look
-		if(touchSet==0){
-		lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
-		//Move
-		}else{
-		movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+			movePosEnd =[e.touches[k].screenX,e.touches[k].screenY];	
 		}
 	}
 }
 
 document.body.ontouchend = function(e){
-	if(e.changedTouches.length>1){
-		lookPosStart =[0,0];
-		 movePosStart=[0,0];
-		 lookPosEnd =[0,0];
-		 movePosEnd=[0,0];
-	}else{
-		if(e.changedTouches[0].screenX<window.innerWidth/2){
-		lookPosEnd =[0,0];	
-		lookPosStart =[0,0];			 
+	for(var k=0;k<e.changedTouches.length;k++){
+		if(e.changedTouches[k].screenX<window.innerWidth/2){
+			lookPosStart = [0,0];
+			lookPosEnd = [0,0];
 		}else{
-		 movePosEnd=[0,0];
-		 movePosStart=[0,0];		 
+			movePosStart = [0,0];
+			movePosEnd = [0,0];
 		}
 	}
 }
