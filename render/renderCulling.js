@@ -621,7 +621,7 @@ self.addEventListener('message', function(e) {
 		var beforeSize = message.file.length;
 		message.file = LZMA.compress(message.file,1,function(result){
 			console.log("size before: " +beforeSize);
-			console.log("final compressed size: "+result);	
+			console.log("final compressed size: "+result.length);	
 			self.postMessage({
 				
 				id : 'downloadData',
