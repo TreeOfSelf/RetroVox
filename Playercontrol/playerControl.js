@@ -257,6 +257,87 @@ canvas.addEventListener('wheel', function(e) {
 });
 
 
+//0 = Look , 1 = Move
+var touchSet=0;
+var lookPosStart =[0,0];
+var movePosStart=[0,0];
+var lookPosEnd =[0,0];
+var movePosEnd=[0,0];
+
+//Mobile
+document.body.ontouchstart = function(e){
+	
+	e.preventDefault();
+	canvas.requestFullscreen();
+	//If there is more than one touch
+	if(e.touches.length>1){
+		if(e.touches[0].screenX < e.touches[1].screenX){
+			touchSet=0;
+			lookPosStart=[e.touches[0].screenX,e.touches[0].screenY];
+			movePosStart=[e.touches[1].screenX,e.touches[1].screenY];		
+			lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+			movePosEnd=[e.touches[1].screenX,e.touches[1].screenY];				
+		}else{
+			touchSet=1;
+			lookPosStart=[e.touches[1].screenX,e.touches[1].screenY];
+			movePosStart=[e.touches[0].screenX,e.touches[0].screenY];
+			lookPosEnd=[e.touches[1].screenX,e.touches[1].screenY];
+			movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+		}
+	}else{
+		if(e.touches[0].screenX < window.innerWidth/2){
+			touchSet=0;
+			lookPosStart=[e.touches[0].screenX,e.touches[0].screenY];
+			lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+		}else{
+			touchSet=1;
+			movePosStart=[e.touches[0].screenX,e.touches[0].screenY];
+			movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+		}
+	}
+}
+
+document.body.ontouchmove = function(e){
+	e.preventDefault();
+	if(e.touches.length>1){
+		if(touchSet==0){
+		lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];		
+		movePosEnd=[e.touches[1].screenX,e.touches[1].screenY];	
+		}else{
+		lookPosEnd=[e.touches[1].screenX,e.touches[1].screenY];		
+		movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];			
+		}
+		
+	//Single touch
+	}else{
+		//Look
+		if(touchSet==0){
+		lookPosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+		//Move
+		}else{
+		movePosEnd=[e.touches[0].screenX,e.touches[0].screenY];
+		}
+	}
+}
+
+document.body.ontouchend = function(e){
+	if(e.changedTouches.length>1){
+		lookPosStart =[0,0];
+		 movePosStart=[0,0];
+		 lookPosEnd =[0,0];
+		 movePosEnd=[0,0];
+	}else{
+		if(e.changedTouches[0].screenX<window.innerWidth/2){
+		lookPosEnd =[0,0];	
+		lookPosStart =[0,0];			 
+		}else{
+		 movePosEnd=[0,0];
+		 movePosStart=[0,0];		 
+		}
+	}
+}
+
+
 //Mouse look
 canvas.addEventListener('mousemove', function(e) {
 	//If pointer is locked
@@ -386,6 +467,14 @@ document.body.onkeyup=function(e){
 
 
 function playerControl(){
+	
+	camRotate[0]-= (lookPosStart[0]-lookPosEnd[0])*0.0004;
+	camRotate[1]-= (lookPosStart[1]-lookPosEnd[1])*0.0004;
+
+	strafeSpeed+= (movePosStart[0]-movePosEnd[0])*0.0004;
+	forwardSpeed-= (movePosStart[1]-movePosEnd[1])*0.0004;
+				
+	
 	
 	//Turn off playerWallRunning (will be set to 1 again if you continue to run on the wall)
 	playerWallRunning=0;
