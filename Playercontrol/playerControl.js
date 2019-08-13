@@ -271,7 +271,7 @@ document.body.ontouchstart = function(e){
 	canvas.requestFullscreen();
 	//If there is more than one touch
 	for(var k=0;k<e.changedTouches.length;k++){
-		if(e.changedTouches[k].screenX<window.innerWidth/2){
+		if(e.changedTouches[k].screenX>window.innerWidth/2){
 			lookPosEnd =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];
 			lookPosStart =[e.changedTouches[k].screenX,e.changedTouches[k].screenY];
 		}else{
@@ -284,7 +284,7 @@ document.body.ontouchstart = function(e){
 document.body.ontouchmove = function(e){
 	e.preventDefault();
 	for(var k=0;k<e.touches.length;k++){
-		if(e.touches[k].screenX<window.innerWidth/2){
+		if(e.touches[k].screenX>window.innerWidth/2){
 			lookPosEnd =[e.touches[k].screenX,e.touches[k].screenY];
 		}else{
 			movePosEnd =[e.touches[k].screenX,e.touches[k].screenY];	
@@ -294,7 +294,7 @@ document.body.ontouchmove = function(e){
 
 document.body.ontouchend = function(e){
 	for(var k=0;k<e.changedTouches.length;k++){
-		if(e.changedTouches[k].screenX<window.innerWidth/2){
+		if(e.changedTouches[k].screenX>window.innerWidth/2){
 			lookPosStart = [0,0];
 			lookPosEnd = [0,0];
 		}else{
