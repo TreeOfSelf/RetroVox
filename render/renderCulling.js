@@ -620,7 +620,7 @@ self.addEventListener('message', function(e) {
 		message.file = JSON.stringify(message.file);
 		var beforeSize = message.file.length;
 		message.file = LZMA.compress(message.file,1,function(result){
-			console.log("size before: " beforeSize);
+			console.log("size before: " +beforeSize);
 			console.log("final compressed size: "+result);	
 			self.postMessage({
 				
