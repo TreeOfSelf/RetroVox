@@ -189,13 +189,13 @@ block_setCull=function(x,y,z){
 	//get ID from xyz
 	var blockId = location_block(x,y,z);
 	//If the chunk exists
-	if(blockId!=-1){
+	if(blockId!=-1 && chunk[blockId[0]].needsDecompress==0){
 	//set blocked to non-culled
 		chunk[blockId[0]].culledList[blockId[1]]=0;
 		
 		//this might be too expensive idk  trying to fix error with blocks not being unculled
-		chunk[chunkID].chunkreDraw=3;	
-		chunk[chunkID].chunkChanged=1;
+		chunk[blockId[0]].chunkreDraw=1;	
+		chunk[blockId[0]].chunkChanged=1;
 	}	
 }
 
@@ -215,7 +215,7 @@ block_exists = function ( x,y,z ) {
 	//get ID from xyz
 	var blockId = location_block(x,y,z);
 	//If the chunk exists
-	if(blockId!=-1){
+	if(blockId!=-1 && chunk[blockId[0]].needsDecompress==0){
 	//If the block exists
 		if(chunk[blockId[0]].blockList[blockId[1]]!=0){return(1);}
 	}
@@ -232,7 +232,8 @@ block_create = function(x,y,z,dontCull){
 
 	//get relative location in chunk
 	var blockLoc = [x - (chunkRef[0]*chunkXY), y - (chunkRef[1]*chunkXY),z - (chunkRef[2]*chunkZ)]
-	
+
+
 	
 	//get index from relative location
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXY+blockLoc[2]*chunkXY*chunkXY;
@@ -252,13 +253,17 @@ block_create = function(x,y,z,dontCull){
 		chunk[chunkID].chunkreDraw=1;	
 		chunk[chunkID].chunkChanged=1;
 		if(dontCull==1){
-			chunk[chunkID].culledList[blockIndex]=1;
+			if(blockLoc[0]==0 || blockLoc[1]==0 || blockLoc[2]==0 || blockLoc[0]==chunkXY-1 || blockLoc[1]==chunkXY-1 || blockLoc[2]==chunkZ-1){
+				block_cullSurrounding();
+			}else{
+				chunk[chunkID].culledList[blockIndex]=1;
+			}
 		}else{
 			block_cullSurrounding();
 		}
 		
 	}else{
-		if(dontCull==1 && chunk[chunkID].culledList[blockIndex]!=1 && chunk[chunkID].needsDecompress==0){
+		if(chunk[chunkID].culledList[blockIndex]!=1 && chunk[chunkID].needsDecompress==0){
 		block_cullSurrounding(x,y,z);
 		}
 	}
@@ -266,6 +271,9 @@ block_create = function(x,y,z,dontCull){
 
 
 block_delete = function(x,y,z){
+	
+	
+	
 	//get Chunk location
 	var chunkRef = chunk_get(x,y,z);
 	
