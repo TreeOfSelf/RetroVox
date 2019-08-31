@@ -342,7 +342,7 @@ block_delete = function(x,y,z){
 	if(chunk[chunkID]!=null){
 
 		//get relative location in chunk
-		var blockLoc = [x - (chunkRef[0]*chunkXYZ), y - (chunkRef[1]*chunkXYZ),z - (chunkRef[2]*chunkXYZ)]
+		var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
 		//get index from relative location
 		var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
 		chunk[chunkID].blockList[blockIndex]+=0.02;
