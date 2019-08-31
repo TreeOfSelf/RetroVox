@@ -156,7 +156,7 @@ we need to draw a sector.
 
 sectorPositionBuffer = new Float32Array(99999999);
 sectorColorBuffer = new Uint8Array(99999999);
-sectorIndiceBuffer = new Uint16Array(99999999);
+sectorIndiceBuffer = new Uint32Array(99999999);
 
 draw_sector = function(x,y,z){
 	
@@ -248,7 +248,6 @@ check_frustrum= function(point){
 
 //Adds a border corner block 
 block_border = function(x,y,z,amount){
-	console.log(x,y,z,amount);
 	var chunkRef = chunk_get(x,y,z);
 	var chunkID = return_chunkID(chunkRef[0],chunkRef[1],chunkRef[2]);
 
@@ -264,7 +263,7 @@ block_border = function(x,y,z,amount){
 	}
 	
 	//chunk[chunkID].blockList[blockIndex]-=0.05;
-	chunk[chunkID].blockList[blockIndex]=-amount;
+	chunk[chunkID].blockList[blockIndex]=amount;
 	chunk[chunkID].reDraw=1;
 }
 
@@ -347,7 +346,7 @@ block_delete = function(x,y,z){
 	var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
 	//get index from relative location
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
-	chunk[chunkID].blockList[blockIndex]+=0.02;
+	chunk[chunkID].blockList[blockIndex]=0.02;
 		
 	switch(blockLoc[0]){
 		case 1:

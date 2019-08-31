@@ -231,7 +231,7 @@ return function(data, chunkPos) {
   }
 	
   //All done!  Return the result
-  return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint16Array(faces)).buffer];
+  return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
 };
 })();
 

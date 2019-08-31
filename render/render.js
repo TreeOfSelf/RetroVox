@@ -310,10 +310,10 @@ function drawScene(now) {
 					//Draw
 					if(wireFrame==0){		
 						
-						gl.drawElements(gl.TRIANGLES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);
+						gl.drawElements(gl.TRIANGLES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_INT,0);
 					}else{
 						gl.lineWidth(15.0);
-						gl.drawElements(gl.LINES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);				
+						gl.drawElements(gl.LINES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_INT,0);				
 							
 					}	
 				}

@@ -26,7 +26,7 @@ function newMeshWorker(){
 			//Set mesh data 
 			chunk[message.chunkID].blockDraws.position = new Float32Array(message.result[0]);
 			chunk[message.chunkID].blockDraws.color = new Uint8Array(message.result[1]);
-			chunk[message.chunkID].blockDraws.indice = new Uint16Array(message.result[2]);
+			chunk[message.chunkID].blockDraws.indice = new Uint32Array(message.result[2]);
 			
 			//Get chunk position from ID
 			
