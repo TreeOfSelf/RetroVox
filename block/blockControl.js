@@ -53,7 +53,7 @@ chunk_create = function(x,y,z){
 			//coordinates
 			coords : [x,y,z],
 			//List of block densities , filled for chunk dimensions cubed 
-			blockList : new Float32Array(chunkXYZ*chunkXYZ*chunkXYZ),
+			blockList : new Float32Array(chunkXYZ*chunkXYZ*chunkXYZ).fill(0.05),
 			//Final draw of the chunk
 			blockDraws : {
 				position : [],
@@ -197,7 +197,6 @@ draw_sector = function(x,y,z){
 			
 			if(indBefore!=0){
 				for(i=indBefore;i<indOffset;i++){
-					//console.log(i,	posBefore);
 					sectorIndiceBuffer[i]+=posBefore/3;
 				}
 			}
@@ -249,6 +248,7 @@ check_frustrum= function(point){
 
 //Adds a border corner block 
 block_border = function(x,y,z,amount){
+	console.log(x,y,z,amount);
 	var chunkRef = chunk_get(x,y,z);
 	var chunkID = return_chunkID(chunkRef[0],chunkRef[1],chunkRef[2]);
 
@@ -264,7 +264,7 @@ block_border = function(x,y,z,amount){
 	}
 	
 	//chunk[chunkID].blockList[blockIndex]-=0.05;
-	chunk[chunkID].blockList[blockIndex]=amount;
+	chunk[chunkID].blockList[blockIndex]=-amount;
 	chunk[chunkID].reDraw=1;
 }
 
@@ -339,45 +339,47 @@ block_delete = function(x,y,z){
 	var chunkRef = chunk_get(x,y,z);
 	var chunkID = return_chunkID(chunkRef[0],chunkRef[1],chunkRef[2]);
 
-	if(chunk[chunkID]!=null){
-
-		//get relative location in chunk
-		var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
-		//get index from relative location
-		var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
-		chunk[chunkID].blockList[blockIndex]+=0.02;
-			
-		switch(blockLoc[0]){
-			case 1:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
-			break;
-			case chunkXYZ-2:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
-			break;
-		}
-		
-
-		switch(blockLoc[1]){
-			case 1:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
-			break;
-			case chunkXYZ-2:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
-			break;
-		}
-		
-
-		switch(blockLoc[2]){
-			case 1:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
-			break;
-			case chunkXYZ-2:
-				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);		
-			break;
-		}
-		
-		chunk[chunkID].reDraw=1;
+	if(chunk[chunkID]==null){
+		chunk_create(x,y,z);
 	}
+
+	//get relative location in chunk
+	var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
+	//get index from relative location
+	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
+	chunk[chunkID].blockList[blockIndex]+=0.02;
+		
+	switch(blockLoc[0]){
+		case 1:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+		break;
+		case chunkXYZ-2:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+		break;
+	}
+	
+
+	switch(blockLoc[1]){
+		case 1:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+		break;
+		case chunkXYZ-2:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+		break;
+	}
+	
+
+	switch(blockLoc[2]){
+		case 1:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+		break;
+		case chunkXYZ-2:
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);		
+		break;
+	}
+
+	
+	chunk[chunkID].reDraw=1;
 }
 
 chunk_process = function() {
