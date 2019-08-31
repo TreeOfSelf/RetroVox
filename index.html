@@ -22,29 +22,29 @@
 	<body>
 
 		<input type="file" id="loadFile" accept=".txt,.csv,.xml">
-		<button id="saveMap" type="button">Save map</button>
 		<canvas id="pandaCanvas"></canvas>
 		
 		<!--gl matrix -->
-		<script src="render/gl-matrix-min.js"></script>
-		<!--lz-string  -->
-		<script src="lib/lz-string.min.js"></script>
-		<!--LZMA  -->
-		<script src="lib/lzma.min.js"></script>				
+		<script src="lib/gl-matrix-min.js"></script>
+		<!--lz-string compression  -->
+		<script src="lib/lz-string.min.js"></script>		
+		
 		
 		<!-- Shaders-->
 		<script src="render/renderShaders.js"></script>
-		
 		
 		<!-- Render -->
 		<script src="render/renderFrustrum.js"></script>
 		<script src="render/render.js"></script>
 		
-		<!--Player Control -->
-		<script src="playerControl/playerControl.js"></script>
+		<!--Controls -->
+		<script src="controls/controlsPC.js"></script>
+		<!--Controls -->
+		<script src="controls/controlsMobile.js"></script>
+		
 		<!-- Game -->
-		<script src="game/blockControl.js"></script>
-
+		<script src="block/blockControl.js"></script>
+		<script src="block/blockSpawnWorkers.js"></script>
 		
 
 		

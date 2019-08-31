@@ -87,7 +87,7 @@ out lowp vec4 vPixelColor;
 out lowp float vColor;
 void main() {
 
-
+	gl_PointSize = 35.0;
 	//Get screen position
 	gl_Position =  uMatrix *vec4(aPixelPosition[0],-aPixelPosition[2],aPixelPosition[1],1.0);
 	

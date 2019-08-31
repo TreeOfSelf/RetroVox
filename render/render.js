@@ -5,16 +5,16 @@
 (__\_)(____)\_)__)(____/(____)(__\_)
 All main drawing code 
 */
-var subData=1;
+
+
 //Definitions 
 var screenSize=[0,0]
 var prevSize=[-1,-1];
 
-//List of sectors we are drawing + their distance to the camera 
-var drawList=[];
 
-//How many verts we are drawing
-var drawLength=0;
+
+//Flag for drawing smooth
+var drawSmooth=1;
 
 //Wireframe toggle
 var wireFrame=0;
@@ -29,16 +29,87 @@ var fov=95;
 var resolution = 1;
 
 //How far of a view to render
-var viewDist = 1;
+var viewDist = 3;
 //How far down and up to render 
-var zView = 1;
+var zView = 3;
 
 
+
+
+//FPS
+let then = 0;
+var fps=0;
+var fpsReal;
+var fpsTotal=0;
+var fpsCount=0;
+var deltaTime = 0;
+
+//Indice amount 
+var drawLength = 0;
+
+//Variables for the frustrum culling
+zFar = 5000.0;
+zNear = 0.0001;
+
+canvas = document.getElementById("pandaCanvas");
+
+//Current chunk
+var camChunk = [0,0];
 //Set resolution scale to pixelated
 canvas.style.imageRendering='pixelated';
 
 
-//Functions
+//Depth testing
+gl.enable(gl.DEPTH_TEST);
+
+//Back face culling   
+gl.enable(gl.CULL_FACE);
+gl.cullFace(gl.BACK);
+//No alpha blending          
+gl.disable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+//Create drawing buffers
+
+
+//Premade indice buffer
+
+var indexBuffer = gl.createBuffer();
+
+
+
+//Premade indice buffer
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
+var indice=[];
+for(var k=0;k<=999999;k++){
+	var q=k*4;
+	indice.push(q,q+1,q+2,q,q+2,q+3);
+}
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
+
+//Background color
+gl.clearColor(0.10, 0.0, 0.1, 1.0);  
+
+
+//Building buffer for the block infront of you
+blockBuildVao = gl.createVertexArray();
+blockBuildPos = gl.createBuffer();
+blockBuildCol = gl.createBuffer();
+
+gl.bindVertexArray(blockBuildVao);
+
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPos);
+gl.vertexAttribPointer(programInfoCube.attribLocations.voxelPosition,3,gl.SHORT,false,0,0);
+gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelPosition);	
+
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildCol);
+gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array([
+90,90,90,90,90,90,90,90,90,90,90,90,150,150,150,150,150,150,150,150,150,150,150,150,50,50,50,50,50,50,50,50,50,50,50,50,110,110,110,110,110,110,110,110,110,170,170,170,170,170,170,170,170,170,170,170,170,210,210,210,210,210,210,210,210,210,210,210,210,
+]),gl.DYNAMIC_DRAW);
+gl.vertexAttribPointer(programInfoCube.attribLocations.voxelColor,3,gl.UNSIGNED_BYTE,false,0,0);
+gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelColor);
+
 
 
 //Load Texture
@@ -58,130 +129,20 @@ function loadTexture(gl,url){
 	return texture;
 }
 
-//Drawing the scene
-
-
-//Fps timing variables
-
-//Things that don't need to be done every frame just once
-
-
-//Depth testing
-gl.enable(gl.DEPTH_TEST);
-
-//Back face culling   
-gl.enable(gl.CULL_FACE);
-gl.cullFace(gl.BACK);
-//No alpha blending          
-gl.disable(gl.BLEND);
-gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-//Create drawing buffers
-
-
-var indexBuffer = gl.createBuffer();
-
-//Premade indice buffer
-gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indexBuffer);
-var indice=[];
-for(var k=0;k<=999999;k++){
-	var q=k*4;
-	indice.push(q,q+1,q+2,q,q+2,q+3);
-}
-console.log("%c indice size: %c" + indice.length,"color:grey","color:red");
-gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(indice), gl.STATIC_DRAW)
-
-//Background color
-gl.clearColor(0.10, 0.0, 0.1, 1.0);  
-
-
-//Building buffer for the block infront of you
-blockBuildVao = gl.createVertexArray();
-blockBuildPos = gl.createBuffer();
-blockBuildCol = gl.createBuffer();
-
-
-gl.bindVertexArray(blockBuildVao);
-
-gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPos);
-gl.vertexAttribPointer(programInfoCube.attribLocations.voxelPosition,3,gl.SHORT,false,0,0);
-gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelPosition);	
-
-gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildCol);
-gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array([
-90,90,90,
-90,90,90,
-90,90,90,
-90,90,90,
-
-150,150,150,
-150,150,150,
-150,150,150,
-150,150,150,
-
-50,50,50,
-50,50,50,
-50,50,50,
-50,50,50,
-
-110,110,110,
-110,110,110,
-110,110,110,
-110,110,110,
-
-170,170,170,
-170,170,170,
-170,170,170,
-170,170,170,
-
-210,210,210,
-210,210,210,
-210,210,210,
-210,210,210,
-]),gl.DYNAMIC_DRAW);
-gl.vertexAttribPointer(programInfoCube.attribLocations.voxelColor,3,gl.UNSIGNED_BYTE,false,0,0);
-gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelColor);
-
-
-
-
-//FPS
-let then = 0;
-var fps=0;
-var fpsReal;
-var fpsTotal=0;
-var fpsCount=0;
-var deltaTime = 0;
-drawLength = 0;
-
-//Variables for the frustrum culling
-zFar = 5000.0;
-zNear = 0.0001;
-
-
-//Current chunk
-var camChunk = [0,0];
-
-//Set view distance
-function set_distance(viewDistt){
-	viewDist=viewDistt;
-}
-
-
+var startTime = [];
+var chunkTick=0;
 //Main render
 function drawScene(now) {
-	
 	//Time the renderer
-	startTime = new Date();
-	
+	startTime['total'] = new Date();
 	//Run player controls
+	
 	playerControl();
 
-	
+	chunk_process();
+
 	//Set canvas size if it has changed
 	if(window.innerWidth!=prevSize[0] || window.innerHeight!=prevSize[1]){
-		
 		
 		//Set screen size
 		prevSize = [window.innerWidth,window.innerHeight];
@@ -190,7 +151,6 @@ function drawScene(now) {
 		canvas.height = screenSize[1];
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-		
 		//Set frustrum culling variables
 		
 		//Near plane
@@ -204,7 +164,7 @@ function drawScene(now) {
 		farSize[0]= farSize[1] * (gl.canvas.clientWidth / gl.canvas.clientHeight) //Width
 		//Up  vector
 		up = glMatrix.vec3.fromValues(0,0,-1);
-	
+		
 	}
 
 	//Calculate FPS + delta Time
@@ -235,14 +195,14 @@ function drawScene(now) {
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,camRotate[1],[1,0,0]);
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,camRotate[0],[0,1,0]);
 	//Translate Camera
-	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-cam[0],cam[2]+camHeightChange,-cam[1]]);
+	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-cam[0],cam[2],-cam[1]]);
 
 	//Use cube shader and set uniforms
 	gl.useProgram(programInfoCube.program);
 
 	//Set uniforms
 	gl.uniformMatrix4fv(programInfoCube.uniformLocations.projectionMatrix,false,projectionMatrix);
-	gl.uniform3fv(programInfoCube.uniformLocations.cam,[cam[0],cam[1],cam[2]+camHeightChange]);
+	gl.uniform3fv(programInfoCube.uniformLocations.cam,[cam[0],cam[1],cam[2]]);
 	gl.uniform1i(programInfoCube.uniformLocations.ortho,ortho);	
 	
 	//Get camera chunk and sector
@@ -252,39 +212,47 @@ function drawScene(now) {
 
 	//Reset drawLength and the drawList 
 	drawLength=0;
-	drawList=[];
+	var drawList=[];
 	
 	
+	
+		
+    startTime['drawSectors']=new Date();
 	//Create frustrum for culling
 	create_frustrum();
-	
+		
+	var drawn=0;
 	//Loop through nearby sectors based on view distances
+	
+	//Single check 
+	
 	for(var xCheck=-viewDist;xCheck<=viewDist;xCheck++){
 	for(var yCheck=-viewDist;yCheck<=viewDist;yCheck++){
 	for(var zCheck=-zView;zCheck<=zView;zCheck++){
-		
+
 		
 		//Get coordinates of current sector
-		sectorCoords =[ camSector[0]+xCheck, camSector[1]+yCheck,camSector[2]+zCheck];
+		var sectorCoords =[ camSector[0]+xCheck, camSector[1]+yCheck,camSector[2]+zCheck];
 		//Return ID for the sector
-		var sectorID = return_sectorID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
+		var sectorID = sectorCoords[0]+sectorCoords[1]*sectorSpace+sectorCoords[2]*sectorSpace*sectorSpace;
+		
 
 		//If the sector exists
 		if(sector[sectorID]!=null){
 				
 				//Redraw sector if it needs to be updated
-				if(sector[sectorID].reDraw==1){
+				if(sector[sectorID].reDraw==1 && drawn==0){
+					drawn=1;
 					sector[sectorID].reDraw=0;
 					draw_sector(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
 				}
 				
 			//Get sector position in chunk space
 			var sectorPos = [sector[sectorID].coords[0]*sectorXY,sector[sectorID].coords[1]*sectorXY,sector[sectorID].coords[2]*sectorZ];
-			var sectorRef=sector[sectorID];
 			
 			//Dont frustrum cull in orthographic view 
 			if(ortho==1){      //Sector ID      Distance from camera
-				drawList.push([sectorID,distance(sectorCoords,camSector)]);
+				drawList.push([sectorID,1]);
 			}else{
 				//Distance from camera
 				var dist=distance(sectorCoords,camSector);
@@ -292,7 +260,7 @@ function drawScene(now) {
 				//Don't cull out sectors that are super close
 				if(dist <=1.0 ||
 				//If sector is within view frustrum
-					check_frustrum( [(sectorPos[0]*chunkXY)+chunkXY/2,(sectorPos[1]*chunkXY)+chunkXY/2,(sectorPos[2]*chunkZ)+(chunkZ)/2])==true){
+					check_frustrum( [(sectorPos[0]*chunkXYZ)+chunkXYZ/2,(sectorPos[1]*chunkXYZ)+chunkXYZ/2,(sectorPos[2]*chunkXYZ)+(chunkXYZ)/2])==true){
 				//Add sector to drawList
 									//ID    distance to camera
 					drawList.push([sectorID,dist]);	
@@ -302,58 +270,89 @@ function drawScene(now) {
 		}
 	}}}
 
-
+	if(ortho==0){
 	//Sort the draw list by distance 
 	drawList.sort(function(a,b){
 		return(a[1]-b[1]);
 	});
+	}
 	
+	startTime['drawSectors'] = new Date() - startTime['drawSectors'];	
 	//Loop through view
 	for(var i=0;i<drawList.length;i++){
 			//Get sector reference from draw list
-			var sectorRef = sector[drawList[i][0]];
 			//If sector is drawn
-			if (sectorRef.buffers.size!=0){
 				//Add to draw length
-				drawLength+=sectorRef.buffers.size;
-				//Bind VAO
-				gl.bindVertexArray(sectorRef.vao);
-				//Draw
-				if(wireFrame==0){
-					gl.drawElements(gl.TRIANGLES, sectorRef.buffers.size,gl.UNSIGNED_INT,0);
+				
+				if(drawSmooth==0){
+				
+					drawLength+=sector[drawList[i][0]].buffers.size;
+					//Bind VAO
+					
+					gl.bindVertexArray(sector[drawList[i][0]].vao);
+					//Draw
+					if(wireFrame==0){		
+						gl.drawElements(gl.TRIANGLES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);
+					}else{
+						gl.lineWidth(15.0);
+						gl.drawElements(gl.LINES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);				
+							
+					}
+					
+					
 				}else{
-					gl.lineWidth(15.0);
-					gl.drawElements(gl.LINES, sectorRef.buffers.size,gl.UNSIGNED_INT,0);				
+					
+					drawLength+=sector[drawList[i][0]].buffers.size;
+					//Bind VAO
+					
+					gl.bindVertexArray(sector[drawList[i][0]].vao);
+
+					//Draw
+					if(wireFrame==0){		
 						
+						gl.drawElements(gl.TRIANGLES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);
+					}else{
+						gl.lineWidth(15.0);
+						gl.drawElements(gl.LINES, sector[drawList[i][0]].buffers.size,gl.UNSIGNED_SHORT,0);				
+							
+					}	
 				}
-			}
 		
 	}
-	
+
 	//Draw block infront where you will build
-	
+
 	if(ortho==0){
 		gl.bindVertexArray(blockBuildVao);
 		gl.bindBuffer(gl.ARRAY_BUFFER, blockBuildPos);
 		gl.bufferData(gl.ARRAY_BUFFER,buildArrayPos,gl.DYNAMIC_DRAW);
 		gl.depthFunc(gl.LEQUAL);
-		gl.drawElements(gl.LINES, 36,gl.UNSIGNED_SHORT,0);	
-	}	
-
-	//Send buffers 
-	buffers_send();
+		gl.drawElements(gl.LINES, 35,gl.UNSIGNED_SHORT,0);	
+	}
 	
+	indexBufferSmooth = gl.createBuffer();
+	positionBuffer = gl.createBuffer();
+	colorBuffer = gl.createBuffer();
+
+	
+	
+	if(startTime['drawSectors']>14){
+	console.log(startTime['drawSectors']);
+	}
+
 	//Check date now to find out ms pased
-	endTime = new Date();
-	endTime-=startTime;
+	startTime['total'] = new Date()-startTime['total'];
 	//Print ms if the timing is under 60fps
-	if(endTime>16.2){
-			console.log("%c Render took!: %c"+ endTime+'ms','color:red; font-weight:bold;','color:black; font-weight:bold;');
+	if(startTime['total']>16.2){
+			console.log("%c Render took!: %c"+ startTime['total']+'ms','color:red; font-weight:bold;','color:black; font-weight:bold;');
 	}
 	//Request to render next frame
 	requestAnimationFrame(drawScene);
 
 }
+
+
+
 
 
 
