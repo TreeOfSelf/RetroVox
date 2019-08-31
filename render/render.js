@@ -64,7 +64,7 @@ gl.enable(gl.DEPTH_TEST);
 
 //Back face culling   
 gl.enable(gl.CULL_FACE);
-gl.cullFace(gl.BACK);
+//gl.cullFace(gl.BACK);
 //No alpha blending          
 gl.disable(gl.BLEND);
 gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
@@ -100,7 +100,7 @@ gl.bindVertexArray(blockBuildVao);
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
 gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPos);
-gl.vertexAttribPointer(programInfoCube.attribLocations.voxelPosition,3,gl.SHORT,false,0,0);
+gl.vertexAttribPointer(programInfoCube.attribLocations.voxelPosition,3,gl.FLOAT,false,0,0);
 gl.enableVertexAttribArray(programInfoCube.attribLocations.voxelPosition);	
 
 gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildCol);
@@ -239,13 +239,6 @@ function drawScene(now) {
 
 		//If the sector exists
 		if(sector[sectorID]!=null){
-				
-				//Redraw sector if it needs to be updated
-				if(sector[sectorID].reDraw==1 && drawn==0){
-					drawn=1;
-					sector[sectorID].reDraw=0;
-					draw_sector(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
-				}
 				
 			//Get sector position in chunk space
 			var sectorPos = [sector[sectorID].coords[0]*sectorXY,sector[sectorID].coords[1]*sectorXY,sector[sectorID].coords[2]*sectorZ];
