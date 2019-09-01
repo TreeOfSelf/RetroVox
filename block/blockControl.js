@@ -16,7 +16,7 @@ var activeChunks=[];
 
 //Chunk Dimensions
 var chunkSpace=64;
-var chunkXYZ=64;
+var chunkXYZ=32;
 						    //X    Y         Z
 //Sector contains chunks sectorXY*sectorXY*sectorZ
 
@@ -43,7 +43,7 @@ chunk_create = function(x,y,z){
 	
 	//Receive the ID for the chunk at this position 
 	var chunkID = return_chunkID(x,y,z);
-	
+	//console.log(x,y,z,chunkID);
 	//Add it to our active chunk list
 	activeChunks.push(chunkID);
 	
@@ -53,7 +53,7 @@ chunk_create = function(x,y,z){
 			//coordinates
 			coords : [x,y,z],
 			//List of block densities , filled for chunk dimensions cubed 
-			blockList : new Float32Array(chunkXYZ*chunkXYZ*chunkXYZ),
+			blockList : new Float32Array(chunkXYZ*chunkXYZ*chunkXYZ).fill(0.1),
 			//Final draw of the chunk
 			blockDraws : {
 				position : [],
@@ -180,7 +180,7 @@ draw_sector = function(x,y,z){
 		
 		//Make sure the chunk exists, and also make sure that it is not being proccessed currently.
 		if(chunk[chunkID]!=null && chunk[chunkID].proccessing==0){
-			var posBefore = posOffset;	
+			var posBefore = posOffset-1;	
 			//Set positions 
 			sectorPositionBuffer.set(chunk[chunkID].blockDraws.position,posOffset);
 			posOffset+=chunk[chunkID].blockDraws.position.length;
@@ -254,7 +254,12 @@ block_border = function(x,y,z,amount){
 	//get relative location in chunk clipped to the interior 
 	var blockLoc = [(x) - (chunkRef[0]*chunkXYZ), (y) - (chunkRef[1]*chunkXYZ),(z) - (chunkRef[2]*chunkXYZ)]
 	//get index from relative location
+
+	
+	
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
+	
+	//console.log("new :"+blockIndex);
 
 	//Generate chunk if it doesn't exists
 
@@ -271,6 +276,7 @@ block_border = function(x,y,z,amount){
 //Adds block data to buildBuffer
 block_create = function(x,y,z){
 	
+	
 
 	//get Chunk locationd
 	var chunkRef = chunk_get(x,y,z);
@@ -279,19 +285,17 @@ block_create = function(x,y,z){
 
 
 	//get relative location in chunk clipped to the interior 
-	//var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
-	var blockLoc = [(x) - (chunkRef[0]*chunkXYZ), (y) - (chunkRef[1]*chunkXYZ),(z) - (chunkRef[2]*chunkXYZ)]
-
-	x+= chunkRef[0]*2.0;
-	y+= chunkRef[1]*2.0;
-	z+= chunkRef[2]*2.0;
-
+	var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
+	//var blockLoc = [(x) - (chunkRef[0]*chunkXYZ), (y) - (chunkRef[1]*chunkXYZ),(z) - (chunkRef[2]*chunkXYZ)]
 
 
 	//get index from relative location
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
-	
 
+	//console.log("old :"+blockIndex);
+
+
+	
 	
 	//Generate chunk if it doesn't exists
 	
@@ -299,40 +303,117 @@ block_create = function(x,y,z){
 	chunk_create(chunkRef[0],chunkRef[1],chunkRef[2]);
 	}
 	
-	chunk[chunkID].blockList[blockIndex]-=0.05;
+	chunk[chunkID].blockList[blockIndex]-=0.1/distance([x,y,z],cam);
 	//chunk[chunkID].blockList[blockIndex]=-0.05;
 	
 	
 	switch(blockLoc[0]){
 		//Real voxels
 		case 1:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			if(blockLoc[1]==1){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			}
+			if(blockLoc[1]==chunkXYZ-2){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);			
+			}
 		break;
 		case chunkXYZ-2:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
-		break;
-		//Corners
-		case 0:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
-		break;
-		case chunkXYZ-1:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
-		break;;
+			if(blockLoc[1]==chunkXYZ-2){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			}
+			if(blockLoc[1]==1){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			}
+		
 	}
 	
 
 	switch(blockLoc[1]){
 		case 1:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+		
+		
+			if(blockLoc[0]==1){
+				
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				
+				
+			}else{
+			
+			if(blockLoc[0]==chunkXYZ-2){
+				
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				
+				
+			}else{
+			
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+
+			
+			}
+			}
+			
+		
 		break;
 		case chunkXYZ-2:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
-		break;
-		case 0:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
-		break;
-		case chunkXYZ-1:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+		
+			if(blockLoc[0]==1){
+				
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				
+				
+			}else{
+			
+			if(blockLoc[0]==chunkXYZ-2){
+				
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				
+				
+			}else{
+			
+				if(blockLoc[2]==1){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+				}
+				if(blockLoc[2]==chunkXYZ-2){
+					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+				}
+
+			
+			}
+			}
+			
+		
+		
+		
+		
 		break;
 	}
 	
@@ -340,17 +421,17 @@ block_create = function(x,y,z){
 	switch(blockLoc[2]){
 		case 1:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+		
+			
 		break;
 		case chunkXYZ-2:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);		
 		break;
-		case 0:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
-		break;
-		case chunkXYZ-1:
-			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);		
-		break;
 	}
+	
+
+
+
 	
 	chunk[chunkID].reDraw=1;
 
@@ -364,18 +445,26 @@ block_delete = function(x,y,z){
 	var chunkRef = chunk_get(x,y,z);
 	var chunkID = return_chunkID(chunkRef[0],chunkRef[1],chunkRef[2]);
 
+		
 	if(chunk[chunkID]==null){
-		chunk_create(x,y,z);
+	//	console.log(x,y,z,chunkID);
+		chunk_create(chunkRef[0],chunkRef[1],chunkRef[2]);
 	}
-
 	//get relative location in chunk
-	var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
-	//var blockLoc = [(x) - (chunkRef[0]*chunkXYZ), (y) - (chunkRef[1]*chunkXYZ),(z) - (chunkRef[2]*chunkXYZ)]
+	//var blockLoc = [Math.min(Math.max((x) - (chunkRef[0]*chunkXYZ),1),chunkXYZ-2), Math.min(Math.max((y) - (chunkRef[1]*chunkXYZ),1),chunkXYZ-2),Math.min(Math.max((z) - (chunkRef[2]*chunkXYZ),1),chunkXYZ-2)]
+	var blockLoc = [(x) - (chunkRef[0]*chunkXYZ), (y) - (chunkRef[1]*chunkXYZ),(z) - (chunkRef[2]*chunkXYZ)]
 	//get index from relative location
+	
+	
+	
 	var blockIndex = blockLoc[0]+blockLoc[1]*chunkXYZ+blockLoc[2]*chunkXYZ*chunkXYZ;
+	
+	
 	//chunk[chunkID].blockList[blockIndex]=0;
 	chunk[chunkID].blockList[blockIndex]+=0.01;
 	
+
+
 	switch(blockLoc[0]){
 		//Real voxels
 		case 1:
@@ -457,6 +546,7 @@ chunk_process = function() {
 				meshWorker[0][0].postMessage({
 					id : "chunkMesh",
 					chunkPos : [chunk[processList[i][0]].coords[0]*(chunkXYZ-2),chunk[processList[i][0]].coords[1]*(chunkXYZ-2),chunk[processList[i][0]].coords[2]*(chunkXYZ-2)],
+					//chunkPos : [chunk[processList[i][0]].coords[0]*(chunkXYZ-1),chunk[processList[i][0]].coords[1]*(chunkXYZ-1),chunk[processList[i][0]].coords[2]*(chunkXYZ-1)],
 					blockList : chunk[processList[i][0]].blockList.buffer,
 					chunkID : processList[i][0],
 				});

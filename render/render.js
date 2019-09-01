@@ -64,7 +64,7 @@ gl.enable(gl.DEPTH_TEST);
 
 //Back face culling   
 gl.enable(gl.CULL_FACE);
-//gl.cullFace(gl.BACK);
+gl.cullFace(gl.BACK);
 //No alpha blending          
 gl.disable(gl.BLEND);
 gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);

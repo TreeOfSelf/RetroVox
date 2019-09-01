@@ -48,10 +48,13 @@ var strafeSpeed=0.0;
 var momentum=0;
 
 //Function used to move the player in a X/Y direction. 
-function move_player(speedCheckX,speedCheckY,camChange){
+function move_player(speedCheckX,speedCheckY,camChange,zChange){
 		cam[0]-=Math.sin(camRotate[0]+camChange)*speedCheckX;
 		cam[1]+=Math.cos(camRotate[0]+camChange)*speedCheckY;
-		cam[2]-=Math.sin(camRotate[1])*(speedCheckX);
+		
+		if(zChange==1){
+			cam[2]-=Math.sin(camRotate[1])*(speedCheckX);
+		}
 }
 
 
@@ -469,12 +472,12 @@ function playerControl(){
 
 	//Move player on X,Y forward
 	forwardChange=Math.abs(1/forwardSpeed);
-	move_player(forwardSpeed,0.0,0.0);
-	move_player(0.0,forwardSpeed,0.0);
+	move_player(forwardSpeed,0.0,0.0,1);
+	move_player(0.0,forwardSpeed,0.0,1);
 	//Move player on X,Y strafe
 	forwardChange=Math.abs(1/strafeSpeed);
-	move_player(strafeSpeed,0.0,1.57);
-	move_player(0.0,strafeSpeed,1.57);
+	move_player(strafeSpeed,0.0,1.57,0);
+	move_player(0.0,strafeSpeed,1.57,0);
 
 	
 	
