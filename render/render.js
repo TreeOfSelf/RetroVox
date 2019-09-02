@@ -240,8 +240,11 @@ function drawScene(now) {
 		//If the sector exists
 		if(sector[sectorID]!=null){
 				
+			
+			
 			//Get sector position in chunk space
 			var sectorPos = [sector[sectorID].coords[0]*sectorXY,sector[sectorID].coords[1]*sectorXY,sector[sectorID].coords[2]*sectorZ];
+			
 			
 			//Dont frustrum cull in orthographic view 
 			if(ortho==1){      //Sector ID      Distance from camera
