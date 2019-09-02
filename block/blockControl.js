@@ -22,8 +22,8 @@ var chunkXYZ=32;
 
 //Sector Dimensions 
 var sectorSpace=64;
-var sectorXY=10;
-var sectorZ=10;
+var sectorXY=1;
+var sectorZ=1;
 
 
 //How far out to proccess chunks
@@ -307,24 +307,229 @@ block_create = function(x,y,z){
 	//chunk[chunkID].blockList[blockIndex]=-0.05;
 	
 	
+	
+	/*switch(blockLoc[0]){
+		
+		//X LEFT
+		case 1:
+			switch(blockLoc[1]){
+				//X LEFT Y LEFT
+				case 1:
+					switch(blockLoc[2]){
+						//X LEFT Y LEFT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X LEFT Y LEFT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X LEFT Y LEFT Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				//X LEFT Y RIGHT
+				case chunkXYZ-2:
+					switch(blockLoc[2]){
+						//X LEFT Y RIGHT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X LEFT Y RIGHT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X LEFT Y RIGHT Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				//X LEFT Y NONE
+				default:
+					switch(blockLoc[2]){
+						//X LEFT Y NONE Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X LEFT Y NONE Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X LEFT Y NONE Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+			}
+		break;
+		
+		
+		
+		//X RIGHT
+		case chunkXYZ-2:
+			switch(blockLoc[1]){
+				//X RIGHT Y LEFT
+				case 1:
+					switch(blockLoc[2]){
+						//X RIGHT Y LEFT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X RIGHT Y LEFT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X RIGHT Y LEFT Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				//X RIGHT Y RIGHT
+				case chunkXYZ-2:
+					switch(blockLoc[2]){
+						//X RIGHT Y RIGHT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X RIGHT Y RIGHT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X RIGHT Y RIGHT Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				//X RIGHT Y NONE
+				default:
+					switch(blockLoc[2]){
+						//X RIGHT Y NONE Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X RIGHT Y NONE Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X RIGHT Y NONE Z NONE
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+			}	
+		break;	
+		
+		
+		
+		
+		//X NONE
+		default:
+			switch(blockLoc[1]){
+				//X NONE Y LEFT
+				case 1:
+					switch(blockLoc[2]){
+						//X NONE Y LEFT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X NONE Y LEFT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X NONE Y LEFT Z NONE 
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				
+				//X NONE Y RIGHT
+				case chunkXYZ-2:
+					switch(blockLoc[2]){
+						//X NONE Y RIGHT Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);
+						break;
+						//X NONE Y RIGHT Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+						break;
+						//X NONE Y RIGHT Z NONE 
+						default:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				//X NONE Y NONE
+				default:
+					switch(blockLoc[2]){
+						//X NONE Y NONE Z LEFT
+						case 1:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);			
+						break;
+						//X NONE Y ZONE Z RIGHT
+						case chunkXYZ-2:
+							block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);
+						break;
+					}
+				break;
+				
+			}
+		break;
+		
+		
+	}
+	*/
+	
 	switch(blockLoc[0]){
 		//Real voxels
 		case 1:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			
+			
+			//SIDE TO SIDE
 			if(blockLoc[1]==1){
 				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
 			}
 			if(blockLoc[1]==chunkXYZ-2){
 				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);			
 			}
+			
+			
+			//UP AND DOWN
+			if(blockLoc[2]==1){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+			}
+			if(blockLoc[2]==chunkXYZ-2){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
+			}
+			
 		break;
 		case chunkXYZ-2:
 			block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			
+			//SIDE TO SIDE
 			if(blockLoc[1]==chunkXYZ-2){
 				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)+2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
 			}
 			if(blockLoc[1]==1){
 				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ),chunk[chunkID].blockList[blockIndex]);		
+			}
+			
+			
+			//UP AND DOWN
+			if(blockLoc[2]==1){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
+			}
+			if(blockLoc[2]==chunkXYZ-2){
+				block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ),blockLoc[2]+(chunkRef[2]*chunkXYZ)+2,chunk[chunkID].blockList[blockIndex]);	
 			}
 		
 	}
@@ -337,6 +542,7 @@ block_create = function(x,y,z){
 		
 			if(blockLoc[0]==1){
 				
+				//diagnol
 				if(blockLoc[2]==1){
 					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)-2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
 				}
@@ -348,7 +554,7 @@ block_create = function(x,y,z){
 			}else{
 			
 			if(blockLoc[0]==chunkXYZ-2){
-				
+				//other diagnol
 				if(blockLoc[2]==1){
 					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ)+2,blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
 				}
@@ -358,7 +564,7 @@ block_create = function(x,y,z){
 				
 				
 			}else{
-			
+				//straight up and down
 				if(blockLoc[2]==1){
 					block_border(blockLoc[0]+(chunkRef[0]*chunkXYZ),blockLoc[1]+(chunkRef[1]*chunkXYZ)-2,blockLoc[2]+(chunkRef[2]*chunkXYZ)-2,chunk[chunkID].blockList[blockIndex]);	
 				}

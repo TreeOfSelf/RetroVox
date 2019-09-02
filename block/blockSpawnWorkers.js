@@ -33,10 +33,16 @@ function newMeshWorker(){
 			
 			var z = Math.round(message.chunkID / (chunkXYZ * chunkXYZ));
 			var y = Math.round((message.chunkID - z * chunkXYZ * chunkXYZ) / chunkXYZ);
-			var x = message.chunkID - chunkXYZ * (y + chunkXYZ * z);
+			var x = Math.round(message.chunkID - chunkXYZ * (y + chunkXYZ * z));
 			
+			
+
 			//Get sector position from chunk position
-			var sectorPos = sector_get(x,y,z);
+			var sectorPos = sector_get(x,y/2,z/2);
+			
+			console.log(x,y/2,z/2,":",sectorPos);
+			
+			
 			//Draw the sector
 			draw_sector(sectorPos[0],sectorPos[1],sectorPos[2]);
 			
