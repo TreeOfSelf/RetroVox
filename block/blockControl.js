@@ -81,7 +81,7 @@ sector_create = function(x,y,z){
 		//Create new chunk
 		sector[sectorID]={
 			//redraw flag
-			reDraw : 0,
+			reDraw : 1,
 			//coordinates
 			coords : [x,y,z],	
 			//Empty buffers
@@ -160,14 +160,11 @@ sectorPositionBuffer = new Float32Array(9999999);
 sectorColorBuffer = new Uint8Array(9999999);
 sectorIndiceBuffer = new Uint32Array(9999999);
 
-draw_sector = function(x,y,z){
+sector_draw = function(x,y,z){
 	
 	//Get sectorID
 	sectorID = return_sectorID(x,y,z);
 	
-	if(sector[sectorID]==null){
-		sector_create(x,y,z);
-	}
 
 	//Keep strack of where we are inside of the pre-allocated buffers
 	var posOffset=0;
@@ -220,7 +217,9 @@ draw_sector = function(x,y,z){
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
 	gl.bufferData(gl.ARRAY_BUFFER,sectorColorBuffer,gl.DYNAMIC_DRAW,0,colOffset);
+	
 
+	sector[sectorID].reDraw=0;
 }
 
 
@@ -554,7 +553,8 @@ block_delete = function(x,y,z){
 	//chunk[chunkID].blockList[blockIndex]+=0.01;
 	chunk[chunkID].blockList[blockIndex]+=0.1/distance([x,y,z],cam);
 	
-switch(blockLoc[0]){
+	
+	switch(blockLoc[0]){
 		
 		//X LEFT  (0K)
 		case 1:
@@ -746,9 +746,9 @@ switch(blockLoc[0]){
 		
 	}
 
+	chunk[chunkID].reDraw=1;
 	}
 
-	chunk[chunkID].reDraw=1;
 }
 
 chunk_process = function() {
@@ -772,7 +772,7 @@ chunk_process = function() {
 	for(var i=0;i<processList.length;i++){
 		if(chunk[processList[i][0]].reDraw>0){
 			chunk[processList[i][0]].reDraw+=1;
-			if(chunk[processList[i][0]].reDraw>=25){
+			if(chunk[processList[i][0]].reDraw>=50){
 				if(drawn==0){
 					
 					if(meshWorker[0][1]==0){
@@ -785,7 +785,7 @@ chunk_process = function() {
 							//chunkPos : [chunk[processList[i][0]].coords[0]*(chunkXYZ-1.5),chunk[processList[i][0]].coords[1]*(chunkXYZ-1.5),chunk[processList[i][0]].coords[2]*(chunkXYZ-1.5)],
 							blockList : chunk[processList[i][0]].blockList.buffer,
 							chunkID : processList[i][0],
-						});
+						},[chunk[processList[i][0]].blockList.buffer]);
 						
 					}
 					drawn=1;

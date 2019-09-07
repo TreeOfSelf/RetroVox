@@ -51,8 +51,13 @@ x = i - WIDTH * (y + HEIGHT * z);
 			
 			//Draw the sector
 			var sectorID=return_sectorID(sectorPos[0],sectorPos[1],sectorPos[2]);
-			draw_sector(sectorPos[0],sectorPos[1],sectorPos[2]);
-			sector[sectorID].reDraw=1;
+			
+			if(sector[sectorID]==null){
+				sector_create(sectorPos[0],sectorPos[1],sectorPos[2]);
+			}
+			
+			sector_draw(sectorPos[0],sectorPos[1],sectorPos[2]);
+			//sector[sectorID].reDraw=1;
 			
 			//ch.postMessage(chunk[message.chunkID].blockList);
 		break;
