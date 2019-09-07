@@ -268,7 +268,7 @@ function playerControl(){
 	//Set build position based on camera view and buildDistance
 	//buildPos=[Math.round(cam[0]+buildOffset[0]+Math.sin(camRotate[0])*buildDistance),Math.round(cam[1]+buildOffset[1]-Math.cos(camRotate[0])*buildDistance),Math.round(cam[2]+buildOffset[2]+(camRotate[1]*buildDistance))]
 	buildPos=[(cam[0]+(Math.sin(camRotate[0])*Math.cos(camRotate[1]))*buildDistance), (cam[1]+(Math.cos(camRotate[0])*-Math.cos(camRotate[1])) *buildDistance), (cam[2]+Math.sin(camRotate[1])*buildDistance)]
-	
+	buildPosReal=[buildPos[0]+camChunk[0]*2,buildPos[1]+camChunk[1]*2,buildPos[2]+camChunk[2]*2];
 	buildArrayPos = new Float32Array([
 	
 	buildPos[0],  buildPos[1], buildPos[2],
@@ -321,7 +321,7 @@ function playerControl(){
 
 	//Block Build Single
 	if(keys['E']==1){
-		block_create(Math.round(buildPos[0]),Math.round(buildPos[1]),Math.round(buildPos[2]),1);
+		block_create(Math.round(buildPosReal[0]),Math.round(buildPosReal[1]),Math.round(buildPosReal[2]),1);
 	}
 	
 	
@@ -336,9 +336,9 @@ function playerControl(){
 			if(dist<blockBuild){
 				
 				if(dist>=blockBuild-1){
-				block_create(Math.round(buildPos[0]+xx),Math.round(buildPos[1]+yy),Math.round(buildPos[2]+zz),(dist/blockDel)*0.2);
+				block_create(Math.round(buildPosReal[0]+xx),Math.round(buildPosReal[1]+yy),Math.round(buildPosReal[2]+zz),(dist/blockDel)*0.2);
 				}else{
-				block_create(Math.round(buildPos[0]+xx),Math.round(buildPos[1]+yy),Math.round(buildPos[2]+zz),(dist/blockDel)*0.2);				
+				block_create(Math.round(buildPosReal[0]+xx),Math.round(buildPosReal[1]+yy),Math.round(buildPosReal[2]+zz),(dist/blockDel)*0.2);				
 				}
 			}
 		}}}
@@ -353,7 +353,7 @@ function playerControl(){
 		for(var zz=-blockDel;zz<=blockDel;zz++){
 			var dist=distance([0,0,0],[xx,yy,zz]);
 			if(dist<blockDel){
-				block_delete(Math.round(buildPos[0]+xx),Math.round(buildPos[1]+yy),Math.round(buildPos[2]+zz,dist/blockDel));				
+				block_delete(Math.round(buildPosReal[0]+xx),Math.round(buildPosReal[1]+yy),Math.round(buildPosReal[2]+zz,dist/blockDel));				
 			}
 		}}}
 	}
@@ -362,7 +362,7 @@ function playerControl(){
 	
 	//Delete single
 	if(keys['V']==1){
-		block_delete(Math.round(buildPos[0]),Math.round(buildPos[1]),Math.round(buildPos[2]));
+		block_delete(Math.round(buildPosReal[0]),Math.round(buildPosReal[1]),Math.round(buildPosReal[2]));
 	}
 	
 	//Fatty block
@@ -372,7 +372,7 @@ function playerControl(){
 			for(var xx=-blockBuild;xx<=blockBuild;xx++){
 				for(var yy=-blockBuild;yy<=blockBuild;yy++){
 					for(var zz=0;zz<=blockBuild;zz++){
-						block_create(Math.round(buildPos[0]+xx),Math.round(buildPos[1]+yy),Math.round(buildPos[2]+zz));
+						block_create(Math.round(buildPosReal[0]+xx),Math.round(buildPosReal[1]+yy),Math.round(buildPosReal[2]+zz));
 				}
 				}
 			}
@@ -385,7 +385,7 @@ function playerControl(){
 		for(var xx=-blockDel;xx<=blockDel;xx++){
 			for(var yy=-blockDel;yy<=blockDel;yy++){
 				for(var zz=-blockDel;zz<=blockDel;zz++){
-					block_delete(Math.round(buildPos[0]+xx),Math.round(buildPos[1]+yy),Math.round(buildPos[2]+1+zz));
+					block_delete(Math.round(buildPosReal[0]+xx),Math.round(buildPosReal[1]+yy),Math.round(buildPosReal[2]+1+zz));
 				}
 			}
 		}
