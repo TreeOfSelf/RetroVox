@@ -195,7 +195,7 @@ function drawScene(now) {
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,camRotate[1],[1,0,0]);
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,camRotate[0],[0,1,0]);
 	//Translate Camera
-	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-cam[0],cam[2],-cam[1]]);
+	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-(cam[0]),(cam[2]),-(cam[1])]);
 
 	//Use cube shader and set uniforms
 	gl.useProgram(programInfoCube.program);
@@ -234,8 +234,7 @@ function drawScene(now) {
 		//Get coordinates of current sector
 		var sectorCoords =[ camSector[0]+xCheck, camSector[1]+yCheck,camSector[2]+zCheck];
 		//Return ID for the sector
-		var sectorID = sectorCoords[0]+sectorCoords[1]*sectorSpace+sectorCoords[2]*sectorSpace*sectorSpace;
-		
+		var sectorID = return_sectorID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
 
 		//If the sector exists
 		if(sector[sectorID]!=null){
@@ -254,13 +253,13 @@ function drawScene(now) {
 				var dist=distance(sectorCoords,camSector);
 				
 				//Don't cull out sectors that are super close
-				if(dist <=1.0 ||
+				//if(dist <=1.0 ||
 				//If sector is within view frustrum
-					check_frustrum( [(sectorPos[0]*chunkXYZ)+chunkXYZ/2,(sectorPos[1]*chunkXYZ)+chunkXYZ/2,(sectorPos[2]*chunkXYZ)+(chunkXYZ)/2])==true){
+					//check_frustrum( [(sectorPos[0]*chunkXYZ)+chunkXYZ/2,(sectorPos[1]*chunkXYZ)+chunkXYZ/2,(sectorPos[2]*chunkXYZ)+(chunkXYZ)/2])==true){
 				//Add sector to drawList
 									//ID    distance to camera
 					drawList.push([sectorID,dist]);	
-				}
+				//}
 
 			}
 		}
@@ -272,7 +271,7 @@ function drawScene(now) {
 		return(a[1]-b[1]);
 	});
 	}
-	
+		
 	startTime['drawSectors'] = new Date() - startTime['drawSectors'];	
 	//Loop through view
 	for(var i=0;i<drawList.length;i++){
@@ -318,13 +317,13 @@ function drawScene(now) {
 
 	//Draw block infront where you will build
 
-	if(ortho==0){
+	//if(ortho==0){
 		gl.bindVertexArray(blockBuildVao);
 		gl.bindBuffer(gl.ARRAY_BUFFER, blockBuildPos);
 		gl.bufferData(gl.ARRAY_BUFFER,buildArrayPos,gl.DYNAMIC_DRAW);
-		gl.depthFunc(gl.LEQUAL);
+		//gl.depthFunc(gl.LEQUAL);
 		gl.drawElements(gl.LINES, 35,gl.UNSIGNED_SHORT,0);	
-	}
+	//}
 	
 	indexBufferSmooth = gl.createBuffer();
 	positionBuffer = gl.createBuffer();

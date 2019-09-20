@@ -15,11 +15,13 @@ function newMeshWorker(){
 	  message = e.data;
 	  switch(message.id){
 		case "finishMesh":
+
 			meshWorker[meshIndex][1]=0;
 			//Mark as not being proccessed
 			chunk[message.chunkID].proccessing = 0;
 			
 			//Reclaim our block list
+
 			chunk[message.chunkID].blockList = new Float32Array(message.arrayBuffer);
 			
 			
@@ -27,7 +29,7 @@ function newMeshWorker(){
 			chunk[message.chunkID].blockDraws.position = new Float32Array(message.result[0]);
 			chunk[message.chunkID].blockDraws.color = new Uint8Array(message.result[1]);
 			chunk[message.chunkID].blockDraws.indice = new Uint32Array(message.result[2]);
-			
+
 			//Get chunk position from ID
 			
 /*
@@ -35,31 +37,28 @@ z = Math.round(i / (WIDTH * HEIGHT));
 y = Math.round((i - z * WIDTH * HEIGHT) / WIDTH);
 x = i - WIDTH * (y + HEIGHT * z);
 */
-			
-			
-			var z = Math.round(message.chunkID / (chunkXYZ * chunkXYZ));
-			var y = Math.round((message.chunkID - z * chunkXYZ * chunkXYZ) / chunkXYZ);
-			var x = Math.round(message.chunkID - chunkXYZ * (y + chunkXYZ * z));
-			
+
+			var z = Math.round(message.chunkID / (chunkSpace * chunkSpace));
+			var y = Math.round((message.chunkID - z * chunkSpace * chunkSpace) / chunkSpace);
+			var x = Math.round(message.chunkID - chunkSpace * (y + chunkSpace * z));
 	
 
 			//Get sector position from chunk position
 			var sectorPos = sector_get(x,y,z);
 			
-			//console.log(x,y/2,z/4,":",sectorPos);
-
-			
 			//Draw the sector
+			
 			var sectorID=return_sectorID(sectorPos[0],sectorPos[1],sectorPos[2]);
+
 			
 			if(sector[sectorID]==null){
 				sector_create(sectorPos[0],sectorPos[1],sectorPos[2]);
 			}
-			
 			sector_draw(sectorPos[0],sectorPos[1],sectorPos[2]);
 			//sector[sectorID].reDraw=1;
 			
 			//ch.postMessage(chunk[message.chunkID].blockList);
+
 		break;
 
 	  }

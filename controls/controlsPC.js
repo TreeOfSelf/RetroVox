@@ -268,7 +268,14 @@ function playerControl(){
 	//Set build position based on camera view and buildDistance
 	//buildPos=[Math.round(cam[0]+buildOffset[0]+Math.sin(camRotate[0])*buildDistance),Math.round(cam[1]+buildOffset[1]-Math.cos(camRotate[0])*buildDistance),Math.round(cam[2]+buildOffset[2]+(camRotate[1]*buildDistance))]
 	buildPos=[(cam[0]+(Math.sin(camRotate[0])*Math.cos(camRotate[1]))*buildDistance), (cam[1]+(Math.cos(camRotate[0])*-Math.cos(camRotate[1])) *buildDistance), (cam[2]+Math.sin(camRotate[1])*buildDistance)]
-	buildPosReal=[buildPos[0]+camChunk[0]*2,buildPos[1]+camChunk[1]*2,buildPos[2]+camChunk[2]*2];
+	buildPos[0]=Math.round(buildPos[0])-0.5;
+	buildPos[1]=Math.round(buildPos[1])-0.5;
+	buildPos[2]=Math.round(buildPos[2])-0.5;
+	var buildChunk = chunk_get(buildPos[0],buildPos[1],buildPos[2]);
+	buildPosReal = buildPos;
+
+
+	//buildPosReal=[buildPos[0]+camChunk[0]*2,buildPos[1]+camChunk[1]*2,buildPos[2]+camChunk[2]*2];
 	buildArrayPos = new Float32Array([
 	
 	buildPos[0],  buildPos[1], buildPos[2],
