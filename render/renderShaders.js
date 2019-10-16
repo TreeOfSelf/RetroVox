@@ -1,23 +1,9 @@
 /*
- ____  _  _   __   ____  ____  ____  ____ 
-/ ___)/ )( \ / _\ (    \(  __)(  _ \/ ___)
-\___ \) __ (/    \ ) D ( ) _)  )   /\___ \
-(____/\_)(_/\_/\_/(____/(____)(__\_)(____/
+RetroVox Shaders 9/23/2019
 
-Shaders & uniform/attribute information 
-
- */
-
-//Definitions
-
-//Get canvas 
-canvas = document.querySelector("#pandaCanvas");
-
-//Get gl context and turn of premultiplied alpha
-const gl = canvas.getContext("webgl2",{
-	alpha: false,
-	antialias : false,
-});
+This file will contain shader code as well as program info for uniform/attribute information. 
+It also contains the init for rendering (things that only need to be ran once at the beginning)
+*/
 
 
 //Init shader program
@@ -55,23 +41,13 @@ function loadShader(gl, type, source) {
 }
  
 
-
-
-/*
-  ___  _  _  ____  ____    ____  _  _   __   ____  ____  ____ 
- / __)/ )( \(  _ \(  __)  / ___)/ )( \ / _\ (    \(  __)(  _ \
-( (__ ) \/ ( ) _ ( ) _)   \___ \) __ (/    \ ) D ( ) _)  )   /
- \___)\____/(____/(____)  (____/\_)(_/\_/\_/(____/(____)(__\_)
-*/
-
-
 //Vertex Shader
-const vsSourceCube = `#version 300 es
+const vsSource = `#version 300 es
 
-//Block Position
-in vec3 aPixelPosition;
+//Position of vertex
+in vec3 aPosition;
 //Block Color
-in vec3 aPixelColor;
+in vec3 aColor;
 
 
 
@@ -89,11 +65,11 @@ void main() {
 
 	gl_PointSize = 35.0;
 	//Get screen position
-	gl_Position =  uMatrix *vec4(aPixelPosition[0],-aPixelPosition[2],aPixelPosition[1],1.0);
+	gl_Position =  uMatrix *vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPixelPosition[0],aPixelPosition[1],aPixelPosition[2]))*0.2);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.2);	
 	if(vColor>75.0){
 		vColor=max(min(vColor*0.008,0.9),0.7);
 	}else{
@@ -113,13 +89,13 @@ void main() {
 	}
 
 	//Set color 0-1 based on 255 values
-	vPixelColor = vec4(aPixelColor[0]/255.0,aPixelColor[1]/255.0,aPixelColor[2]/255.0,1.0);
+	vPixelColor = vec4(aColor[0]/255.0,aColor[1]/255.0,aColor[2]/255.0,1.0);
 
 }
 `;
 
 //Fragment Shader
-const fsSourceCube = `#version 300 es
+const fsSource = `#version 300 es
 in lowp vec4 vPixelColor;
 in lowp float vColor;
 
@@ -133,25 +109,57 @@ void main() {
 
 //Create shader program
 
-const shaderProgramCube = initShaderProgram(gl, vsSourceCube, fsSourceCube);
+const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
 //Create shader program info
-const programInfoCube = {
-	program: shaderProgramCube,
+const programInfo = {
+	program: shaderProgram,
 	
 	attribLocations: {
-	//Voxel Position 3v (shorts only)
-	  voxelPosition: gl.getAttribLocation(shaderProgramCube, 'aPixelPosition'),
-	  //Voxel Color 3v (works on 255 scale)
-	  voxelColor : gl.getAttribLocation(shaderProgramCube, 'aPixelColor'),
+	// Position 3v (shorts only) 	
+	  position: gl.getAttribLocation(shaderProgram, 'aPosition'),
+	  // Color 3v (works on 255 scale)
+	  color : gl.getAttribLocation(shaderProgram, 'aColor'),
 	},
 	
 	uniformLocations: {
 		//Camera coordiantes 3v
-		cam : gl.getUniformLocation(shaderProgramCube, 'uCam'),
+		cam : gl.getUniformLocation(shaderProgram, 'uCam'),
 		//Projection matrix
-		projectionMatrix : gl.getUniformLocation(shaderProgramCube,'uMatrix'),
+		projectionMatrix : gl.getUniformLocation(shaderProgram,'uMatrix'),
 		//Ortho view
-		ortho : gl.getUniformLocation(shaderProgramCube,'uOrtho'),
+		ortho : gl.getUniformLocation(shaderProgram,'uOrtho'),
 
 	},
 };
+
+//Init
+//Cursor init
+
+var blockBuildVao = gl.createVertexArray();
+var blockBuildPosition = gl.createBuffer();
+var blockBuildColor = gl.createBuffer();
+var blockBuildIndexBuffer = gl.createBuffer();
+//Bind VAO for cursor
+gl.bindVertexArray(blockBuildVao);
+//Premade index buffer 
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blockBuildIndexBuffer);
+var indice=[];
+for(var k=0;k<=100;k++){
+	var q=k*4;
+	indice.push(q,q+1,q+2,q,q+2,q+3);
+}
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
+//Building buffer for the block infront of you
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPosition);
+gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.position);	
+//Set color buffer
+gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildColor);
+gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array([
+90,90,90,90,90,90,90,90,90,90,90,90,150,150,150,150,150,150,150,150,150,150,150,150,50,50,50,50,50,50,50,50,50,50,50,50,110,110,110,110,110,110,110,110,110,170,170,170,170,170,170,170,170,170,170,170,170,210,210,210,210,210,210,210,210,210,210,210,210,
+]),gl.STATIC_DRAW);
+gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.color);
+//The position buffer is set every frame from  player_physics
+
+

@@ -1,53 +1,31 @@
-<!--
-  __  __ _  ____  ____  _  _     _  _  ____  _  _  __   
- (  )(  ( \(    \(  __)( \/ )   / )( \(_  _)( \/ )(  )  
-  )( /    / ) D ( ) _)  )  (  _ ) __ (  )(  / \/ \/ (_/\
- (__)\_)__)(____/(____)(_/\_)(_)\_)(_/ (__) \_)(_/\____/
- 
- Main html file to pull everything together 
- 
- -->
- 
-<!DOCTYPE html>
-<html>
-	<meta charset="UTF-8">
-	<head>
-	
-<meta name="viewport" content="width=device-width, user-scalable=no">
+<!-- 
 
-		<title>🌌 RetroVox 🌌️ </title>
-	</head> 
-	 
+RetroVox 9/20/2019
 
-	<body>
+This revision is after me giving up on working with my last version. Things I am going to try and do better this time:
+1. Make sure the coordinate space matches the world space
+2. Make sure the seaming is implemented correctly
+3. Make it single threaded, then go to multithreaded further down the line. 
 
-		<input type="file" id="loadFile" accept=".txt,.csv,.xml">
-		<canvas id="pandaCanvas"></canvas>
-		
-		<!--gl matrix -->
-		<script src="lib/gl-matrix-min.js"></script>
-		<!--lz-string compression  -->
-		<script src="lib/lz-string.min.js"></script>		
-		
-		
-		<!-- Shaders-->
-		<script src="render/renderShaders.js"></script>
-		
-		<!-- Render -->
-		<script src="render/renderFrustrum.js"></script>
-		<script src="render/render.js"></script>
-		
-		<!--Controls -->
-		<script src="controls/controlsPC.js"></script>
-		<!--Controls -->
-		<script src="controls/controlsMobile.js"></script>
-		
-		<!-- Game -->
-		<script src="block/blockControl.js"></script>
-		<script src="block/blockSpawnWorkers.js"></script>
-		
+Notes:
 
-		
-		
-	</body>
-</html>
+RetroVox refers to Z as the vertical elevation. [X,Y,Z]
+
+-->
+
+<!-- Libraries -->
+<script src="lib/retroLibrary.js"> </script>
+<script src="lib/gl-matrix-min.js"> </script>
+<!-- Render -->
+<canvas id="retroCanvas"> </canvas>
+<script src="render/renderMain.js"> </script>
+<script src="render/renderShaders.js"> </script>
+<script src="render/renderMesher.js"> </script>
+
+<!-- Controls -->
+<script src="controls/controlsPC.js"> </script>
+
+<!-- Controllers -->
+<script src="controllers/blockControl.js"> </script>
+<script src="controllers/playerControl.js"> </script>
+

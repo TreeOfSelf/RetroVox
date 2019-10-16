@@ -1,32 +1,9 @@
-//Takes a byte 0-255 and returns a color 
-return_color = function(a){
-	switch(a){
-		default:
-		return([0,0,0]);
-		break;
-		//Grass
-		case 1:
-		return([0,0,0]);	
-		break
-		//Dirt
-		case 2:
-		return([100,230,150]);
-		break;
-		case 3:
-		return([70,6,154]);
-		break;
-		case 4:
-		return([35,35,35]);
-		break;
-		case 5:
-		return([10,50,5]);
-		break;
-	}
-}
+/*
+RetroVox Chunk Meshing 9/20/2019
 
-
-
-var chunkXYZ=64;
+This file will contain the code that meshes a chunk together and sets its draw data.
+It takes a blockArray and returns the verticie information that draws the triangles to make up a scene.
+*/
 
 
 //Messaging from main thread
@@ -36,7 +13,7 @@ self.addEventListener('message', function(e) {
 		
 		//Receive chunk information 
 		case "start":
-			chunkXYZ = message.chunkXYZ;
+			blockSettings.chunk.XYZ = message.blockSettings.chunk.XYZ;
 		break;
 		
 		
@@ -59,7 +36,7 @@ self.addEventListener('message', function(e) {
 
 
 
-var SurfaceNets = (function() {
+var mesh_naive = (function() {
 	
 //Precompute edge table, like Paul Bourke does.
 // This saves a bit of time when computing the centroid of each boundary cell
@@ -98,7 +75,7 @@ var cube_edges = new Int32Array(24)
 var buffer = new Int32Array(4096);
 
 return function(data, chunkPos) {
-  var dims=[chunkXYZ,chunkXYZ,chunkXYZ];
+  var dims=[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ];
   var vertices = []
     , faces = []
 	, finalVert = []
@@ -230,157 +207,9 @@ return function(data, chunkPos) {
   }
 	
   //All done!  Return the result
-  return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
+  return [(new Float32Array(finalVert)), (new Uint8Array(finalColor)), (new Uint32Array(faces))];
 };
 })();
-
-//Greedy meshing
-
-greedy = function(volume,chunkPos) {
-var dims=[64,64,64];
-var mask = new Int32Array(4096);
-  function f(i,j,k) {
-    return volume[i + dims[0] * (j + dims[1] * k)];
-  }
-  //Sweep over 3-axes
-  var vertices = [], faces = [];
-  for(var d=0; d<3; ++d) {
-	  
-    var i, j, k, l, w, h
-      , u = (d+1)%3
-      , v = (d+2)%3
-      , x = [0,0,0]
-      , q = [0,0,0];
-    if(mask.length < dims[u] * dims[v]) {
-      mask = new Int32Array(dims[u] * dims[v]);
-    }
-    q[d] = 1;
-	
-	//For each slice in this chunk
-    for(x[d]=-1; x[d]<dims[d]; ) {
-      //Compute mask
-      var n = 0;
-	  
-	  //Loop through first axis 
-      for(x[v]=0; x[v]<dims[v]; ++x[v])
-		//Loop through second axis
-      for(x[u]=0; x[u]<dims[u]; ++x[u], ++n) {
-			//To get the direction, you use d, then you use q to determine which way it is facing
-			//You can then use that to determine face value 
-			
-			//A is the first block we are checking
-        var a = (0    <= x[d]      ? f(x[0],      x[1],      x[2])      : 0 )
-			//B is the second block we are checking
-          , b = (x[d] <  dims[d]-1 ? f(x[0]+q[0], x[1]+q[1], x[2]+q[2]) : 0);
-		  
-
-		  //If they are the same, or are both 0  (because if they are the same, there isn't a face between)
-        if((!!a) === (!!b)) {
-          mask[n] = 0;
-		  //If a exists, but b doesn't 
-        } else if(!!a) {
-          mask[n] = a;
-		  //If b exists but a doesn't
-        } else {
-          mask[n] = -b;
-        }
-      }
-      //Increment x[d]
-      ++x[d];
-      //Generate mesh for mask using lexicographic ordering
-      n = 0;
-      for(j=0; j<dims[v]; ++j)
-      for(i=0; i<dims[u]; ) {
-        var c = mask[n];
-		var saveC=mask[n];
-		if(c==-1 || c==1){
-			c=0;
-		}
-        if(!!c) {
-          //Compute width
-          for(w=1; c === mask[n+w] && i+w<dims[u]; ++w) {
-          }
-          //Compute height (this is slightly awkward
-          var done = false;
-          for(h=1; j+h<dims[v]; ++h) {
-            for(k=0; k<w; ++k) {
-              if(c !== mask[n+k+h*dims[u]]) {
-                done = true;
-                break;
-              }
-            }
-            if(done) {
-              break;
-            }
-          }
-          //Add quad
-          x[u] = i;  x[v] = j;
-          var du = [0,0,0]
-            , dv = [0,0,0]; 
-          if(c > 0) {
-            dv[v] = h;
-            du[u] = w;
-          } else {
-            c = -c;
-            du[v] = h;
-            dv[u] = w;
-          }
-		  
-		var col = return_color(c);  
-
-		switch(d){
-			case 0:
-			if(saveC>0){
-				col=[col[0]*0.9,col[1]*0.9,col[2]*0.9];		
-			}else{
-				col=[col[0]*0.8,col[1]*0.8,col[2]*0.8];					
-			}	
-			break;
-			case 1:
-			if(saveC>0){
-				col=[col[0]*0.7,col[1]*0.7,col[2]*0.7];		
-			}else{
-				col=[col[0]*0.6,col[1]*0.6,col[2]*0.6];			
-			}			
-			break;
-			case 2:
-			if(saveC>0){
-				//bottom
-				col=[col[0]*0.5,col[1]*0.5,col[2]*0.5];
-			}
-				//top
-								
-			
-			break;
-		}
-		  
-          vertices.push(x[0]+chunkPos[0],             x[1]+chunkPos[1],             x[2]   +chunkPos[2]         );
-          vertices.push(x[0]+du[0]+chunkPos[0],       x[1]+du[1]+chunkPos[1],       x[2]+du[2]+chunkPos[2]      );
-          vertices.push(x[0]+du[0]+dv[0]+chunkPos[0], x[1]+du[1]+dv[1]+chunkPos[1], x[2]+du[2]+dv[2]+chunkPos[2]);
-          vertices.push(x[0]      +dv[0]+chunkPos[0], x[1]      +dv[1]+chunkPos[1], x[2]      +dv[2]+chunkPos[2]);
-
-          faces.push(col[0],col[1],col[2],col[0],col[1],col[2],col[0],col[1],col[2],col[0],col[1],col[2],);
-          //Zero-out mask
-          for(l=0; l<h; ++l)
-          for(k=0; k<w; ++k) {
-            mask[n+k+l*dims[u]] = 0;
-          }
-          //Increment counters and continue
-          i += w; n += w;
-        } else {
-          ++i;    ++n;
-        }
-      }
-    }
-  }
-
-  return([ new Int16Array(vertices).buffer, new Uint8Array(faces).buffer ]);
-}
-
-
-
-
-
 
 
 // The MIT License (MIT)
