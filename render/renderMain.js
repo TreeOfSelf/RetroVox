@@ -20,8 +20,8 @@ var renderSettings = {
 	
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
-		XY : 1,
-		Z  : 1,
+		XY : 3,
+		Z  : 3,
 	},
 }
 

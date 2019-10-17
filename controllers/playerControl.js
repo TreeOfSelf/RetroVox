@@ -70,21 +70,6 @@ function player_physics(){
 
 	//Check which block our cursor lines up on relative inside the cursor chunk
 	var blockLocation = [(Math.round(controls.cursorFixedPosition[0])) - (controls.cursorChunk[0]*blockSettings.chunk.XYZ), (Math.round(controls.cursorFixedPosition[1])) - (controls.cursorChunk[1]*blockSettings.chunk.XYZ),(Math.round(controls.cursorFixedPosition[2])) - (controls.cursorChunk[2]*blockSettings.chunk.XYZ)];
-	
-	//Displace edges of fixed position to get a more accurate location that doesn't lie
-	//on a border 
-	if(blockLocation[0]==0){
-		controls.cursorFixedPosition[0]-=2;
-	}
-	if(blockLocation[1]==0){
-		controls.cursorFixedPosition[1]-=2;
-	}
-	if(blockLocation[2]==0){
-		controls.cursorFixedPosition[2]-=2;
-	}
-
-
-	//console.log(Math.roundArray(controls.cursorPosition),controls.cursorChunk),
 
 	//Set the position buffer for the cursor and draw cube 
 	
