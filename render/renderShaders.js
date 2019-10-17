@@ -69,16 +69,8 @@ void main() {
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.2);	
-	if(vColor>75.0){
-		vColor=max(min(vColor*0.008,0.9),0.7);
-	}else{
-		if(vColor>30.0){
-		vColor=max(min(vColor*0.015,0.7),0.5);	
-		}else{
-		vColor=min(vColor*0.030,0.5);
-		}
-	}
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.02);	
+
 
 	//Different depth depending on orthographic/perspective
 	if(uOrtho==1){

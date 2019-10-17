@@ -14,12 +14,18 @@ var controls = {
 	cursorPosition : [0,0,0],
 	//Chunk of the cursor used to displace the cursor builds
 	cursorChunk : [0,0,0],
+	//Position in game space 
+	cursorFixedPosition : [0,0,0],
 	//Distance of cursor to camera 
 	cursorDistance : 1,
 	//Size of delete cursor
-	deleteAmount : 5,
-	//Size of create cursor
-	createAmount : 5,
+	deleteAmount : 3,
+	//Size of build cursor
+	buildAmount : 4,
+	//Strength of delete cursor
+	deleteStrength : 0.0025,
+	//Strength of build cursor
+	buildStrength : 0.005,
 }
 
 
@@ -143,32 +149,70 @@ keyboard_controls = function(){
 		player.position[2]+=0.1;
 	}
 	
-	//Build key
+	//Single build key
 	if(controls.keys['E']==1){
-		
-		var blockLocation = [(Math.round(controls.cursorPosition[0]+controls.cursorChunk[0]*2)) - (controls.cursorChunk[0]*blockSettings.chunk.XYZ), (Math.round(controls.cursorPosition[1]+controls.cursorChunk[1]*2)) - (controls.cursorChunk[1]*blockSettings.chunk.XYZ),(Math.round(controls.cursorPosition[2]+controls.cursorChunk[2]*2)) - (controls.cursorChunk[2]*blockSettings.chunk.XYZ)]
-		
-
-		switch(blockLocation[0]){
-				case 0:
-					controls.cursorPosition[0]-=2;
-				break;
-		}
-		switch(blockLocation[1]){
-				case 0:
-					controls.cursorPosition[1]-=2;
-				break;
-		}
-		switch(blockLocation[2]){
-				case 0:
-					controls.cursorPosition[2]-=2;
-				break;
-		}
-
-		//console.log("CONTORL",blockLocation,[Math.round(controls.cursorPosition[0]+controls.cursorChunk[0]*2),Math.round(controls.cursorPosition[1]),Math.round(controls.cursorPosition[2])],controls.cursorChunk);
-		
-		
-		block_change(Math.round(controls.cursorPosition[0]+controls.cursorChunk[0]*2),Math.round(controls.cursorPosition[1]+controls.cursorChunk[1]*2),Math.round(controls.cursorPosition[2]+controls.cursorChunk[2]*2),0);
+		block_build(controls.cursorPosition[0],controls.cursorPosition[1],controls.cursorPosition[2],0);
 	}
+
+	//Single delete key
+	if(controls.keys['V']==1){
+		block_build(controls.cursorPosition[0],controls.cursorPosition[1],controls.cursorPosition[2],1);	
+	}
+	
+	//Cube build key
+	if(controls.keys['T']==1){
+		
+		for(var xx=-controls.buildAmount ; xx<=controls.buildAmount ; xx++){
+		for(var yy=-controls.buildAmount ; yy<=controls.buildAmount ; yy++){
+		for(var zz=-controls.buildAmount ; zz<=controls.buildAmount ; zz++){
+			block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,0);
+		}
+		}
+		}
+	}
+	
+	
+	//Cube delete key
+	if(controls.keys['B']==1){
+		
+		for(var xx=-controls.deleteAmount ; xx<=controls.deleteAmount ; xx++){
+		for(var yy=-controls.deleteAmount ; yy<=controls.deleteAmount ; yy++){
+		for(var zz=-controls.deleteAmount ; zz<=controls.deleteAmount ; zz++){
+			block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,1);
+		}
+		}
+		}
+	}
+	
+	//Sphere build key
+	if(controls.keys['F']==1){
+		
+		for(var xx=-controls.buildAmount ; xx<=controls.buildAmount ; xx++){
+		for(var yy=-controls.buildAmount ; yy<=controls.buildAmount ; yy++){
+		for(var zz=-controls.buildAmount ; zz<=controls.buildAmount ; zz++){
+			var dist = distance_3d([controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz],controls.cursorPosition);
+			if(dist<controls.buildAmount*1.2){
+				block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,0);
+			}
+		}
+		}
+		}
+	}
+	
+	//Sphere delete key
+	if(controls.keys['C']==1){
+		
+		for(var xx=-controls.deleteAmount ; xx<=controls.deleteAmount ; xx++){
+		for(var yy=-controls.deleteAmount ; yy<=controls.deleteAmount ; yy++){
+		for(var zz=-controls.deleteAmount ; zz<=controls.deleteAmount ; zz++){
+			var dist = distance_3d([controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz],controls.cursorPosition);
+			if(dist<controls.deleteAmount*1.2){
+				block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,1);
+			}
+		}
+		}
+		}
+	}
+	
 	
 }

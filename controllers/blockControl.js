@@ -29,18 +29,18 @@ var activeChunks=[];
 var blockSettings = {
 	chunk : {
 		space : 64,
-		XYZ : 32,
+		XYZ : 16,
 	},
 	
 	sector : {
 		space : 32,
-		XYZ : 3,
+		XYZ : 4,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 3,
-		Z : 1,
+		XY : 4,
+		Z : 4,
 	},
 	
 	
@@ -48,13 +48,63 @@ var blockSettings = {
 
 // BLOCK FUNCTIONS
 
-//Finds chunk of block, and then adds to the desnity of the block within the chunk.
-block_change = function(x,y,z,del){
 
+//Returns true if a block is a solid density 
+block_exists = function(x,y,z){
 	//get location of chunk from block XYZ
 	var chunkPosition = chunk_get(x,y,z);
+		
+	//get id from location of chunks
+	var chunkID = chunk_returnID(chunkPosition[0],chunkPosition[1],chunkPosition[2]);
+	//formula to get location of block relative inside of the chunks space.
+	// x - (chunkX*chunkXYZ) for each axis
+	var blockLocation = [(x) - (chunkPosition[0]*blockSettings.chunk.XYZ), (y) - (chunkPosition[1]*blockSettings.chunk.XYZ),(z) - (chunkPosition[2]*blockSettings.chunk.XYZ)]
+	//get 1d index from relative location
+	var blockIndex = blockLocation[0]+blockLocation[1]*blockSettings.chunk.XYZ+blockLocation[2]*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
+
+	//Generate chunk if it doesn't exists
+	if(chunk[chunkID]==null || chunk[chunkID].blockArray[blockIndex]>0){
+		return(false);
+	}else{
+		return(true);
+	}
+}
+
+
+//Snaps block from game position to grid position
+block_build = function(x,y,z,del){
 	
+	//Get chunk that this position resides in
+	var blockChunk = chunk_get_no_border(x,y,z);
 	
+	//Offset position by chunk
+	x+=blockChunk[0]*2;
+	y+=blockChunk[1]*2;
+	z+=blockChunk[2]*2;
+	
+	//Get location within chunk 
+	var blockLocation = [(Math.round(x)) - (blockChunk[0]*blockSettings.chunk.XYZ), (Math.round(y)) - (blockChunk[1]*blockSettings.chunk.XYZ),(Math.round(z)) - (blockChunk[2]*blockSettings.chunk.XYZ)];
+	
+	//Displace edges 
+	if(blockLocation[0]==0){
+		x-=2;
+	}
+	if(blockLocation[1]==0){
+		y-=2;
+	}
+	if(blockLocation[2]==0){
+		z-=2;
+	}
+	
+	//Send to block change function to preform actual build/delete 
+	block_change(x,y,z,del);
+	
+}
+
+//Finds chunk of block, and then adds to the desnity of the block within the chunk.
+block_change = function(x,y,z,del,amount){
+
+	//get location of chunk from block XYZ
 	var chunkPosition = chunk_get(x,y,z);
 		
 	//get id from location of chunks
@@ -66,9 +116,7 @@ block_change = function(x,y,z,del){
 	//Fill edges of bordering chunk(s)
 	
 	//Offset variables
-	var xOff=0;
-	var yOff=0;
-	var zOff=0;
+	var xOff=0;var yOff=0;var zOff=0;
 
 	//Check if we are on edges
 
@@ -99,40 +147,12 @@ block_change = function(x,y,z,del){
 		zOff=2;
 		break;
 	}
-	
-	//Unoptimized checks 
-	
-	if(xOff != 0 && yOff != 0 && zOff != 0){
-		block_change(x+xOff,y+yOff,z+zOff,0);
-	}
-	if(xOff !=0 && yOff !=0){
-		block_change(x+xOff,y+yOff,z,0);	
-	}
-	if(xOff !=0 && zOff !=0){
-		block_change(x+xOff,y,z+zOff,0);	
-	}
-	if(yOff !=0 && zOff !=0){
-		block_change(x,y+yOff,z+zOff,0);	
-	}
-	if(xOff !=0){
-		block_change(x+xOff,y,z,0);
-	}
-	if(yOff !=0){
-		block_change(x,y+yOff,z,0);
-	}
-	if(zOff !=0){
-		block_change(x,y,z+zOff,0);
-	}
-
-	
 
 	
 	
 	//get 1d index from relative location
 	var blockIndex = blockLocation[0]+blockLocation[1]*blockSettings.chunk.XYZ+blockLocation[2]*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
 
-	//console.log("BLOCK", x,y,z , blockLocation, chunkPosition);
-	
 	//Generate chunk if it doesn't exists
 	if(chunk[chunkID]==null){
 	chunk_create(chunkPosition[0],chunkPosition[1],chunkPosition[2]);
@@ -143,14 +163,52 @@ block_change = function(x,y,z,del){
 	//Add/Delete density based on distance to build position (your cursor)
 	
 	//Calculate distance from cursor, minimum of 1 so we don't get divides by 0.
-	var dist = Math.max(distance_3d([x,y,z],[0,0,0]),1);
-	
-	if(del==1){
-		chunk[chunkID].blockArray[blockIndex]+=0.1/dist;
-	}else{
-		chunk[chunkID].blockArray[blockIndex]-=0.1/dist;	
-		chunk[chunkID].blockArray[blockIndex]=-1;		
+	//var dist = Math.max(distance_3d([x,y,z],controls.cursorFixedPosition),1);
+	var dist = Math.max(distance_3d([x-chunkPosition[0]*2,y-chunkPosition[1]*2,z-chunkPosition[2]*2],[controls.cursorFixedPosition[0]-controls.cursorChunk[0]*2,controls.cursorFixedPosition[1]-controls.cursorChunk[1]*2,controls.cursorFixedPosition[2]-controls.cursorChunk[2]*2]),1);
+
+	switch(del){
+	//Build
+	case 0:
+		chunk[chunkID].blockArray[blockIndex]-=controls.buildStrength/dist		
+	break;
+	//Delete
+	case 1:
+		chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
+	break;
+	case 2:
+	//Inherit (for connecting block data)
+		chunk[chunkID].blockArray[blockIndex]=amount;	
+	break;
 	}
+	
+	
+	//Unoptimized checks 
+	
+	/*if(xOff != 0 && yOff != 0 && zOff != 0){
+		block_change(x+xOff,y+yOff,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);
+	}
+	if(xOff !=0 && yOff !=0){
+		block_change(x+xOff,y+yOff,z,2,chunk[chunkID].blockArray[blockIndex]);	
+	}
+	if(xOff !=0 && zOff !=0){
+		block_change(x+xOff,y,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);	
+	}
+	if(yOff !=0 && zOff !=0){
+		block_change(x,y+yOff,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);	
+	}*/
+	if(xOff !=0){
+		block_change(x+xOff,y,z,2,chunk[chunkID].blockArray[blockIndex]);
+	}
+	if(yOff !=0){
+		block_change(x,y+yOff,z,2,chunk[chunkID].blockArray[blockIndex]);
+	}
+	if(zOff !=0){
+		block_change(x,y,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);
+	}
+
+	
+
+	
 	//Flag chunk to re-draw
 	chunk[chunkID].reDraw=1;
 
@@ -235,7 +293,7 @@ chunk_process = function() {
 		}			
 	}}}
 	
-	//Sort the list of chunks by distanc
+	//Sort the list of chunks by distance
 	processList.sort(function(a,b){
 		return(a[1]-b[1]);
 	});
@@ -319,13 +377,14 @@ we need to draw a sector.
 */
 
 var sectorBuffer = {
-	position : new Float32Array(999999),
-	color : new Uint8Array(999999),
-	indice : new Uint32Array(999999),
+	position : new Float32Array(99999),
+	color : new Uint8Array(99999),
+	indice : new Uint32Array(99999),
 }
 
 //Draws a sector, this is called everytime a chunk within the sector changes 
 sector_draw = function(x,y,z){
+	
 	
 	//Get sectorID
 	sectorID = sector_returnID(x,y,z);
@@ -353,13 +412,13 @@ sector_draw = function(x,y,z){
 		//Get ID from chunk XYZ position
 		var chunkID = chunk_returnID(pos[0],pos[1],pos[2]);
 		
-		//Make sure the chunk exists
-		if(chunk[chunkID]!=null){
+		//Make sure the chunk exists and has draw data
+		if(chunk[chunkID]!=null && chunk[chunkID].drawData.indice.length>12){
 				//Get index we are at in the position buffer.
 				//The reason we need this, is because everytime we add a new chunk we have to offset all of it's indices to 
 				//Make up for the chunks already added in. 
 				var positionBefore = positionOffset;
-				
+			
 				//Add chunk draw information, and then add to the offset .
 				sectorBuffer.position.set(chunk[chunkID].drawData.position,positionOffset);
 				positionOffset+=chunk[chunkID].drawData.position.length;
@@ -374,30 +433,38 @@ sector_draw = function(x,y,z){
 				indiceOffset+=chunk[chunkID].drawData.indice.length;	
 				//If this is not the first chunk being added to the sector
 				if(indiceBefore!=0){
+					//Get amount we need to add indices
+					var addAmount = Math.round(positionBefore/3);
 					//Go through each indice we just added
-					for(i=indiceBefore;i<indiceOffset;i++){
+					for(i=indiceBefore;i<=indiceOffset;i++){
 						//Add in an offset to each offset to make up for the chunks already added.
-						sectorBuffer.indice[i]+=positionBefore/3;
+						sectorBuffer.indice[i]+=addAmount;
 					}
 				}
 				
 		}
 	}}}
 	
-	//Set size of the sector to how many verticies 
-	sector[sectorID].buffers.size=indiceOffset;
-	//Bind this sector VAO
-	gl.bindVertexArray(sector[sectorID].vao);
-	//Set data for indice
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[sectorID].buffers.indice);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.DYNAMIC_DRAW,0,indiceOffset);
-	//position
-	gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
-	gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.DYNAMIC_DRAW,0,positionOffset);
-	//color
-	gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
-	gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.DYNAMIC_DRAW,0,colorOffset);
-	
+	if(indiceOffset!=0){
+		
+		//Set size of the sector to how many verticies 
+		sector[sectorID].buffers.size=indiceOffset;
+		//Bind this sector VAO
+		gl.bindVertexArray(sector[sectorID].vao);
+		//Set data for indice
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[sectorID].buffers.indice);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.DYNAMIC_DRAW,0,indiceOffset);
+		//position
+		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
+		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.DYNAMIC_DRAW,0,positionOffset);
+		//color
+		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
+		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.DYNAMIC_DRAW,0,colorOffset);
+		
+	}else{
+		//Set size of the sector to 0 
+		sector[sectorID].buffers.size=0;
+	}
 	//Remove flag for sector to be redrawn.
 	sector[sectorID].reDraw=0;
 }

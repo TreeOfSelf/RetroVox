@@ -169,7 +169,8 @@ return function(data, chunkPos) {
       vertices.push(v);
 	  finalVert.push(v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]);
 	  finalColor.push(v[0]*255,v[1]*255,v[2]*255);
-      //Now we need to add faces together, to do this we just loop over 3 basis components
+      //finalColor.push(v[0]*20,(v[1]+v[0]+v[2])*255,v[2]*20);
+	  //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
         //The first three entries of the edge_mask count the crossings along the edge
         if(!(edge_mask & (1<<i)) ) {

@@ -153,7 +153,7 @@ function render(now){
 		//Return ID for the sector
 		var sectorID = sector_returnID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
 		//If the sector exists
-		if(sector[sectorID]!=null){
+		if(sector[sectorID]!=null && sector[sectorID].buffers.size>0){
 			
 			//drawLength+=sector[sectorID].buffers.size;
 			//Bind VAO

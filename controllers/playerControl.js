@@ -59,11 +59,29 @@ function player_physics(){
 	
 
 	//Snap cursor position to grid and shift to center
-	controls.cursorPosition = [Math.round(controls.cursorPosition[0])-0.5,Math.round(controls.cursorPosition[1])-0.5,Math.round(controls.cursorPosition[2])-0.5];
+	controls.cursorPosition = [Math.round(controls.cursorPosition[0]),Math.round(controls.cursorPosition[1]),Math.round(controls.cursorPosition[2])];
 
 	
 	//Set the cursor chunk 
 	controls.cursorChunk = chunk_get_no_border(Math.round(controls.cursorPosition[0]),Math.round(controls.cursorPosition[1]),Math.round(controls.cursorPosition[2]));
+
+	//Set the cursor fixed position (where it is in game space)
+	controls.cursorFixedPosition =[controls.cursorPosition[0]+controls.cursorChunk[0]*2,controls.cursorPosition[1]+controls.cursorChunk[1]*2,controls.cursorPosition[2]+controls.cursorChunk[2]*2];
+
+	//Check which block our cursor lines up on relative inside the cursor chunk
+	var blockLocation = [(Math.round(controls.cursorFixedPosition[0])) - (controls.cursorChunk[0]*blockSettings.chunk.XYZ), (Math.round(controls.cursorFixedPosition[1])) - (controls.cursorChunk[1]*blockSettings.chunk.XYZ),(Math.round(controls.cursorFixedPosition[2])) - (controls.cursorChunk[2]*blockSettings.chunk.XYZ)];
+	
+	//Displace edges of fixed position to get a more accurate location that doesn't lie
+	//on a border 
+	if(blockLocation[0]==0){
+		controls.cursorFixedPosition[0]-=2;
+	}
+	if(blockLocation[1]==0){
+		controls.cursorFixedPosition[1]-=2;
+	}
+	if(blockLocation[2]==0){
+		controls.cursorFixedPosition[2]-=2;
+	}
 
 
 	//console.log(Math.roundArray(controls.cursorPosition),controls.cursorChunk),
@@ -72,41 +90,41 @@ function player_physics(){
 	
 	blockBuildPositionData = new Float32Array([
 	
-	controls.cursorPosition[0],  controls.cursorPosition[1], controls.cursorPosition[2],
-	controls.cursorPosition[0],  controls.cursorPosition[1]+1.0,controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1]+1.0,controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1], controls.cursorPosition[2],
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
 
 	// Back face
-	controls.cursorPosition[0],  controls.cursorPosition[1], controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0],  controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1], controls.cursorPosition[2]+1.0,
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5+1.0,
 
 
 	// Top face
-	controls.cursorPosition[0],  controls.cursorPosition[1]+1.0, controls.cursorPosition[2],
-	controls.cursorPosition[0],  controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0]+1.0,  controls.cursorPosition[1]+1.0, controls.cursorPosition[2],
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
 
 	// Bottom face
-	controls.cursorPosition[0], controls.cursorPosition[1], controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1], controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1],controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0], controls.cursorPosition[1],controls.cursorPosition[2]+1.0,
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
 
 	// Right face
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1],controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1]+1.0, controls.cursorPosition[2],
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0]+1.0, controls.cursorPosition[1],controls.cursorPosition[2]+1.0,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
 
 	// Left face
-	controls.cursorPosition[0], controls.cursorPosition[1], controls.cursorPosition[2],
-	controls.cursorPosition[0], controls.cursorPosition[1],controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0], controls.cursorPosition[1]+1.0,controls.cursorPosition[2]+1.0,
-	controls.cursorPosition[0], controls.cursorPosition[1]+1.0, controls.cursorPosition[2],
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
+	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
 	]);
 	
 	
