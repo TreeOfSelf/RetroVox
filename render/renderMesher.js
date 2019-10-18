@@ -33,7 +33,35 @@ self.addEventListener('message', function(e) {
 	}
 });
 
-
+//Takes a type and returns a color
+color_return = function(type){
+	switch(type){
+		//Grass
+		case 1:
+			return([10,160,5]);
+		break;
+		//Dirt
+		case 2:
+			return([120,55,65]);
+		break;
+		//Rock
+		case 3:
+			return([66,57,58]);
+		break;
+		//Wood
+		case 4:
+			return([145,45,55]);
+		break;
+		//Flag
+		case 5:
+			return([150,20,20]);
+		break;
+		//Star
+		case 6:
+			return([200,200,20]);
+		break;
+	}
+}
 
 
 var mesh_naive = (function() {
@@ -74,7 +102,7 @@ var cube_edges = new Int32Array(24)
 //Internal buffer, this may get resized at run time
 var buffer = new Int32Array(4096);
 
-return function(data, chunkPos) {
+return function(data, dataType ,chunkPos) {
   var dims=[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ];
   var vertices = []
     , faces = []
@@ -98,10 +126,10 @@ return function(data, chunkPos) {
     //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
     //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
     var m = 1 + (dims[0]+1) * (1 + buf_no * (dims[1]+1));
-    
+ 	var colorSave=0;   
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
-    
+
       //Read in 8 field values around this vertex and store them in an array
       //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
       var mask = 0, g = 0, idx = n;
@@ -109,6 +137,9 @@ return function(data, chunkPos) {
       for(var j=0; j<2; ++j, idx += dims[0]-2)      
       for(var i=0; i<2; ++i, ++g, ++idx) {
         var p = data[idx];
+		if(dataType[idx]!=0){
+			colorSave = dataType[idx];
+		}
         grid[g] = p;
         mask |= (p < 0) ? (1<<g) : 0;
       }
@@ -163,13 +194,14 @@ return function(data, chunkPos) {
       for(var i=0; i<3; ++i) {
         v[i] = x[i] + s * v[i];
       }
-      
+
       //Add vertex to buffer, store pointer to vertex index in buffer
       buffer[m] = vertices.length;
       vertices.push(v);
 	  finalVert.push(v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]);
-	  finalColor.push(v[0]*255,v[1]*255,v[2]*255);
-      //finalColor.push(v[0]*20,(v[1]+v[0]+v[2])*255,v[2]*20);
+	  //finalColor.push(v[0]*255,v[1]*255,v[2]*255);
+	  var color = color_return(colorSave);
+	  finalColor.push(color[0]+Math.abs(Math.sin(v[0]+v[1]))*20,color[1]+Math.abs(Math.sin(v[1]+v[2]))*20,color[2]+Math.abs(Math.sin(v[2]+v[0]))*20);
 	  //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
         //The first three entries of the edge_mask count the crossings along the edge

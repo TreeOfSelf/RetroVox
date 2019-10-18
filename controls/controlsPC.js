@@ -21,11 +21,13 @@ var controls = {
 	//Size of delete cursor
 	deleteAmount : 3,
 	//Size of build cursor
-	buildAmount : 4,
+	buildAmount : 6,
 	//Strength of delete cursor
 	deleteStrength : 0.0025,
 	//Strength of build cursor
 	buildStrength : 0.005,
+	//Type of material we are building
+	buildType : 1,
 }
 
 

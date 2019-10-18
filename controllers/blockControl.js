@@ -97,13 +97,12 @@ block_build = function(x,y,z,del){
 	}
 	
 	//Send to block change function to preform actual build/delete 
-	block_change(x,y,z,del);
+	block_change(x,y,z,del,0,controls.buildType);
 	
 }
 
 //Finds chunk of block, and then adds to the desnity of the block within the chunk.
-block_change = function(x,y,z,del,amount){
-
+block_change = function(x,y,z,del,amount,buildType){
 	//get location of chunk from block XYZ
 	var chunkPosition = chunk_get(x,y,z);
 		
@@ -169,41 +168,38 @@ block_change = function(x,y,z,del,amount){
 	switch(del){
 	//Build
 	case 0:
-		chunk[chunkID].blockArray[blockIndex]-=controls.buildStrength/dist		
+		//Set density of block
+		chunk[chunkID].blockArray[blockIndex]-=controls.buildStrength/dist
+		//Set type of block
+		if(chunk[chunkID].blockType[blockIndex]==0 && chunk[chunkID].blockArray[blockIndex]<0){
+			chunk[chunkID].blockType[blockIndex]=buildType;
+		}
 	break;
 	//Delete
 	case 1:
-		chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
+		if(chunk[chunkID].blockArray[blockIndex]<0.1){
+			chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
+		}else{
+			chunk[chunkID].blockType[blockIndex]=0;
+		}
 	break;
 	case 2:
 	//Inherit (for connecting block data)
 		chunk[chunkID].blockArray[blockIndex]=amount;	
+		chunk[chunkID].blockType[blockIndex] = buildType;
 	break;
 	}
 	
 	
 	//Unoptimized checks 
-	
-	/*if(xOff != 0 && yOff != 0 && zOff != 0){
-		block_change(x+xOff,y+yOff,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);
-	}
-	if(xOff !=0 && yOff !=0){
-		block_change(x+xOff,y+yOff,z,2,chunk[chunkID].blockArray[blockIndex]);	
-	}
-	if(xOff !=0 && zOff !=0){
-		block_change(x+xOff,y,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);	
-	}
-	if(yOff !=0 && zOff !=0){
-		block_change(x,y+yOff,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);	
-	}*/
 	if(xOff !=0){
-		block_change(x+xOff,y,z,2,chunk[chunkID].blockArray[blockIndex]);
+		block_change(x+xOff,y,z,2,chunk[chunkID].blockArray[blockIndex],chunk[chunkID].blockType[blockIndex]);
 	}
 	if(yOff !=0){
-		block_change(x,y+yOff,z,2,chunk[chunkID].blockArray[blockIndex]);
+		block_change(x,y+yOff,z,2,chunk[chunkID].blockArray[blockIndex],chunk[chunkID].blockType[blockIndex]);
 	}
 	if(zOff !=0){
-		block_change(x,y,z+zOff,2,chunk[chunkID].blockArray[blockIndex]);
+		block_change(x,y,z+zOff,2,chunk[chunkID].blockArray[blockIndex],chunk[chunkID].blockType[blockIndex]);
 	}
 
 	
@@ -254,6 +250,8 @@ chunk_create = function(x,y,z){
 			coords : [x,y,z],
 			//List of block densities , filled for chunk dimensions cubed 
 			blockArray : new Float32Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0.1),
+			//List of block types , filled for chunk dimensions cubed 
+			blockType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0),
 			//Draw 
 			drawData : {
 				//XYZ positions of verticies 
@@ -306,7 +304,7 @@ chunk_process = function() {
 
 			chunk[processList[i][0]].reDraw=0;		
 			//Mesh the chunk 
-			var drawData = mesh_naive(chunk[processList[i][0]].blockArray,[chunk[processList[i][0]].coords[0]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[1]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[2]*(blockSettings.chunk.XYZ-2)]);
+			var drawData = mesh_naive(chunk[processList[i][0]].blockArray,chunk[processList[i][0]].blockType,[chunk[processList[i][0]].coords[0]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[1]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[2]*(blockSettings.chunk.XYZ-2)]);
 			//Set values for chunk
 			chunk[processList[i][0]].drawData.position = drawData[0];
 			chunk[processList[i][0]].drawData.color = drawData[1];

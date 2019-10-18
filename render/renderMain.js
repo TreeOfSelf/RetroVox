@@ -73,7 +73,7 @@ gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.CULL_FACE);
 gl.cullFace(gl.BACK);
 gl.lineWidth(15.0);
-gl.clearColor(Math.random()*0.1,Math.random()*0.7+0.3,Math.random()*0.4+0.1,0.1);
+gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,0.1);
 
 //Load Texture
 
