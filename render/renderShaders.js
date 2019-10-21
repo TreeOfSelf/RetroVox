@@ -55,9 +55,12 @@ in vec3 aColor;
 uniform vec3 uCam;
 //Perspective Matrix
 uniform mat4 uMatrix;
+//Model Matrix
+uniform mat4 uModelMatrix;
 //Orthographic
 uniform int uOrtho;
-
+//Light amount
+uniform float uLight;
 
 out lowp vec4 vPixelColor;
 out lowp float vColor;
@@ -65,11 +68,11 @@ void main() {
 
 	gl_PointSize = 35.0;
 	//Get screen position
-	gl_Position =  uMatrix *vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
+	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.02);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*uLight);	
 
 
 	//Different depth depending on orthographic/perspective
@@ -116,10 +119,14 @@ const programInfo = {
 	uniformLocations: {
 		//Camera coordiantes 3v
 		cam : gl.getUniformLocation(shaderProgram, 'uCam'),
-		//Projection matrix
+		//Projection Matrix
 		projectionMatrix : gl.getUniformLocation(shaderProgram,'uMatrix'),
+		//Model Matrix
+		modelMatrix : gl.getUniformLocation(shaderProgram,'uModelMatrix'),
 		//Ortho view
 		ortho : gl.getUniformLocation(shaderProgram,'uOrtho'),
+		//Light 
+		light : gl.getUniformLocation(shaderProgram,'uLight'),
 
 	},
 };

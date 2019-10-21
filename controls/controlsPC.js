@@ -6,29 +6,6 @@ This file will contain all the keyboard / mouse controls
 
 
 
-//Object containing the keyboard controls 
-var controls = {
-	//Key array, index is a string of the key, value 0 = not pressed 1 = pressed
-	keys : [],
-	//Position to build block at A.K.A cursor
-	cursorPosition : [0,0,0],
-	//Chunk of the cursor used to displace the cursor builds
-	cursorChunk : [0,0,0],
-	//Position in game space 
-	cursorFixedPosition : [0,0,0],
-	//Distance of cursor to camera 
-	cursorDistance : 1,
-	//Size of delete cursor
-	deleteAmount : 3,
-	//Size of build cursor
-	buildAmount : 6,
-	//Strength of delete cursor
-	deleteStrength : 0.0025,
-	//Strength of build cursor
-	buildStrength : 0.005,
-	//Type of material we are building
-	buildType : 1,
-}
 
 
 

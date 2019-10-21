@@ -38,27 +38,43 @@ color_return = function(type){
 	switch(type){
 		//Grass
 		case 1:
-			return([10,160,5]);
+			return([0,102,0]);
 		break;
 		//Dirt
 		case 2:
-			return([120,55,65]);
+			return([153,76,0]);
 		break;
 		//Rock
 		case 3:
-			return([66,57,58]);
+			return([40,40,40]);
 		break;
 		//Wood
 		case 4:
-			return([145,45,55]);
+			return([51,25,0]);
 		break;
-		//Flag
+		//Red Cloth
 		case 5:
-			return([150,20,20]);
+			return([200,15,15]);
 		break;
-		//Star
+		//Sand
 		case 6:
-			return([200,200,20]);
+			return([255,128,0]);
+		break;
+		//Leaves
+		case 7:
+			return([0,160,0]);
+		break;
+		//Water
+		case 8:
+			return([0,128,255]);
+		break;
+		//White
+		case 9:
+			return([255,255,255]);
+		break;
+		//Black
+		case 10:
+			return([0,0,0]);
 		break;
 	}
 }
@@ -188,6 +204,7 @@ return function(data, dataType ,chunkPos) {
           }
         }
       }
+	  
       
       //Now we just average the edge intersections and add them to coordinate
       var s = 1.0 / e_count;
@@ -201,7 +218,8 @@ return function(data, dataType ,chunkPos) {
 	  finalVert.push(v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]);
 	  //finalColor.push(v[0]*255,v[1]*255,v[2]*255);
 	  var color = color_return(colorSave);
-	  finalColor.push(color[0]+Math.abs(Math.sin(v[0]+v[1]))*20,color[1]+Math.abs(Math.sin(v[1]+v[2]))*20,color[2]+Math.abs(Math.sin(v[2]+v[0]))*20);
+	  //finalColor.push(color[0]+Math.abs(Math.sin(v[0]+v[1]))*20,color[1]+Math.abs(Math.sin(v[1]+v[2]))*20,color[2]+Math.abs(Math.sin(v[2]+v[0]))*20);
+	  finalColor.push(Math.min(Math.max(color[0]+Math.abs(Math.sin(v[0]+v[1]+chunkPos[0]+chunkPos[1]))*20,0),255),Math.min(Math.max(color[1]+Math.abs(Math.sin(v[1]+v[2]+chunkPos[1]+chunkPos[2]))*20,0),255),Math.min(Math.max(color[2]+Math.abs(Math.sin(v[2]+v[0]+chunkPos[2]+chunkPos[0]))*20,0),255));
 	  //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
         //The first three entries of the edge_mask count the crossings along the edge

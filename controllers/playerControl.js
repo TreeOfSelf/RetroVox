@@ -7,7 +7,36 @@ This file will contain everything relating to the player, physics, position, cam
 //Starting position
 var defaultPosition = [1,2,1]
 
+
+
+//Object containing the keyboard control related variables
+var controls = {
+	//Key array, index is a string of the key, value 0 = not pressed 1 = pressed
+	keys : [],
+	//Position to build block at A.K.A cursor
+	cursorPosition : [0,0,0],
+	//Chunk of the cursor used to displace the cursor builds
+	cursorChunk : [0,0,0],
+	//Position in game space 
+	cursorFixedPosition : [0,0,0],
+	//Distance of cursor to camera 
+	cursorDistance : 1,
+	//Size of delete cursor
+	deleteAmount : 3,
+	//Size of build cursor
+	buildAmount : 6,
+	//Strength of delete cursor
+	deleteStrength : 0.003,
+	//Strength of build cursor
+	buildStrength : 0.005,
+	//Type of material we are building
+	buildType : 1,
+}
+
+
+//Player object
 var player = {
+	startPosition [0,0,0],
 	rotation : [0,0],
 	position : defaultPosition.slice(),
 	chunk : [0,0,0],

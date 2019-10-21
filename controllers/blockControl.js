@@ -177,9 +177,10 @@ block_change = function(x,y,z,del,amount,buildType){
 	break;
 	//Delete
 	case 1:
-		if(chunk[chunkID].blockArray[blockIndex]<0.1){
+		if(chunk[chunkID].blockArray[blockIndex]<0){
 			chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
 		}else{
+			chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
 			chunk[chunkID].blockType[blockIndex]=0;
 		}
 	break;
@@ -375,9 +376,9 @@ we need to draw a sector.
 */
 
 var sectorBuffer = {
-	position : new Float32Array(99999),
-	color : new Uint8Array(99999),
-	indice : new Uint32Array(99999),
+	position : new Float32Array(9999999),
+	color : new Uint8Array(9999999),
+	indice : new Uint32Array(9999999),
 }
 
 //Draws a sector, this is called everytime a chunk within the sector changes 

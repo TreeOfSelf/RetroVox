@@ -17,7 +17,7 @@ var renderSettings = {
 	zoom : 75.0,
 	fov : 95,
 	resolution : 1,
-	
+	lightIntensity : 0.01,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
 		XY : 3,
@@ -125,22 +125,29 @@ function render(now){
 		gl.clearDepth(0); 
 		glMatrix.mat4.ortho(projectionMatrix, -renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),-renderSettings.zoom,renderSettings.zoom,99999,0.0001);
 	}
-	
+
 	//Rotate camera
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[1],[1,0,0]);
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[0],[0,1,0]);
 	//Translate Camera
 	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-(player.position[0]),(player.position[2]),-(player.position[1])]);
 
+
+	
+	//Model Matrix
+	modelMatrix = glMatrix.mat4.create();
+
+	//Set program
 	gl.useProgram(programInfo.program);
 
 
 
 	//Set uniforms
 	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,false,projectionMatrix);
+	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
 	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
 	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
-
+	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 
 	//Loop through nearby sectors 
 	
