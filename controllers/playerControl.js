@@ -20,34 +20,59 @@ var controls = {
 	//Position in game space 
 	cursorFixedPosition : [0,0,0],
 	//Distance of cursor to camera 
-	cursorDistance : 1,
-	//Size of delete cursor
-	deleteAmount : 3,
+	cursorDistance : 3,
 	//Size of build cursor
 	buildAmount : 6,
-	//Strength of delete cursor
-	deleteStrength : 0.003,
 	//Strength of build cursor
 	buildStrength : 0.005,
 	//Type of material we are building
 	buildType : 1,
+	//Current cursor shape
+	cursorShape : 0,
+	//Chunk data for cursor
+	cursorChunkData : new Float32Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0.1), 
+	//Type data for cursor (filled so that it actually meshes correctly)
+	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(1), 
+	//List of coordinates to create blocks from using the cursor build/delete
+	cursorList : [],
+	//Draw data for cursor
+	cursorDraw  : { 
+		vao : gl.createVertexArray(), 
+		size : 0,
+		buffers : { 
+			position : gl.createBuffer(),
+			color : gl.createBuffer(),
+			indice :  gl.createBuffer(),
+		}
+	}
 }
+
+
+//Set up vertex array object with our buffers for the controls.cursorDraw 
+gl.bindVertexArray(controls.cursorDraw.vao);
+gl.bindBuffer(gl.ARRAY_BUFFER,controls.cursorDraw.buffers.position);
+gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.position);	
+
+gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
+gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.color);
 
 
 //Player object
 var player = {
-	startPosition [0,0,0],
 	rotation : [0,0],
 	position : defaultPosition.slice(),
 	chunk : [0,0,0],
 	sector : [0,0,0],
 		// forward,strafe
 	momentum : [0,0],
-	acceleration : 0.005,
+	acceleration : 0.015,
 }
 
 var upVector = glMatrix.vec3.fromValues(0,0,1);
 var rightVector = glMatrix.vec3.create();
+
 
 //Function ran every frame to calculate player physics
 function player_physics(){
@@ -81,9 +106,21 @@ function player_physics(){
 	
 	//Cursor positioning based on forward vector and build distance
 	
-	controls.cursorPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) * controls.cursorDistance, 
-	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]) * controls.cursorDistance,
-	player.position[2]+Math.sin(player.rotation[1]) * controls.cursorDistance];
+	//Distance changed for bigger builds
+	var displacedDistance = controls.cursorDistance;
+	
+	switch(controls.cursorShape){
+		case 2:
+		displacedDistance*=6.66;
+		break;
+		case 3:
+		displacedDistance*=6.66;
+		break;
+	}
+	
+	controls.cursorPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) * displacedDistance, 
+	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]) * displacedDistance,
+	player.position[2]+Math.sin(player.rotation[1]) * displacedDistance];
 	
 	
 
@@ -96,60 +133,8 @@ function player_physics(){
 
 	//Set the cursor fixed position (where it is in game space)
 	controls.cursorFixedPosition =[controls.cursorPosition[0]+controls.cursorChunk[0]*2,controls.cursorPosition[1]+controls.cursorChunk[1]*2,controls.cursorPosition[2]+controls.cursorChunk[2]*2];
+		
 
-	//Check which block our cursor lines up on relative inside the cursor chunk
-	var blockLocation = [(Math.round(controls.cursorFixedPosition[0])) - (controls.cursorChunk[0]*blockSettings.chunk.XYZ), (Math.round(controls.cursorFixedPosition[1])) - (controls.cursorChunk[1]*blockSettings.chunk.XYZ),(Math.round(controls.cursorFixedPosition[2])) - (controls.cursorChunk[2]*blockSettings.chunk.XYZ)];
-
-	//Set the position buffer for the cursor and draw cube 
-	
-	blockBuildPositionData = new Float32Array([
-	
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
-
-	// Back face
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5+1.0,
-
-
-	// Top face
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5+1.0,  controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
-
-	// Bottom face
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
-
-	// Right face
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5+1.0, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
-
-	// Left face
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5, controls.cursorPosition[2]-0.5,
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5+1.0,controls.cursorPosition[2]-0.5+1.0,
-	controls.cursorPosition[0]-0.5, controls.cursorPosition[1]-0.5+1.0, controls.cursorPosition[2]-0.5,
-	]);
-	
-	
-	
-
-	
-	//Set data to buffer
-	
-	gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPosition);
-	gl.bufferData(gl.ARRAY_BUFFER,blockBuildPositionData,gl.DYNAMIC_DRAW);
-	
 }
 
 

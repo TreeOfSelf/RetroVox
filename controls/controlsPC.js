@@ -7,12 +7,46 @@ This file will contain all the keyboard / mouse controls
 
 
 
-
+LOD=0;
 
 //Key press event
 document.onkeydown=function(e){
 	e =  e || window.event;
 	e.preventDefault(); e.stopPropagation();
+
+	if(e.key=='[' || e.key=='{'){
+		if(controls.buildAmount>1){
+			controls.buildAmount--;
+			cursor_set_shape();
+		}
+	}
+
+	
+	
+	if(e.key==']' || e.key=='}'){
+		if(controls.buildAmount<blockSettings.chunk.XYZ/2-2){
+			controls.buildAmount++;
+			cursor_set_shape();
+		}
+	}
+	
+	
+	if(controls.keys['SHIFT']==0){
+		//Select block type
+		if(parseInt(e.key)>=0){
+			controls.buildType = parseInt(e.key);
+			controls.cursorChunkType.fill(parseInt(e.key));
+			cursor_draw();
+		}
+	}else{
+		//Select cursor shape
+		
+		var num = parseInt(e.code[5]);
+		if(num>=0){
+			controls.cursorShape=num;
+			cursor_set_shape();
+			}
+		}
 	
 	//wireframe toggle
 	if(e.key=='n' || e.key=='N'){
@@ -86,10 +120,24 @@ canvas.addEventListener('wheel', function(e) {
 //Function ran every frame to check keyboard controls
 keyboard_controls = function(){
 	
+	
+	if(controls.keys['-'] || controls.keys['_']){
+		if(controls.buildStrength>0.002){
+			controls.buildStrength-=0.002;
+		}
+	}
+	
+	if(controls.keys['='] || controls.keys['+']){
+		if(controls.buildStrength<0.07){
+			controls.buildStrength+=0.002;
+		}
+	}
+	
+	
 	if(controls.keys['SHIFT']!=1){
-		player.acceleration = 0.005;
+		player.acceleration = 0.015;
 	}else{
-		player.acceleration = 0.015;		
+		player.acceleration = 0.05;		
 	}
 	
 	//WASD MOVEMENT
@@ -130,68 +178,19 @@ keyboard_controls = function(){
 	
 	//Single build key
 	if(controls.keys['E']==1){
-		block_build(controls.cursorPosition[0],controls.cursorPosition[1],controls.cursorPosition[2],0);
+		var loopLen=controls.cursorList.length;
+		for(var k=0; k<loopLen; k++){
+			block_build(controls.cursorPosition[0]+controls.cursorList[k][0],controls.cursorPosition[1]+controls.cursorList[k][1],controls.cursorPosition[2]+controls.cursorList[k][2],0);
+		}
 	}
 
 	//Single delete key
-	if(controls.keys['V']==1){
-		block_build(controls.cursorPosition[0],controls.cursorPosition[1],controls.cursorPosition[2],1);	
-	}
-	
-	//Cube build key
-	if(controls.keys['T']==1){
-		
-		for(var xx=-controls.buildAmount ; xx<=controls.buildAmount ; xx++){
-		for(var yy=-controls.buildAmount ; yy<=controls.buildAmount ; yy++){
-		for(var zz=-controls.buildAmount ; zz<=controls.buildAmount ; zz++){
-			block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,0);
-		}
-		}
-		}
-	}
-	
-	
-	//Cube delete key
-	if(controls.keys['B']==1){
-		
-		for(var xx=-controls.deleteAmount ; xx<=controls.deleteAmount ; xx++){
-		for(var yy=-controls.deleteAmount ; yy<=controls.deleteAmount ; yy++){
-		for(var zz=-controls.deleteAmount ; zz<=controls.deleteAmount ; zz++){
-			block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,1);
-		}
-		}
-		}
-	}
-	
-	//Sphere build key
-	if(controls.keys['F']==1){
-		
-		for(var xx=-controls.buildAmount ; xx<=controls.buildAmount ; xx++){
-		for(var yy=-controls.buildAmount ; yy<=controls.buildAmount ; yy++){
-		for(var zz=-controls.buildAmount ; zz<=controls.buildAmount ; zz++){
-			var dist = distance_3d([controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz],controls.cursorPosition);
-			if(dist<controls.buildAmount*1.2){
-				block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,0);
-			}
-		}
-		}
-		}
-	}
-	
-	//Sphere delete key
 	if(controls.keys['C']==1){
-		
-		for(var xx=-controls.deleteAmount ; xx<=controls.deleteAmount ; xx++){
-		for(var yy=-controls.deleteAmount ; yy<=controls.deleteAmount ; yy++){
-		for(var zz=-controls.deleteAmount ; zz<=controls.deleteAmount ; zz++){
-			var dist = distance_3d([controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz],controls.cursorPosition);
-			if(dist<controls.deleteAmount*1.2){
-				block_build(controls.cursorPosition[0]+xx,controls.cursorPosition[1]+yy,controls.cursorPosition[2]+zz,1);
-			}
-		}
-		}
+		var loopLen=controls.cursorList.length;
+		for(var k=0; k<loopLen; k++){
+			block_build(controls.cursorPosition[0]+controls.cursorList[k][0],controls.cursorPosition[1]+controls.cursorList[k][1],controls.cursorPosition[2]+controls.cursorList[k][2],1);
 		}
 	}
-	
+
 	
 }

@@ -29,23 +29,36 @@ var activeChunks=[];
 var blockSettings = {
 	chunk : {
 		space : 64,
-		XYZ : 16,
+		XYZ : 32,
 	},
 	
 	sector : {
 		space : 32,
-		XYZ : 6,
+		XYZ : 1,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 4,
-		Z : 4,
+		XY : 3,
+		Z : 3,
 	},
 	
+	//How far out multiplied by process Distance to less agressively process farther out chunks
+	processMultiplier : 3,
+	
+	
+	//Amount of chunks allowed to process in one frame
+	processLimit : 2,
 	
 }
 
+
+//Coordinates for where we are in our farther our processing 
+blockSettings.processCoords = [
+	-blockSettings.processDistance.XY * blockSettings.processMultiplier, //X
+	-blockSettings.processDistance.XY * blockSettings.processMultiplier, //Y
+	-blockSettings.processDistance.Z * blockSettings.processMultiplier,  //Z
+];
 // BLOCK FUNCTIONS
 
 
@@ -73,7 +86,7 @@ block_exists = function(x,y,z){
 
 //Snaps block from game position to grid position
 block_build = function(x,y,z,del){
-	
+
 	//Get chunk that this position resides in
 	var blockChunk = chunk_get_no_border(x,y,z);
 	
@@ -83,18 +96,38 @@ block_build = function(x,y,z,del){
 	z+=blockChunk[2]*2;
 	
 	//Get location within chunk 
+	
 	var blockLocation = [(Math.round(x)) - (blockChunk[0]*blockSettings.chunk.XYZ), (Math.round(y)) - (blockChunk[1]*blockSettings.chunk.XYZ),(Math.round(z)) - (blockChunk[2]*blockSettings.chunk.XYZ)];
 	
 	//Displace edges 
-	if(blockLocation[0]==0){
-		x-=2;
+	
+	switch(blockLocation[0]){
+		case 0:
+			x-=2;
+		break;
+		case blockSettings.chunk.XYZ-1:
+			x+=2;
+		break;
 	}
-	if(blockLocation[1]==0){
-		y-=2;
+	
+	switch(blockLocation[1]){
+		case 0:
+			y-=2;
+		break;
+		case blockSettings.chunk.XYZ-1:
+			y+=2;
+		break;
 	}
-	if(blockLocation[2]==0){
-		z-=2;
+	
+	switch(blockLocation[2]){
+		case 0:
+			z-=2;
+		break;
+		case blockSettings.chunk.XYZ-1:
+			z+=2;
+		break;
 	}
+
 	
 	//Send to block change function to preform actual build/delete 
 	block_change(x,y,z,del,0,controls.buildType);
@@ -103,6 +136,7 @@ block_build = function(x,y,z,del){
 
 //Finds chunk of block, and then adds to the desnity of the block within the chunk.
 block_change = function(x,y,z,del,amount,buildType){
+	
 	//get location of chunk from block XYZ
 	var chunkPosition = chunk_get(x,y,z);
 		
@@ -178,9 +212,9 @@ block_change = function(x,y,z,del,amount,buildType){
 	//Delete
 	case 1:
 		if(chunk[chunkID].blockArray[blockIndex]<0){
-			chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
+			chunk[chunkID].blockArray[blockIndex]+=controls.buildStrength/dist;
 		}else{
-			chunk[chunkID].blockArray[blockIndex]+=controls.deleteStrength/dist;
+			chunk[chunkID].blockArray[blockIndex]+=controls.buildStrength/dist;
 			chunk[chunkID].blockType[blockIndex]=0;
 		}
 	break;
@@ -207,7 +241,7 @@ block_change = function(x,y,z,del,amount,buildType){
 
 	
 	//Flag chunk to re-draw
-	chunk[chunkID].reDraw=1;
+	chunk[chunkID].flags.reDraw+=1;
 
 }
 
@@ -232,7 +266,78 @@ chunk_get_no_border =function(x,y,z){
 }
 
 
+//Draws a chunk using LOD or no LOD and flags correct sector to reDraw
+chunk_draw = function(chunkID){
+	chunk[chunkID].flags.reDraw=0;		
+	//Mesh the chunk 
+	//2.3 6.1
+	
+	//If the LOD is not set to 1x Detail
+	if(chunk[chunkID].LOD!=1){
+		//Get BlockData at LOD size
+		var blockData = [chunk[chunkID].blockArray,chunk[chunkID].blockType];
+		blockData = NearestFilter(blockData[0],blockData[1],[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],chunk[chunkID].LOD);
+		//Set magic LOD numbers
+		switch(chunk[chunkID].LOD){
+			case 2:
+				var lodScale = 2.2;
+			break;
+			case 4:
+				var lodScale = 4.4
+			break;
+		}
 
+		//Draw LOD chunk
+		var drawData = mesh_naive(blockData[0],blockData[1],blockData[2],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2)],lodScale);
+		}else{
+		//Draw regular chunk if no LOD
+		var drawData = mesh_naive(chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ-2)]);
+		}
+		
+		//Set values for chunk
+		chunk[chunkID].drawData.position = drawData[0];
+		chunk[chunkID].drawData.color = drawData[1];
+		chunk[chunkID].drawData.indice = drawData[2];
+		//Get sector chunk is in
+		var sectorPosition = sector_get(chunk[chunkID].coords[0],chunk[chunkID].coords[1],chunk[chunkID].coords[2]);
+		//Draw the sector now that it has new information
+		var sectorID=sector_returnID(sectorPosition[0],sectorPosition[1],sectorPosition[2]);
+		if(sector[sectorID]==null){
+			sector_create(sectorPosition[0],sectorPosition[1],sectorPosition[2]);
+		}
+		sector[sectorID].reDraw+=1;
+
+}
+
+chunk_set_LOD = function(chunkID){
+	
+	var dist = distance_3d(chunk[chunkID].coords,player.chunk);
+	//Detect LOD changes
+	if( dist > (blockSettings.processDistance.XY)){
+		//FAR LOD
+		if( dist >= (blockSettings.processDistance.XY*2-3)){
+			if(chunk[chunkID].LOD!=4){
+				chunk[chunkID].LOD=4;
+				chunk[chunkID].flags.reDraw+=1;
+			}	
+		//CLOSE LOD
+		}else{
+			if(chunk[chunkID].LOD!=2){
+				chunk[chunkID].LOD=2;
+				chunk[chunkID].flags.reDraw+=1;
+			}
+		}
+	}else{
+		//NO LOD
+		if(chunk[chunkID].LOD!=1){
+			chunk[chunkID].LOD=1;
+			chunk[chunkID].flags.reDraw+=1;
+		}
+	}
+		
+
+			
+}
 
 
 //Create chunk
@@ -265,7 +370,11 @@ chunk_create = function(x,y,z){
 			flags : {
 				reDraw : 0,
 				processing : 0,
-			}
+			},
+			//Scale of LOD 1,2,4
+			LOD : 1,
+			//Time of last LOD update
+			LODupdate : Date.now(),
 		}
 	
 	}
@@ -275,9 +384,13 @@ chunk_create = function(x,y,z){
 
 chunk_process = function() {
 	
+	
+	//Agressive nearby processing 
+	
 	//Create empty list of chunk ID's we are going to process.
 	var processList = [];
-	
+	//Amount of chunks we have processed
+	var procAmount =0;
 	//Loop through our process distance (Not the same as view distance, you might be able to see farther than you process (Just like IRL)).
 	//These will determine the offsets we add to our camera chunk to select a chunk to process nearby.
 	for(var xx=-blockSettings.processDistance.XY ;xx<=blockSettings.processDistance.XY;xx++){
@@ -288,8 +401,8 @@ chunk_process = function() {
 		var chunkID= chunk_returnID(player.chunk[0]+xx,player.chunk[1]+yy,player.chunk[2]+zz);
 		//If the chunk exists add it to our lists and add the distance to camera.
 		if(chunk[chunkID]!=null){
-			processList.push([chunkID,distance_3d(chunk[chunkID].coords,player.chunk)]);
-		}			
+			processList.push([chunkID,distance_3d(chunk[chunkID].coords,player.chunk)]);	
+		}
 	}}}
 	
 	//Sort the list of chunks by distance
@@ -298,25 +411,87 @@ chunk_process = function() {
 	});
 	
 	//Loop through the process list. 
-	for(var i=0;i<processList.length;i++){
+	
+	for(var k = 0 ; k<processList.length ; k++){
+		var chunkID = processList[k][0];
+		
+		if(chunk[chunkID].LOD!=1){
+			chunk[chunkID].LOD=1;
+			chunk[chunkID].flags.reDraw=1;
+			procAmount+=1;
+		}
 		
 		//If chunk is flagged to be re-drawn
-		if(chunk[processList[i][0]].reDraw>0){
+		if( chunk[chunkID].flags.reDraw>=1){
+				procAmount+=1;
+				chunk_draw(chunkID);
+		}
+		
+		//End loop if we have hit our processLimit
+		if(procAmount>=blockSettings.processLimit){
+			k = processList.length;
+		}
+	}
+	
+	
+	//Less aggressive 
+	
+	//Flag to keep the less aggressive far loop going 
+	var farLoop=1;
+	//Reset process amount to keep track of how many chunks far out we are processing 
+	procAmount = 0;
+	var checkLimit = 10;
+	while(farLoop==1){
+		checkLimit--;
+		//Get chunkID using camX+xOffset for each offset
+		var chunkID= chunk_returnID(player.chunk[0]+blockSettings.processCoords[0],player.chunk[1]+blockSettings.processCoords[1],player.chunk[2]+blockSettings.processCoords[2]);
+		//If the chunk exists add it to our lists and add the distance to camera.
+		if(chunk[chunkID]!=null){
+			chunk_set_LOD(chunkID);
+			if(chunk[chunkID].flags.reDraw>0){
+				chunk_draw(chunkID);
+				procAmount+=1;
+			}
+		}
+		
+		blockSettings.processCoords[0]+=1;
+		
+		//Check X
+		switch(blockSettings.processCoords[0]){
+			//Go to next number if we hit the limit
+			case blockSettings.processDistance.XY * blockSettings.processMultiplier:
+				blockSettings.processCoords[0] = -blockSettings.processDistance.XY * blockSettings.processMultiplier;
+				blockSettings.processCoords[1]+=1;
+			break;
+		}
+		//Check Y
+		switch(blockSettings.processCoords[1]){
+			//Go to next number if we hit the limit
+			case blockSettings.processDistance.XY * blockSettings.processMultiplier:
+				blockSettings.processCoords[1] = -blockSettings.processDistance.XY * blockSettings.processMultiplier;
+				blockSettings.processCoords[2]+=1;
+			break;
+		}
+		//Check Z
+		switch(blockSettings.processCoords[2]){
+			//End the loop and reset our number if we finish the loop
+			case blockSettings.processDistance.Z * blockSettings.processMultiplier:
+				blockSettings.processCoords[2] = -blockSettings.processDistance.Z * blockSettings.processMultiplier;
+				farLoop=0;
+			break;
+		}
+		
+		//End loop if we hit process limit or check limit
+		if(procAmount>=blockSettings.processLimit || checkLimit <=0){
+			farLoop=0;
+		}
 
-			chunk[processList[i][0]].reDraw=0;		
-			//Mesh the chunk 
-			var drawData = mesh_naive(chunk[processList[i][0]].blockArray,chunk[processList[i][0]].blockType,[chunk[processList[i][0]].coords[0]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[1]*(blockSettings.chunk.XYZ-2),chunk[processList[i][0]].coords[2]*(blockSettings.chunk.XYZ-2)]);
-			//Set values for chunk
-			chunk[processList[i][0]].drawData.position = drawData[0];
-			chunk[processList[i][0]].drawData.color = drawData[1];
-			chunk[processList[i][0]].drawData.indice = drawData[2];
-			//Get sector chunk is in
-			var sectorPosition = sector_get(chunk[processList[i][0]].coords[0],chunk[processList[i][0]].coords[1],chunk[processList[i][0]].coords[2]);
-			//Draw the sector now that it has new information
-			sector_draw(sectorPosition[0],sectorPosition[1],sectorPosition[2]);
-		}			
+	
+	
 	}
 }
+	
+
 
 //SECTOR FUNCTIONS
 
@@ -338,6 +513,8 @@ sector_create = function(x,y,z){
 	if(sector[sectorID]==null){
 		//Create new chunk
 		sector[sectorID]={
+			//reDraw flag
+			reDraw : 1,
 			//coordinates
 			coords : [x,y,z],
 			//Buffer data for draw calls, this is compiled from chunks in our space. 
@@ -382,16 +559,8 @@ var sectorBuffer = {
 }
 
 //Draws a sector, this is called everytime a chunk within the sector changes 
-sector_draw = function(x,y,z){
+sector_draw = function(sectorID){
 	
-	
-	//Get sectorID
-	sectorID = sector_returnID(x,y,z);
-	
-	//Create sector if it does not exist
-	if(sector[sectorID]==null){
-		sector_create(x,y,z);
-	}
 
 	//Keep strack of where we are inside of the pre-allocated buffers
 	var positionOffset=0;var colorOffset=0;var indiceOffset=0;
@@ -452,13 +621,13 @@ sector_draw = function(x,y,z){
 		gl.bindVertexArray(sector[sectorID].vao);
 		//Set data for indice
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.DYNAMIC_DRAW,0,indiceOffset);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.STATIC_DRAW,0,indiceOffset);
 		//position
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.DYNAMIC_DRAW,0,positionOffset);
+		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.STATIC_DRAW,0,positionOffset);
 		//color
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.DYNAMIC_DRAW,0,colorOffset);
+		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.STATIC_DRAW,0,colorOffset);
 		
 	}else{
 		//Set size of the sector to 0 

@@ -16,12 +16,12 @@ var renderSettings = {
 	orthographic : 0,
 	zoom : 75.0,
 	fov : 95,
-	resolution : 1,
-	lightIntensity : 0.01,
+	resolution : 0.75,
+	lightIntensity : 0.001,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
-		XY : 3,
-		Z  : 3,
+		XY : 16,
+		Z  : 10,
 	},
 }
 
@@ -65,6 +65,7 @@ canvas = document.getElementById("retroCanvas");
 const gl = canvas.getContext("webgl2",{
 	alpha: false,
 	antialias : false,
+	//premultipliedAlpha: false, 
 });
 canvas.style.imageRendering='pixelated';
 //Depth testing
@@ -72,8 +73,11 @@ gl.enable(gl.DEPTH_TEST);
 //Culling
 gl.enable(gl.CULL_FACE);
 gl.cullFace(gl.BACK);
+//Alpha blending
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 gl.lineWidth(15.0);
-gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,0.1);
+gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,1.0);
 
 //Load Texture
 
@@ -84,6 +88,9 @@ gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,0.1)
 
 function render(now){
 	
+	fps.drawLength=0;
+	
+	gl.disable(gl.BLEND);
 	keyboard_controls();
 	player_physics();
 	chunk_process();
@@ -136,7 +143,6 @@ function render(now){
 	
 	//Model Matrix
 	modelMatrix = glMatrix.mat4.create();
-
 	//Set program
 	gl.useProgram(programInfo.program);
 
@@ -148,8 +154,11 @@ function render(now){
 	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
 	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
+	gl.uniform1f(programInfo.uniformLocations.transparency,1);
 
 	//Loop through nearby sectors 
+	
+	var drawLimit=1;
 	
 	for(var xCheck=-renderSettings.viewDistance.XY;xCheck<=renderSettings.viewDistance.XY;xCheck++){
 	for(var yCheck=-renderSettings.viewDistance.XY;yCheck<=renderSettings.viewDistance.XY;yCheck++){
@@ -159,30 +168,50 @@ function render(now){
 		var sectorCoords =[ player.sector[0]+xCheck, player.sector[1]+yCheck,player.sector[2]+zCheck];
 		//Return ID for the sector
 		var sectorID = sector_returnID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
-		//If the sector exists
-		if(sector[sectorID]!=null && sector[sectorID].buffers.size>0){
-			
-			//drawLength+=sector[sectorID].buffers.size;
-			//Bind VAO
-			gl.bindVertexArray(sector[sectorID].vao);
 
-			//Draw the triangles 
-			if(renderSettings.wireframe==0){		
-				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
-			//Draw wireframe
-			}else{
-				gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
-			}	
-		
+		//If the sector exists
+		if(sector[sectorID]!=null){
+				
+			//Check if sector needs reDraw
+			if(sector[sectorID].reDraw>0 && drawLimit>0){
+				sector_draw(sectorID);
+				drawLimit--;
+			}
+			
+			if(sector[sectorID].buffers.size>0){
+					
+				//drawLength+=sector[sectorID].buffers.size;
+				//Bind VAO
+				gl.bindVertexArray(sector[sectorID].vao);
+				fps.drawLength+=sector[sectorID].buffers.size;
+				//Draw the triangles 
+				if(renderSettings.wireframe==0){		
+			
+					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+				//Draw wireframe
+				}else{
+					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+				}	
+			}
 		}
 
 	}
 	}
 	}
-	//gl.depthFunc(gl.LESS);
-	//Draw cursor
-	gl.bindVertexArray(blockBuildVao);
-	gl.drawElements(gl.LINES, 35,gl.UNSIGNED_SHORT,0);	
+	
+	//If there is a cursor to be drawn
+	if(controls.cursorDraw.size!=0){
+		gl.enable(gl.BLEND);
+		//Displace cursor 
+		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
+		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
+		gl.uniform1f(programInfo.uniformLocations.transparency,controls.buildStrength*10);
+		//Draw cursor
+		gl.bindVertexArray(controls.cursorDraw.vao);
+		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+		gl.disable(gl.BLEND);
+		gl.drawElements(gl.LINES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+	}
 	
 	//Create animation of render function
 	requestAnimationFrame(render);

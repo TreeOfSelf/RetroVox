@@ -61,9 +61,13 @@ uniform mat4 uModelMatrix;
 uniform int uOrtho;
 //Light amount
 uniform float uLight;
+//Transparency 
+uniform float uTransparency;
 
 out lowp vec4 vPixelColor;
 out lowp float vColor;
+out lowp float vTransparency;
+
 void main() {
 
 	gl_PointSize = 35.0;
@@ -85,7 +89,7 @@ void main() {
 
 	//Set color 0-1 based on 255 values
 	vPixelColor = vec4(aColor[0]/255.0,aColor[1]/255.0,aColor[2]/255.0,1.0);
-
+	vTransparency = uTransparency;
 }
 `;
 
@@ -93,12 +97,14 @@ void main() {
 const fsSource = `#version 300 es
 in lowp vec4 vPixelColor;
 in lowp float vColor;
+in lowp float vTransparency;
 
 out lowp vec4 fragColor;
 
 void main() {
 	//Mix color with shading
 	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
+	fragColor.a = vTransparency;
 }
 `;
 
@@ -127,6 +133,8 @@ const programInfo = {
 		ortho : gl.getUniformLocation(shaderProgram,'uOrtho'),
 		//Light 
 		light : gl.getUniformLocation(shaderProgram,'uLight'),
+		//Transparency 
+		transparency : gl.getUniformLocation(shaderProgram, 'uTransparency'),
 
 	},
 };

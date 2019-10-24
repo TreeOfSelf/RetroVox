@@ -36,6 +36,9 @@ self.addEventListener('message', function(e) {
 //Takes a type and returns a color
 color_return = function(type){
 	switch(type){
+		default:
+			return([0,0,0]);
+		break;
 		//Grass
 		case 1:
 			return([0,102,0]);
@@ -79,9 +82,9 @@ color_return = function(type){
 	}
 }
 
-
 var mesh_naive = (function() {
-	
+"use strict";
+
 //Precompute edge table, like Paul Bourke does.
 // This saves a bit of time when computing the centroid of each boundary cell
 var cube_edges = new Int32Array(24)
@@ -118,15 +121,14 @@ var cube_edges = new Int32Array(24)
 //Internal buffer, this may get resized at run time
 var buffer = new Int32Array(4096);
 
-return function(data, dataType ,chunkPos) {
-  var dims=[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ];
+return function(data,dataType, dims,chunkPos,lod=1) {
   var vertices = []
     , faces = []
 	, finalVert = []
 	, finalColor = []
     , n = 0
     , x = new Int32Array(3)
-    , R = new Int32Array([1, (dims[0]+1), (dims[0]+1)*(dims[1]+1)])
+    , R = new Int32Array([1, (dims[0]+1), (dims[0]+1)*(dims[0]+1)])
     , grid = new Float32Array(8)
     , buf_no = 1;
    
@@ -142,10 +144,10 @@ return function(data, dataType ,chunkPos) {
     //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
     //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
     var m = 1 + (dims[0]+1) * (1 + buf_no * (dims[1]+1));
- 	var colorSave=0;   
+    var colorSave=0;
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
-
+    
       //Read in 8 field values around this vertex and store them in an array
       //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
       var mask = 0, g = 0, idx = n;
@@ -204,23 +206,23 @@ return function(data, dataType ,chunkPos) {
           }
         }
       }
-	  
       
       //Now we just average the edge intersections and add them to coordinate
       var s = 1.0 / e_count;
       for(var i=0; i<3; ++i) {
         v[i] = x[i] + s * v[i];
       }
-
+      
       //Add vertex to buffer, store pointer to vertex index in buffer
       buffer[m] = vertices.length;
-      vertices.push(v);
-	  finalVert.push(v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]);
+	  vertices.push(v);
+	  finalVert.push((v[0]+chunkPos[0])*lod,(v[1]+chunkPos[1])*lod,(v[2]+chunkPos[2])*lod);
 	  //finalColor.push(v[0]*255,v[1]*255,v[2]*255);
 	  var color = color_return(colorSave);
 	  //finalColor.push(color[0]+Math.abs(Math.sin(v[0]+v[1]))*20,color[1]+Math.abs(Math.sin(v[1]+v[2]))*20,color[2]+Math.abs(Math.sin(v[2]+v[0]))*20);
 	  finalColor.push(Math.min(Math.max(color[0]+Math.abs(Math.sin(v[0]+v[1]+chunkPos[0]+chunkPos[1]))*20,0),255),Math.min(Math.max(color[1]+Math.abs(Math.sin(v[1]+v[2]+chunkPos[1]+chunkPos[2]))*20,0),255),Math.min(Math.max(color[2]+Math.abs(Math.sin(v[2]+v[0]+chunkPos[2]+chunkPos[0]))*20,0),255));
-	  //Now we need to add faces together, to do this we just loop over 3 basis components
+      
+      //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
         //The first three entries of the edge_mask count the crossings along the edge
         if(!(edge_mask & (1<<i)) ) {
@@ -256,11 +258,102 @@ return function(data, dataType ,chunkPos) {
       }
     }
   }
-	
   //All done!  Return the result
   return [(new Float32Array(finalVert)), (new Uint8Array(finalColor)), (new Uint32Array(faces))];
 };
 })();
+
+
+
+function NearestFilter(volume, type, dims,lod) {
+  "use strict";
+  
+  
+  var ndims = new Int32Array(3);
+  for(var i=0; i<3; ++i) {
+    ndims[i] = Math.floor(dims[i]/lod);
+  }
+  
+  var nvolume = new Float32Array(ndims[0] * ndims[1] * ndims[2]).fill(0.1)
+  var nType = new Uint8Array(ndims[0] * ndims[1] * ndims[2]).fill(0);
+  var n = 0; 
+  var l=0;
+  for(var k=0; k<ndims[2]; ++k)
+  for(var j=0; j<ndims[1]; ++j)
+  for(var i=0; i<ndims[0]; ++i) {
+    if(lod*i < dims[0] && lod*j < dims[1] && lod*k < dims[2]) {
+
+		if(k == 0 || k==ndims[2]-1 || j == 0 || j==ndims[1]-1 || i==0 || i==ndims[0]-1){
+			nvolume[n++]=0.1;
+		}else{
+		nvolume[n++] = volume[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))]*20;
+		}
+	  nType[l++] = type[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))]
+    } else {
+      nvolume[n++] = 0.1;
+	  nType[l++] = 1.0;
+    }
+  }
+  
+  return [nvolume,nType ,ndims];
+}
+
+
+function MedianFilter(volume,type, dims,lod) {
+  "use strict";
+  
+  var ndims = new Int32Array(3);
+  for(var i=0; i<3; ++i) {
+    ndims[i] = Math.floor(dims[i] / 2);
+  }
+  var ntype = new Uint8Array(ndims[0] * ndims[1] * ndims[2]);
+  var l = 0;
+  var nvolume = new Float32Array(ndims[0] * ndims[1] * ndims[2])
+    , n = 0
+    , ranks = new Array(27);
+  for(var k=0; k<ndims[2]; ++k)
+  for(var j=0; j<ndims[1]; ++j)
+  for(var i=0; i<ndims[0]; ++i) {
+    var idx = 0;
+    for(var dz=-1; dz<2; ++dz) {
+      var iz = 2*(k)+dz;
+      if(iz < 0) {
+        iz = -iz;
+      }
+      if(iz >= dims[2]) {
+        iz = 2*dims[2]-2-iz;
+      }
+      
+      for(var dy=-1; dy<2; ++dy) {
+        var iy = 2*(j)+dy;
+        if(iy < 0) {
+          iy = -iy;
+        }
+        if(iy >= dims[1]) {
+          iy = 2*dims[1]-2-iy;
+        }
+        
+        for(var dx=-1; dx<2; ++dx) {
+          var ix = 2*(i)+dx;
+          if(ix < 0) {
+            ix = -ix;
+          }
+          if(ix >= dims[0]) {
+            ix = 2*dims[0]-2-ix;
+          }
+          ranks[idx++] = volume[ix+dims[0]*(iy+dims[1]*(iz))];
+        }
+      }
+    }
+    var ranked = ranks.sort(function(a,b){ return b < a ? -1 : b>a ? 1 : 0; });
+    nvolume[n++] = 0.5 * (ranked[Math.floor(idx/2)] + ranked[Math.floor(idx/2)+1]);
+	ntype=1;
+  }
+  
+  return ([nvolume,ntype,ndims]);
+}
+
+
 
 
 // The MIT License (MIT)
