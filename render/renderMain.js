@@ -20,8 +20,8 @@ var renderSettings = {
 	lightIntensity : 0.001,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
-		XY : 16,
-		Z  : 10,
+		XY : 4,
+		Z  : 4,
 	},
 }
 
@@ -158,9 +158,8 @@ function render(now){
 
 	//Loop through nearby sectors 
 	
-	var drawLimit=1;
 	
-	for(var xCheck=-renderSettings.viewDistance.XY;xCheck<=renderSettings.viewDistance.XY;xCheck++){
+	/*for(var xCheck=-renderSettings.viewDistance.XY;xCheck<=renderSettings.viewDistance.XY;xCheck++){
 	for(var yCheck=-renderSettings.viewDistance.XY;yCheck<=renderSettings.viewDistance.XY;yCheck++){
 	for(var zCheck=-renderSettings.viewDistance.Z;zCheck<=renderSettings.viewDistance.Z;zCheck++){
 
@@ -173,9 +172,13 @@ function render(now){
 		if(sector[sectorID]!=null){
 				
 			//Check if sector needs reDraw
-			if(sector[sectorID].reDraw>0 && drawLimit>0){
-				sector_draw(sectorID);
-				drawLimit--;
+			if(sector[sectorID].reDraw>0){
+				var dist = distance_3d(player.sector,sectorCoords);
+				sector[sectorID].reDraw+= 1/dist;
+				
+				if(sector[sectorID].reDraw>=1){
+					sector_draw(sectorID);
+				}
 			}
 			
 			if(sector[sectorID].buffers.size>0){
@@ -197,6 +200,33 @@ function render(now){
 
 	}
 	}
+	}*/
+	
+	for(var k=0; k<activeSectors.length;k++){
+		if(sector[activeSectors[k]].reDraw>0){
+			var dist = distance_3d(player.sector,sector[activeSectors[k]].coords);
+			sector[activeSectors[k]].reDraw+= 1/dist;
+			
+			if(sector[activeSectors[k]].reDraw>=1){
+				sector_draw(activeSectors[k]);
+			}
+		}
+		
+		if(sector[activeSectors[k]].buffers.size>0){
+				
+			//drawLength+=sector[sectorID].buffers.size;
+			//Bind VAO
+			gl.bindVertexArray(sector[activeSectors[k]].vao);
+			fps.drawLength+=sector[activeSectors[k]].buffers.size;
+			//Draw the triangles 
+			if(renderSettings.wireframe==0){		
+		
+				gl.drawElements(gl.TRIANGLES, sector[activeSectors[k]].buffers.size,gl.UNSIGNED_INT,0);
+			//Draw wireframe
+			}else{
+				gl.drawElements(gl.LINES, sector[activeSectors[k]].buffers.size,gl.UNSIGNED_INT,0);					
+			}	
+		}	
 	}
 	
 	//If there is a cursor to be drawn
@@ -205,7 +235,7 @@ function render(now){
 		//Displace cursor 
 		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
 		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
-		gl.uniform1f(programInfo.uniformLocations.transparency,controls.buildStrength*10);
+		gl.uniform1f(programInfo.uniformLocations.transparency,controls.buildStrength/30);
 		//Draw cursor
 		gl.bindVertexArray(controls.cursorDraw.vao);
 		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	

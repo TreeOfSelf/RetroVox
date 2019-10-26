@@ -122,14 +122,14 @@ keyboard_controls = function(){
 	
 	
 	if(controls.keys['-'] || controls.keys['_']){
-		if(controls.buildStrength>0.002){
-			controls.buildStrength-=0.002;
+		if(controls.buildStrength>2){
+			controls.buildStrength-=1;
 		}
 	}
 	
 	if(controls.keys['='] || controls.keys['+']){
-		if(controls.buildStrength<0.07){
-			controls.buildStrength+=0.002;
+		if(controls.buildStrength<20){
+			controls.buildStrength+=1;
 		}
 	}
 	

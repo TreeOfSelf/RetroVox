@@ -73,8 +73,7 @@ var sector=new Map();
 
 //list of active chunks.
 var activeChunks=[];
-//list of active sectors
-var activeSectors=[];
+
 
 //The space variables define the limit of how far out they can go, and is used to determine a chunk/sector's 1D index. 
 //The XYZ variable determines the size cubed it contains.
@@ -97,7 +96,7 @@ var blockSettings = {
 	
 	sector : {
 		space : 32,
-		XYZ : 5,
+		XYZ : 1,
 	},
 	
 	//Determines how far out to process chunks
@@ -163,17 +162,15 @@ block_build = function(x,y,z,del){
 	var blockLocation = [(Math.round(x)) - (blockChunk[0]*blockSettings.chunk.XYZ), (Math.round(y)) - (blockChunk[1]*blockSettings.chunk.XYZ),(Math.round(z)) - (blockChunk[2]*blockSettings.chunk.XYZ)];
 	
 	//Displace edges 
-	
-	
-	
+
 	if(blockLocation[0]==0){
 		x-=2;
 	}
 	if(blockLocation[1]==0){
-		y-=2;
+		y-=1;
 	}
 	if(blockLocation[2]==0){
-		z-=2;
+		z-=1;
 	}
 
 	
@@ -574,7 +571,6 @@ sector_create = function(x,y,z){
 	var sectorID = sector_returnID(x,y,z);
 	//If sector hasn't been created
 	if(sector[sectorID]==null){
-		activeSectors.push(sectorID);
 		//Create new chunk
 		sector[sectorID]={
 			//reDraw flag
@@ -601,16 +597,16 @@ sector_create = function(x,y,z){
 		gl.bindVertexArray(sector[sectorID].vao);
 		
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,9999999,gl.DYNAMIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
 		gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
-		gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,9999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
 		gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
-		gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,9999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.color);
 	}
 }
@@ -630,8 +626,7 @@ var sectorBuffer = {
 
 //Draws a sector, this is called everytime a chunk within the sector changes 
 sector_draw = function(sectorID){
-		var time = Date.now();
-		var smallTime=0;
+
 	//Keep strack of where we are inside of the pre-allocated buffers
 	var positionOffset=0;var colorOffset=0;var indiceOffset=0;
 	
@@ -684,8 +679,7 @@ sector_draw = function(sectorID){
 	}}}
 	
 	if(indiceOffset!=0){
-		
-		var timer= Date.now();
+
 	
 		//Set size of the sector to how many verticies 
 		sector[sectorID].buffers.size=indiceOffset;
@@ -693,28 +687,22 @@ sector_draw = function(sectorID){
 		gl.bindVertexArray(sector[sectorID].vao);
 		//Set data for indice
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.STATIC_DRAW,0,indiceOffset);
-		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,sectorBuffer.indice,0,indiceOffset);
+		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.STATIC_DRAW,0,indiceOffset);
+		gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,sectorBuffer.indice,0,indiceOffset);
 		//position
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.STATIC_DRAW,0,positionOffset);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.position,0,positionOffset);
+		//gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.STATIC_DRAW,0,positionOffset);
+		gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.position,0,positionOffset);
 		//color
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.STATIC_DRAW,0,colorOffset);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.color,0,colorOffset);		
-		smallTime = Date.now()-timer;
+		//gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.STATIC_DRAW,0,colorOffset);
+		gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.color,0,colorOffset);		
+		
 	}else{
 		//Set size of the sector to 0 
 		sector[sectorID].buffers.size=0;
 	}
 	//Remove flag for sector to be redrawn.
-
-	var result = Date.now()-time;
-	if(result>7){
-		console.log(result,smallTime);
-	}
-	
 	sector[sectorID].reDraw=0;
 	
 	

@@ -24,13 +24,13 @@ var controls = {
 	//Size of build cursor
 	buildAmount : 6,
 	//Strength of build cursor
-	buildStrength : 0.005,
+	buildStrength : 2,
 	//Type of material we are building
 	buildType : 1,
 	//Current cursor shape
 	cursorShape : 0,
 	//Chunk data for cursor
-	cursorChunkData : new Float32Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0.1), 
+	cursorChunkData : new Int16Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(64), 
 	//Type data for cursor (filled so that it actually meshes correctly)
 	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(1), 
 	//List of coordinates to create blocks from using the cursor build/delete

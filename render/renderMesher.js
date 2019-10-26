@@ -12,21 +12,17 @@ self.addEventListener('message', function(e) {
 	switch(message.id){
 		
 		//Receive chunk information 
-		case "start":
-			blockSettings.chunk.XYZ = message.blockSettings.chunk.XYZ;
-		break;
+
 		
 		
-		case "chunkMesh": 
-		var result = SurfaceNets(new Float32Array(message.blockList),message.chunkPos);
+		case "mesh": 
+		var result = mesh_naive(message.data,message.dataType, message.dims,message.chunkPos,message.LOD);
 			
 			self.postMessage({
-				id : "finishMesh",
+				id : "mesh",
 				chunkID : message.chunkID,
-							//Position   color        indice 
 				result : [result[0],result[1],result[2]],
-				arrayBuffer : message.blockList,
-			},[message.blockList,result[0],result[1],result[2]]);
+			},[result[0],result[1],result[2]]);
 		
 		break;
 		
@@ -154,7 +150,7 @@ return function(data,dataType, dims,chunkPos,lod=1) {
       for(var k=0; k<2; ++k, idx += dims[0]*(dims[1]-2))
       for(var j=0; j<2; ++j, idx += dims[0]-2)      
       for(var i=0; i<2; ++i, ++g, ++idx) {
-        var p = data[idx];
+        var p = data[idx]*0.01;
 		if(dataType[idx]!=0){
 			colorSave = dataType[idx];
 		}
@@ -258,8 +254,11 @@ return function(data,dataType, dims,chunkPos,lod=1) {
       }
     }
   }
+  
+
   //All done!  Return the result
-  return [(new Float32Array(finalVert)), (new Uint8Array(finalColor)), (new Uint32Array(faces))];
+  return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
+
 };
 })();
 
@@ -274,7 +273,7 @@ function NearestFilter(volume, type, dims,lod) {
     ndims[i] = Math.floor(dims[i]/lod);
   }
   
-  var nvolume = new Float32Array(ndims[0] * ndims[1] * ndims[2]).fill(0.1)
+  var nvolume = new Int8Array(ndims[0] * ndims[1] * ndims[2]).fill(64)
   var nType = new Uint8Array(ndims[0] * ndims[1] * ndims[2]).fill(0);
   var n = 0; 
   var l=0;
@@ -284,14 +283,14 @@ function NearestFilter(volume, type, dims,lod) {
     if(lod*i < dims[0] && lod*j < dims[1] && lod*k < dims[2]) {
 
 		if(k == 0 || k==ndims[2]-1 || j == 0 || j==ndims[1]-1 || i==0 || i==ndims[0]-1){
-			nvolume[n++]=0.1;
+			nvolume[n++]=64;
 		}else{
-		nvolume[n++] = volume[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))]*20;
+		nvolume[n++] = volume[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))];
 		}
 	  nType[l++] = type[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))]
     } else {
-      nvolume[n++] = 0.1;
-	  nType[l++] = 1.0;
+      nvolume[n++] = 64;
+	  nType[l++] = 0;
     }
   }
   

@@ -72,11 +72,11 @@ block_change_cursor = function(x,y,z,del){
 	//Build
 	case 0:
 		//Set density of block
-		controls.cursorChunkData[blockIndex]=-5
+		controls.cursorChunkData[blockIndex]=-127
 	break;
 	//Delete
 	case 1:
-		controls.cursorChunkData[blockIndex]=0.1;
+		controls.cursorChunkData[blockIndex]=127;
 	break;
 	}
 }
@@ -89,28 +89,13 @@ function cursor_draw(){
 		//Get cursor mesh data
 		
 		if(controls.cursorList.length>0){
-			var drawData = mesh_naive(controls.cursorChunkData,controls.cursorChunkType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[0,0,0]);
-			
-			
-			//Set size of the sector to how many verticies 
-			controls.cursorDraw.size=drawData[2].length;
-			//Bind this sector VAO
-			gl.bindVertexArray(controls.cursorDraw.vao);
-			//Set data for indice
-			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, controls.cursorDraw.buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,drawData[2],gl.STATIC_DRAW);
-			//position
-			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,drawData[0],gl.STATIC_DRAW);
-			//color
-			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,drawData[1],gl.STATIC_DRAW);
+			 mesh_naive('cursor',controls.cursorChunkData,controls.cursorChunkType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[0,0,0],1);
 		}
 }
 
 function cursor_set_shape(){
 		//Clear cursor chunk array and clear cursot list to populate with new values
-		controls.cursorChunkData = new Float32Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0.1);
+		controls.cursorChunkData = new Int8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(64);
 		controls.cursorList = [];
 		switch(controls.cursorShape){
 			//None
