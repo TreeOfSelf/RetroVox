@@ -6,25 +6,66 @@ It takes a blockArray and returns the verticie information that draws the triang
 */
 
 
+//Container for all of our chunk data
+var chunk = [];
+
+
 //Messaging from main thread
 self.addEventListener('message', function(e) {
 	var message = e.data;
 	switch(message.id){
 		
-		//Receive chunk information 
-
+		case "start":
+			blockSettings = {
+				chunk : {
+					
+				},
+				sector : {
+					
+				},
+			}
+			blockSettings.chunk.space = message.chunkSpace;
+			blockSettings.sector.XYZ = message.sectorXYZ;
+		break;
 		
-		
+		//Sets the mesh for a specified chunk
 		case "mesh": 
-		var result = mesh_naive(message.data,message.dataType, message.dims,message.chunkPos,message.LOD);
+		var result = mesh_naive(message.data,message.dataType, message.dims,message.chunkPos,message.LOD,message.chunkID);
 			
-			self.postMessage({
-				id : "mesh",
-				chunkID : message.chunkID,
-				result : [result[0],result[1],result[2]],
-			},[result[0],result[1],result[2]]);
+			if(message.chunkID!='cursor'){
+				
+				self.postMessage({
+					id : "mesh",
+					chunkID : message.chunkID,
+				});
+			
+			}else{
+				self.postMessage({
+					id : "mesh",
+					chunkID : message.chunkID,
+					result : result,
+				},[result[0],result[1],result[2]]);
+						
+			}
 		
 		break;
+		
+		case "sector":
+		
+		var result = sector_draw(message.sectorPos,message.XYZ);
+		
+			self.postMessage({
+				id : 'sector',
+				sectorID : message.sectorID,
+				size : result[0],
+				indice : result[1],
+				position : result[2],
+				color : result[3],
+			},[result[1],result[2],result[3]]);
+		
+		
+		break;
+		
 		
 	}
 });
@@ -117,7 +158,7 @@ var cube_edges = new Int32Array(24)
 //Internal buffer, this may get resized at run time
 var buffer = new Int32Array(4096);
 
-return function(data,dataType, dims,chunkPos,lod=1) {
+return function(data,dataType, dims,chunkPos,lod,chunkID) {
   var vertices = []
     , faces = []
 	, finalVert = []
@@ -254,10 +295,21 @@ return function(data,dataType, dims,chunkPos,lod=1) {
       }
     }
   }
-  
-
+	//Set draw data to the specified chunk
+	
+	if(chunkID!='cursor'){
+		chunk[chunkID] = {
+			drawData : {
+				position : new Float32Array(finalVert),
+				color : new Uint8Array(finalColor),
+				indice : new Uint32Array(faces),
+				
+			},
+		}
+	}else{
+		return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
+	}
   //All done!  Return the result
-  return [(new Float32Array(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
 
 };
 })();
@@ -352,6 +404,79 @@ function MedianFilter(volume,type, dims,lod) {
   return ([nvolume,ntype,ndims]);
 }
 
+/*
+We can pre-allocate arrays for the sector drawing. The idea behind this is: instead of creting a big new Float32Array to upload
+to the GPU every time we update a sector, we can simply just pre-allocate one big array in advance and re-use it every time
+we need to draw a sector.
+*/
+
+var sectorBuffer = {
+	position : new Float32Array(9999999),
+	color : new Uint8Array(9999999),
+	indice : new Uint32Array(9999999),
+}
+
+//Returns chunkID from chunk XYZ
+chunk_returnID = function(x,y,z){
+	return(x+blockSettings.chunk.space*(y+blockSettings.chunk.space*z));
+}
+
+sector_draw = function(sectorPos,XYZ){
+	//Keep strack of where we are inside of the pre-allocated buffers
+	var positionOffset=0;var colorOffset=0;var indiceOffset=0;
+	
+	//Loop through chunks in our sector space
+	for(xx=0;xx<blockSettings.sector.XYZ;xx++){
+	for(yy=0;yy<blockSettings.sector.XYZ;yy++){
+	for(zz=0;zz<blockSettings.sector.XYZ;zz++){
+		
+		//Get position of chunk we have located using this formula
+		// [X offset + (sectorX*sectorXYZ)]
+		//For each axis 
+		var pos = [xx+sectorPos[0]*blockSettings.sector.XYZ,
+		yy+sectorPos[1]*blockSettings.sector.XYZ,
+		zz+sectorPos[2]*blockSettings.sector.XYZ];
+		
+		//Get ID from chunk XYZ position
+		var chunkID = chunk_returnID(pos[0],pos[1],pos[2]);
+		
+		//Make sure the chunk exists and has draw data
+		if(chunk[chunkID]!=null && chunk[chunkID].drawData.indice.length>12){
+				//Get index we are at in the position buffer.
+				//The reason we need this, is because everytime we add a new chunk we have to offset all of it's indices to 
+				//Make up for the chunks already added in. 
+				var positionBefore = positionOffset;
+			
+				//Add chunk draw information, and then add to the offset .
+				sectorBuffer.position.set(chunk[chunkID].drawData.position,positionOffset);
+				positionOffset+=chunk[chunkID].drawData.position.length;
+				//colors
+				sectorBuffer.color.set(chunk[chunkID].drawData.color,colorOffset);
+				colorOffset+=chunk[chunkID].drawData.color.length;	
+				
+				//Find out where we are starting inside of the indice, so that we know which indice's need to be offset.
+				var indiceBefore = indiceOffset;
+				//indice
+				sectorBuffer.indice.set(chunk[chunkID].drawData.indice,indiceOffset);
+				indiceOffset+=chunk[chunkID].drawData.indice.length;	
+				//If this is not the first chunk being added to the sector
+				if(indiceBefore!=0){
+					//Get amount we need to add indices
+					var addAmount = Math.round(positionBefore/3);
+					//Go through each indice we just added
+					for(i=indiceBefore;i<=indiceOffset;i++){
+						//Add in an offset to each offset to make up for the chunks already added.
+						sectorBuffer.indice[i]+=addAmount;
+					}
+				}
+				
+		}
+	}}}
+
+	
+	return([indiceOffset,sectorBuffer.indice.slice(0,indiceOffset).buffer,sectorBuffer.position.slice(0,positionOffset).buffer,sectorBuffer.color.slice(0,colorOffset).buffer]);
+	
+}
 
 
 

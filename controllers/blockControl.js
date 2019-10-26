@@ -19,10 +19,6 @@ meshWorker.worker.addEventListener('message', function(e) {
 		case "mesh": 
 		meshWorker.busy=0;
 		if(message.chunkID!='cursor'){
-			//Set values for chunk
-			chunk[message.chunkID].drawData.position = new Float32Array(message.result[0]);
-			chunk[message.chunkID].drawData.color = new Uint8Array(message.result[1]);
-			chunk[message.chunkID].drawData.indice = new Uint32Array(message.result[2]);
 			//Get sector chunk is in
 			var sectorPosition = sector_get(chunk[message.chunkID].coords[0],chunk[message.chunkID].coords[1],chunk[message.chunkID].coords[2]);
 			//Draw the sector now that it has new information
@@ -31,7 +27,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 			if(sector[sectorID]==null){
 				sector_create(sectorPosition[0],sectorPosition[1],sectorPosition[2]);
 			}
-			sector[sectorID].reDraw+=1;	
+			sector[sectorID].reDraw=1;	
 			
 		}else{
 			//Set size of the sector to how many verticies 
@@ -41,18 +37,46 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bindVertexArray(controls.cursorDraw.vao);
 			//Set data for indice
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, controls.cursorDraw.buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.STATIC_DRAW);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.STATIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.DYNAMIC_DRAW);
 			//colorsss
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.STATIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
 		}
+		break;
+		
+		case 'sector':
+		meshWorker.busy=0;
+		
+		message.indice =new Uint32Array(message.indice);
+		message.position = new Float32Array(message.position);
+		message.color = new Uint8Array(message.color);
+		//Set size of the sector to how many verticies 
+		sector[message.sectorID].buffers.size=message.size;
+		//Bind this sector VAO
+		gl.bindVertexArray(sector[message.sectorID].vao);
+		//Set data for indice
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
+		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,sectorBuffer.indice,0,indiceOffset);
+		//position
+		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
+		gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
+		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.position,0,positionOffset);
+		//color
+		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
+		gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
+		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.color,0,colorOffset);		
+		
+		
+		
 		break;
 		
 	}
 });
+
 
 mesh_naive = function(chunkID,chunkData,chunkType,chunkDim,chunkPos,Lod){
 	meshWorker.busy=1;
@@ -114,6 +138,12 @@ var blockSettings = {
 	processLimit : 2,
 	
 }
+
+meshWorker.worker.postMessage({
+	id : 'start',
+	chunkSpace : blockSettings.chunk.space,
+	sectorXYZ : blockSettings.sector.XYZ,
+});
 
 
 //Coordinates for where we are in our farther our processing 
@@ -312,7 +342,7 @@ block_change = function(x,y,z,del,amount,buildType){
 
 	
 	//Flag chunk to re-draw
-	chunk[chunkID].flags.reDraw+=1;
+	chunk[chunkID].flags.reDraw=1;
 
 }
 
@@ -341,66 +371,17 @@ chunk_get_no_border =function(x,y,z){
 //Draws a chunk using LOD or no LOD and flags correct sector to reDraw
 chunk_draw = function(chunkID){
 
-	//Mesh the chunk 
-	//2.3 6.1
-	
-	//If the LOD is not set to 1x Detail
-	if(chunk[chunkID].LOD!=1){
-		//Get BlockData at LOD size
-		var blockData = [chunk[chunkID].blockArray,chunk[chunkID].blockType];
-		blockData = NearestFilter(blockData[0],blockData[1],[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],chunk[chunkID].LOD);
-		//Set magic LOD numbers
-		switch(chunk[chunkID].LOD){
-			case 2:
-				var lodScale = 2.2;
-			break;
-			case 4:
-				var lodScale = 4.4
-			break;
-		}
 
-		//Draw LOD chunk
-		//var drawData = mesh_naive(blockData[0],blockData[1],blockData[2],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ/chunk[chunkID].LOD-2)],lodScale);
-		}else{
-			//Draw regular chunk if no LOD
-			if(meshWorker.busy==0){
-				chunk[chunkID].flags.reDraw=0;		
-				mesh_naive(chunkID,chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ-2)],1);
-			}
-		}
-		
-
-}
-
-chunk_set_LOD = function(chunkID){
-	
-	var dist = distance_3d(chunk[chunkID].coords,player.chunk);
-	//Detect LOD changes
-	if( dist > (blockSettings.processDistance.XY)){
-		//FAR LOD
-		if( dist >= (blockSettings.processDistance.XY*2-3)){
-			if(chunk[chunkID].LOD!=4){
-				chunk[chunkID].LOD=4;
-				chunk[chunkID].flags.reDraw+=1;
-			}	
-		//CLOSE LOD
-		}else{
-			if(chunk[chunkID].LOD!=2){
-				chunk[chunkID].LOD=2;
-				chunk[chunkID].flags.reDraw+=1;
-			}
-		}
-	}else{
-		//NO LOD
-		if(chunk[chunkID].LOD!=1){
-			chunk[chunkID].LOD=1;
-			chunk[chunkID].flags.reDraw+=1;
-		}
+	//Draw regular chunk if no LOD
+	if(meshWorker.busy==0){
+		chunk[chunkID].flags.reDraw=0;		
+		mesh_naive(chunkID,chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ-2)],1);
 	}
 		
+		
 
-			
 }
+
 
 
 //Create chunk
@@ -476,17 +457,15 @@ chunk_process = function() {
 	
 	for(var k = 0 ; k<processList.length ; k++){
 		var chunkID = processList[k][0];
-		
-		/*if(chunk[chunkID].LOD!=1){
-			chunk[chunkID].LOD=1;
-			chunk[chunkID].flags.reDraw=1;
-			procAmount+=1;
-		}*/
-		
+
 		//If chunk is flagged to be re-drawn
 		if( chunk[chunkID].flags.reDraw>=1){
+			if(chunk[chunkID].flags.reDraw>=20){
 				procAmount+=1;
 				chunk_draw(chunkID);
+			}else{
+				chunk[chunkID].flags.reDraw+=1;
+			}
 		}
 		
 		//End loop if we have hit our processLimit
@@ -600,17 +579,17 @@ sector_create = function(x,y,z){
 		//Set up vertex array object with our buffers
 		gl.bindVertexArray(sector[sectorID].vao);
 		
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
+		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
 		gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
-		gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
 		gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
-		gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.color);
 	}
 }
@@ -629,94 +608,23 @@ var sectorBuffer = {
 }
 
 //Draws a sector, this is called everytime a chunk within the sector changes 
-sector_draw = function(sectorID){
-		var time = Date.now();
-		var smallTime=0;
-	//Keep strack of where we are inside of the pre-allocated buffers
-	var positionOffset=0;var colorOffset=0;var indiceOffset=0;
+sector_draw = function(sectorPos,sectorID){
 	
-	//Loop through chunks in our sector space
-	for(xx=0;xx<blockSettings.sector.XYZ;xx++){
-	for(yy=0;yy<blockSettings.sector.XYZ;yy++){
-	for(zz=0;zz<blockSettings.sector.XYZ;zz++){
-		
-		//Get position of chunk we have located using this formula
-		// [X offset + (sectorX*sectorXYZ)]
-		//For each axis 
-		var pos = [xx+sector[sectorID].coords[0]*blockSettings.sector.XYZ,
-		yy+sector[sectorID].coords[1]*blockSettings.sector.XYZ,
-		zz+sector[sectorID].coords[2]*blockSettings.sector.XYZ];
-		
-		//Get ID from chunk XYZ position
-		var chunkID = chunk_returnID(pos[0],pos[1],pos[2]);
-		
-		//Make sure the chunk exists and has draw data
-		if(chunk[chunkID]!=null && chunk[chunkID].drawData.indice.length>12){
-				//Get index we are at in the position buffer.
-				//The reason we need this, is because everytime we add a new chunk we have to offset all of it's indices to 
-				//Make up for the chunks already added in. 
-				var positionBefore = positionOffset;
-			
-				//Add chunk draw information, and then add to the offset .
-				sectorBuffer.position.set(chunk[chunkID].drawData.position,positionOffset);
-				positionOffset+=chunk[chunkID].drawData.position.length;
-				//colors
-				sectorBuffer.color.set(chunk[chunkID].drawData.color,colorOffset);
-				colorOffset+=chunk[chunkID].drawData.color.length;	
-				
-				//Find out where we are starting inside of the indice, so that we know which indice's need to be offset.
-				var indiceBefore = indiceOffset;
-				//indice
-				sectorBuffer.indice.set(chunk[chunkID].drawData.indice,indiceOffset);
-				indiceOffset+=chunk[chunkID].drawData.indice.length;	
-				//If this is not the first chunk being added to the sector
-				if(indiceBefore!=0){
-					//Get amount we need to add indices
-					var addAmount = Math.round(positionBefore/3);
-					//Go through each indice we just added
-					for(i=indiceBefore;i<=indiceOffset;i++){
-						//Add in an offset to each offset to make up for the chunks already added.
-						sectorBuffer.indice[i]+=addAmount;
-					}
-				}
-				
-		}
-	}}}
 	
-	if(indiceOffset!=0){
-		
-		var timer= Date.now();
 	
-		//Set size of the sector to how many verticies 
-		sector[sectorID].buffers.size=indiceOffset;
-		//Bind this sector VAO
-		gl.bindVertexArray(sector[sectorID].vao);
-		//Set data for indice
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,sectorBuffer.indice,gl.STATIC_DRAW,0,indiceOffset);
-		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,sectorBuffer.indice,0,indiceOffset);
-		//position
-		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.position,gl.STATIC_DRAW,0,positionOffset);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.position,0,positionOffset);
-		//color
-		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
-		gl.bufferData(gl.ARRAY_BUFFER,sectorBuffer.color,gl.STATIC_DRAW,0,colorOffset);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.color,0,colorOffset);		
-		smallTime = Date.now()-timer;
-	}else{
-		//Set size of the sector to 0 
-		sector[sectorID].buffers.size=0;
+	
+	if(meshWorker.busy==0){
+		sector[sectorID].reDraw=0;
+		meshWorker.busy=1;
+		
+		meshWorker.worker.postMessage({
+			id : 'sector',
+			sectorPos : sectorPos,
+			XYZ : blockSettings.sector.XYZ,
+			sectorID : sectorID,
+		});
 	}
-	//Remove flag for sector to be redrawn.
+	
 
-	var result = Date.now()-time;
-	if(result>7){
-		console.log(result,smallTime);
-	}
-	
-	sector[sectorID].reDraw=0;
-	
-	
 
 }
