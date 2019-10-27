@@ -37,13 +37,13 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bindVertexArray(controls.cursorDraw.vao);
 			//Set data for indice
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, controls.cursorDraw.buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.STATIC_DRAW);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.DYNAMIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.STATIC_DRAW);
 			//colorsss
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.STATIC_DRAW);
 		}
 		break;
 		
@@ -60,21 +60,22 @@ meshWorker.worker.addEventListener('message', function(e) {
 		//Set data for indice
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
-		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,sectorBuffer.indice,0,indiceOffset);
+		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
 		//position
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
 		gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.position,0,positionOffset);
+		//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
 		//color
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
 		gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,sectorBuffer.color,0,colorOffset);		
+		//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);	
 		
 		
 		
 		break;
 		
 	}
+
 });
 
 
@@ -121,21 +122,21 @@ var blockSettings = {
 	
 	sector : {
 		space : 32,
-		XYZ : 5,
+		XYZ : 1,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 3,
-		Z : 3,
+		XY : 5,
+		Z : 5,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processMultiplier : 4,
+	processDistanceFar : 20,
 	
 	
 	//Amount of chunks allowed to process in one frame
-	processLimit : 1,
+	processLimit : 10,
 	
 }
 
@@ -148,9 +149,9 @@ meshWorker.worker.postMessage({
 
 //Coordinates for where we are in our farther our processing 
 blockSettings.processCoords = [
-	-blockSettings.processDistance.XY * blockSettings.processMultiplier, //X
-	-blockSettings.processDistance.XY * blockSettings.processMultiplier, //Y
-	-blockSettings.processDistance.Z * blockSettings.processMultiplier,  //Z
+	-blockSettings.processDistanceFar, //X
+	-blockSettings.processDistanceFar, //Y
+	-blockSettings.processDistanceFar,  //Z
 ];
 // BLOCK FUNCTIONS
 
@@ -426,6 +427,7 @@ chunk_create = function(x,y,z){
 
 chunk_process = function() {
 	
+	
 
 	//Agressive nearby processing 
 	
@@ -485,23 +487,26 @@ chunk_process = function() {
 	
 	//Flag to keep the less aggressive far loop going 
 	var farLoop=1;
+	
+	//Skip loop if we have hit our limit
+	if(procAmount>=blockSettings.processLimit){
+		farLoop=0;
+	}
 	//Reset process amount to keep track of how many chunks far out we are processing 
-	procAmount = 0;
 	//Amount allowed to process in one frame
-	var checkLimit = 50;
+	var checkLimit = 2000;
 	while(farLoop==1){
 		checkLimit--;
 		//Get chunkID using camX+xOffset for each offset
 		var chunkID= chunk_returnID(player.chunk[0]+blockSettings.processCoords[0],player.chunk[1]+blockSettings.processCoords[1],player.chunk[2]+blockSettings.processCoords[2]);
 		//If the chunk exists add it to our lists and add the distance to camera.
 		if(chunk[chunkID]!=null){
-			
 			//If the chunk is outside of your normal processing range 
 			if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
-				
+
 				var dist = distance_3d(player.chunk,chunk[chunkID].coords);
-				if(dist >= 5){
-					if(dist>=8){
+				if(dist >= 10){
+					if(dist>=15){
 						if(chunk[chunkID].LOD!=4){
 							chunk[chunkID].LOD=4;
 							chunk[chunkID].flags.reDraw=1;
@@ -532,24 +537,24 @@ chunk_process = function() {
 		//Check X
 		switch(blockSettings.processCoords[0]){
 			//Go to next number if we hit the limit
-			case blockSettings.processDistance.XY * blockSettings.processMultiplier:
-				blockSettings.processCoords[0] = -blockSettings.processDistance.XY * blockSettings.processMultiplier;
+			case blockSettings.processDistanceFar:
+				blockSettings.processCoords[0] = -blockSettings.processDistanceFar;
 				blockSettings.processCoords[1]+=1;
 			break;
 		}
 		//Check Y
 		switch(blockSettings.processCoords[1]){
 			//Go to next number if we hit the limit
-			case blockSettings.processDistance.XY * blockSettings.processMultiplier:
-				blockSettings.processCoords[1] = -blockSettings.processDistance.XY * blockSettings.processMultiplier;
+			case blockSettings.processDistanceFar:
+				blockSettings.processCoords[1] = -blockSettings.processDistanceFar
 				blockSettings.processCoords[2]+=1;
 			break;
 		}
 		//Check Z
 		switch(blockSettings.processCoords[2]){
 			//End the loop and reset our number if we finish the loop
-			case blockSettings.processDistance.Z * blockSettings.processMultiplier:
-				blockSettings.processCoords[2] = -blockSettings.processDistance.Z * blockSettings.processMultiplier;
+			case blockSettings.processDistanceFar:
+				blockSettings.processCoords[2] = -blockSettings.processDistanceFar;
 				farLoop=0;
 			break;
 		}

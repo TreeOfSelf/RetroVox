@@ -6,14 +6,55 @@ This file will contain all the keyboard / mouse controls
 
 
 
+var loadMap = document.getElementById('loadMap');
 
-LOD=0;
+loadMap.onchange=function(e){
+	chunk = [];
+	sector = [];
+	activeChunks=[];
+	activeSectors=[];
+  var fileToLoad = loadMap.files[0];
+  var fileReader = new FileReader();
+  fileReader.onload = function(fileLoadedEvent){
+      var textFromFileLoaded = fileLoadedEvent.target.result;
+      var loadObject = JSON.parse(textFromFileLoaded);
+	  for(var k = 0 ; k<loadObject.length; k++){
+		  console.log(k+1+'/'+loadObject.length);
+		  var chunkID = chunk_returnID(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
+		  chunk_create(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
+		  chunk[chunkID].blockArray = new Int8Array(LZString.decompress(loadObject[k][1]).split(','));
+		  chunk[chunkID].blockType = new Uint8Array(LZString.decompress(loadObject[k][2]).split(','));
+		  chunk[chunkID].flags.reDraw=1;
+	  }
+  };
+
+  fileReader.readAsText(fileToLoad, "UTF-8");
+}
+
 
 //Key press event
 document.onkeydown=function(e){
 	e =  e || window.event;
 	e.preventDefault(); e.stopPropagation();
 
+	//File save
+	if(e.key=='F1'){
+		console.time();
+		var saveArray = [];
+		//Loop through active chunks
+		for(var k = 0 ; k<activeChunks.length; k++){
+			console.log(k+1+'/'+activeChunks.length);
+			var blockArray = LZString.compress(chunk[activeChunks[k]].blockArray.toString());
+			var typeArray = LZString.compress(chunk[activeChunks[k]].blockType.toString());
+			
+			saveArray.push([chunk[activeChunks[k]].coords,blockArray,typeArray]);
+		}
+		download(JSON.stringify(saveArray),'saveOne');
+
+		console.timeEnd();
+	}
+	
+	//Pressure decrease
 	if(e.key=='[' || e.key=='{'){
 		if(controls.buildAmount>1){
 			controls.buildAmount--;
@@ -21,8 +62,7 @@ document.onkeydown=function(e){
 		}
 	}
 
-	
-	
+	//Pressure increase
 	if(e.key==']' || e.key=='}'){
 		if(controls.buildAmount<blockSettings.chunk.XYZ/2-2){
 			controls.buildAmount++;
@@ -30,7 +70,7 @@ document.onkeydown=function(e){
 		}
 	}
 	
-	
+	//Sprint
 	if(controls.keys['SHIFT']==0){
 		//Select block type
 		if(parseInt(e.key)>=0){

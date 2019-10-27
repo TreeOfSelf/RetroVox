@@ -20,8 +20,8 @@ var renderSettings = {
 	lightIntensity : 0.001,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
-		XY : 4,
-		Z  : 4,
+		XY : 1,
+		Z  : 1,
 	},
 }
 
@@ -87,7 +87,7 @@ gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,1.0)
 //This is the main drawing function. It is ran once per frame to determine the image output. It also encapsulates the functions to run physics.
 
 function render(now){
-	
+	var time = Date.now();
 	fps.drawLength=0;
 	
 	gl.disable(gl.BLEND);
@@ -244,4 +244,9 @@ function render(now){
 	
 	//Create animation of render function
 	requestAnimationFrame(render);
+	
+	var result = Date.now() - time;
+	if(result>16){
+		console.log("FRAME TOOK: "+result);
+	}
 }
