@@ -131,11 +131,11 @@ var blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processMultiplier : 3,
+	processMultiplier : 4,
 	
 	
 	//Amount of chunks allowed to process in one frame
-	processLimit : 2,
+	processLimit : 1,
 	
 }
 
@@ -375,7 +375,7 @@ chunk_draw = function(chunkID){
 	//Draw regular chunk if no LOD
 	if(meshWorker.busy==0){
 		chunk[chunkID].flags.reDraw=0;		
-		mesh_naive(chunkID,chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[1]*(blockSettings.chunk.XYZ-2),chunk[chunkID].coords[2]*(blockSettings.chunk.XYZ-2)],1);
+		mesh_naive(chunkID,chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*((blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD),chunk[chunkID].coords[1]*( (blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD),chunk[chunkID].coords[2]*((blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD)],chunk[chunkID].LOD);
 	}
 		
 		
@@ -458,6 +458,11 @@ chunk_process = function() {
 	for(var k = 0 ; k<processList.length ; k++){
 		var chunkID = processList[k][0];
 
+		if(chunk[chunkID].LOD!=1){
+			chunk[chunkID].LOD=1;
+			chunk[chunkID].flags.reDraw=1;
+		}
+
 		//If chunk is flagged to be re-drawn
 		if( chunk[chunkID].flags.reDraw>=1){
 			if(chunk[chunkID].flags.reDraw>=20){
@@ -479,21 +484,47 @@ chunk_process = function() {
 	//Less aggressive 
 	
 	//Flag to keep the less aggressive far loop going 
-/*	var farLoop=1;
+	var farLoop=1;
 	//Reset process amount to keep track of how many chunks far out we are processing 
 	procAmount = 0;
-	var checkLimit = 10;
+	//Amount allowed to process in one frame
+	var checkLimit = 50;
 	while(farLoop==1){
 		checkLimit--;
 		//Get chunkID using camX+xOffset for each offset
 		var chunkID= chunk_returnID(player.chunk[0]+blockSettings.processCoords[0],player.chunk[1]+blockSettings.processCoords[1],player.chunk[2]+blockSettings.processCoords[2]);
 		//If the chunk exists add it to our lists and add the distance to camera.
 		if(chunk[chunkID]!=null){
-			chunk_set_LOD(chunkID);
-			if(chunk[chunkID].flags.reDraw>0){
-				chunk_draw(chunkID);
-				procAmount+=1;
+			
+			//If the chunk is outside of your normal processing range 
+			if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
+				
+				var dist = distance_3d(player.chunk,chunk[chunkID].coords);
+				if(dist >= 5){
+					if(dist>=8){
+						if(chunk[chunkID].LOD!=4){
+							chunk[chunkID].LOD=4;
+							chunk[chunkID].flags.reDraw=1;
+						}
+					}else{
+						if(chunk[chunkID].LOD!=2){
+							chunk[chunkID].LOD=2;
+							chunk[chunkID].flags.reDraw=1;
+						}
+					}
+				}
+				
+				if(chunk[chunkID].flags.reDraw>0){
+					//if(chunk[chunkID].flags.reDraw>=dist/2){
+						chunk_draw(chunkID);
+						procAmount+=1;
+					//}else{
+						//chunk[chunkID].flags.reDraw+=1;
+					//}
+				}
+			
 			}
+		
 		}
 		
 		blockSettings.processCoords[0]+=1;
@@ -530,7 +561,7 @@ chunk_process = function() {
 
 	
 	
-	}*/
+	}
 }
 	
 
