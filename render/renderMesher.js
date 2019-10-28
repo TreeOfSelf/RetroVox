@@ -39,6 +39,7 @@ self.addEventListener('message', function(e) {
 		
 		
 		case "start":
+		//Clear chunk list and create new blockSettings
 			chunk=[];
 			blockSettings = {
 				chunk : {
@@ -48,19 +49,21 @@ self.addEventListener('message', function(e) {
 					
 				},
 			}
+		//Set new block Settings
 			blockSettings.chunk.space = message.chunkSpace;
 			blockSettings.sector.XYZ = message.sectorXYZ;
+		//Set data type for drawing
 			switch(message.drawType){
 				case 0:
-					drawArray = Float32Array;
+					dataType = Float32Array;
 				break;
 				case 1:
-					drawArray = Int16Array
+					dataType = Int16Array
 				break;
 			}
-						
+		//New pre allocated sector buffers		
 			sectorBuffer = {
-				position : new drawArray(9999999),
+				position : new dataType(9999999),
 				color : new Uint8Array(9999999),
 				indice : new Uint32Array(9999999),
 			}
@@ -68,19 +71,20 @@ self.addEventListener('message', function(e) {
 		
 		//Sets the mesh for a specified chunk
 		case "mesh": 
-		
+			//If no LOD
 			if(message.LOD==1){
-		
-		var result = mesh_naive(message.data,message.dataType, message.dims,message.chunkPos,message.LOD,message.chunkID);
+				//Normal mesh
+				var result = mesh_naive(message.data,message.dataType, message.dims,message.chunkPos,message.LOD,message.chunkID);
 			
 			}else{
-				//function MedianFilter(volume,type, dims,lod)
+				//Resize chunk
 				var chunkInput = NearestFilter(message.data,message.dataType,message.dims,message.LOD);
+				//Mesh resized chunk
 				var result = mesh_naive(chunkInput[0],chunkInput[1], chunkInput[2],message.chunkPos,message.LOD,message.chunkID);
 				
 			}
 			
-			
+			//Regular chunk
 			if(message.chunkID!='cursor'){
 				
 				self.postMessage({
@@ -88,6 +92,7 @@ self.addEventListener('message', function(e) {
 					chunkID : message.chunkID,
 				});
 			
+			//Cursor chunk
 			}else{
 				self.postMessage({
 					id : "mesh",
@@ -100,9 +105,11 @@ self.addEventListener('message', function(e) {
 		break;
 		
 		case "sector":
-		
-		var result = sector_draw(message.sectorPos,message.XYZ);
-		
+			
+			
+			//Draw sector 
+			var result = sector_draw(message.sectorPos,message.XYZ);
+			//Send draw information
 			self.postMessage({
 				id : 'sector',
 				sectorID : message.sectorID,
@@ -120,6 +127,8 @@ self.addEventListener('message', function(e) {
 });
 
 //Takes a type and returns a color
+//Different mathematical functions for each block type
+//Variation of sine waves , cosine waves, and simplex noise
 color_return = function(type,position){
 	switch(type){
 		default:
@@ -174,6 +183,8 @@ color_return = function(type,position){
 	}
 }
 
+
+//Function for creating chunk meshes from blockData
 var mesh_naive = (function() {
 "use strict";
 
@@ -356,14 +367,15 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 	if(chunkID!='cursor'){
 		chunk[chunkID] = {
 			drawData : {
-				position : new drawArray(finalVert),
+				position : new dataType(finalVert),
 				color : new Uint8Array(finalColor),
 				indice : new Uint32Array(faces),
 				
 			},
 		}
+	//Return draw data for cursor chunk
 	}else{
-		return [(new drawArray(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
+		return [(new dataType(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
 	}
   //All done!  Return the result
 
@@ -371,7 +383,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 })();
 
 
-
+//Function for resizing chunks 
 function NearestFilter(volume, type, dims,lod) {
   "use strict";
   
@@ -407,19 +419,13 @@ function NearestFilter(volume, type, dims,lod) {
 }
 
 
-/*
-We can pre-allocate arrays for the sector drawing. The idea behind this is: instead of creting a big new Float32Array to upload
-to the GPU every time we update a sector, we can simply just pre-allocate one big array in advance and re-use it every time
-we need to draw a sector.
-*/
-
-
 
 //Returns chunkID from chunk XYZ
 chunk_returnID = function(x,y,z){
 	return(x+blockSettings.chunk.space*(y+blockSettings.chunk.space*z));
 }
 
+//Seams together multiple chunk's draw datas into one sector
 sector_draw = function(sectorPos,XYZ){
 	//Keep strack of where we are inside of the pre-allocated buffers
 	var positionOffset=0;var colorOffset=0;var indiceOffset=0;

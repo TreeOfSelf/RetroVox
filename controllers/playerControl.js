@@ -51,7 +51,7 @@ var controls = {
 //Set up vertex array object with our buffers for the controls.cursorDraw 
 gl.bindVertexArray(controls.cursorDraw.vao);
 gl.bindBuffer(gl.ARRAY_BUFFER,controls.cursorDraw.buffers.position);
-gl.vertexAttribPointer(programInfo.attribLocations.position,3,drawGL,false,0,0);
+gl.vertexAttribPointer(programInfo.attribLocations.position,3,dataTypeGL,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);

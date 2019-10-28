@@ -6,34 +6,43 @@ This file will contain everything relating to sectors/chunks/blocks
 
 
 
+
+//0 = drawing with Float32Arrays (more accuracy)
+//1 = drawing with Int16 (less data bandwidth)
 var drawType = 0
 
 switch(drawType){
 	case 0:
-	drawArray = Float32Array;
-	drawGL = gl.FLOAT;
+	dataType = Float32Array;
+	dataTypeGL = gl.FLOAT;
 	break;
 	case 1:
-	drawArray = Int16Array;
-	drawGL = gl.SHORT;
+	dataType = Int16Array;
+	dataTypeGL = gl.SHORT;
 	break;
 }
 
 
 
-
+//Mesh worker thread
+//Controls chunk data , chunk meshing, sector meshing
 var meshWorker ={ 
+	//Worker thread
 	worker : new Worker('./render/renderMesher.js'),
+	//Busy flag
 	busy : 0,
 };
-//,essaging from mesh thread 
+
+//messaging from mesh thread 
 meshWorker.worker.addEventListener('message', function(e) {
 	var message = e.data;
 	switch(message.id){
 		
-		
+	//Receive mesh	
 		case "mesh": 
 		meshWorker.busy=0;
+		
+		//Cursor mesh
 		if(message.chunkID!='cursor'){
 			//Get sector chunk is in
 			var sectorPosition = sector_get(chunk[message.chunkID].coords[0],chunk[message.chunkID].coords[1],chunk[message.chunkID].coords[2]);
@@ -46,6 +55,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 			sector[sectorID].reDraw=1;	
 			
 		}else{
+		//Chunk mesh
 			//Set size of the sector to how many verticies 
 			message.result[2] = new Uint16Array(message.result[2]);
 			controls.cursorDraw.size=message.result[2].length/2;
@@ -56,22 +66,26 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,new drawArray(message.result[0]),gl.DYNAMIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new dataType(message.result[0]),gl.DYNAMIC_DRAW);
 			//colorsss
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
 			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
 		}	
 		break;
 		
+		//Sector drawing
+		
 		case 'sector':
 		meshWorker.busy=0;
 		
 		message.indice =new Uint32Array(message.indice);
-		message.position = new drawArray(message.position);
+		message.position = new dataType(message.position);
 		message.color = new Uint8Array(message.color);
 		
 		//Set size of the sector to how many verticies 
 		sector[message.sectorID].buffers.size=message.size;
+		
+		//If the buffer is not big enough, create a new buffer with appropriote size
 		
 		if(sector[message.sectorID].buffers.maxIndiceSize < message.indice.length || sector[message.sectorID].buffers.maxPositionSize < message.position.length ||  sector[message.sectorID].buffers.maxColorSize < message.color.length){
 			sector[message.sectorID].buffers.maxIndiceSize = message.indice.length;
@@ -92,7 +106,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);
 			
-			
+		//If the buffer IS big enough, subData new sector draw data in
 		}else{
 			//Bind this sector VAO
 			gl.bindVertexArray(sector[message.sectorID].vao);
@@ -115,6 +129,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 });
 
 
+//Send chunk data to mesher thread
 
 mesh_naive = function(chunkID,chunkData,chunkType,chunkDim,chunkPos,Lod){
 	meshWorker.busy=1;
@@ -180,12 +195,17 @@ var blockSettings = {
 	
 }
 
-meshWorker.worker.postMessage({
-	id : 'start',
-	chunkSpace : blockSettings.chunk.space,
-	sectorXYZ : blockSettings.sector.XYZ,
-	drawType : drawType,
-});
+
+//Function to start mesh worker
+//Also can be used to clear mesh worker data
+mesh_start = function(){
+	meshWorker.worker.postMessage({
+		id : 'start',
+		chunkSpace : blockSettings.chunk.space,
+		sectorXYZ : blockSettings.sector.XYZ,
+		drawType : drawType,
+	});
+}
 	
 
 //Coordinates for where we are in our farther our processing 
@@ -194,6 +214,8 @@ blockSettings.processCoords = [
 	-blockSettings.processDistanceFar, //Y
 	-blockSettings.processDistanceFar,  //Z
 ];
+
+
 // BLOCK FUNCTIONS
 
 
@@ -317,8 +339,6 @@ block_change = function(x,y,z,del,amount,buildType){
 	
 	//Calculate distance from cursor, minimum of 1 so we don't get divides by 0.
 
-	//this v 
-	
 	var dist = (controls.buildStrength  / ( Math.max(distance_3d([x-chunkPosition[0]*2,y-chunkPosition[1]*2,z-chunkPosition[2]*2],[controls.cursorFixedPosition[0]-controls.cursorChunk[0]*2,controls.cursorFixedPosition[1]-controls.cursorChunk[1]*2,controls.cursorFixedPosition[2]-controls.cursorChunk[2]*2]),1)*0.25));
 	
 	
@@ -410,7 +430,7 @@ chunk_get_no_border =function(x,y,z){
 
 		
 
-//Draws a chunk using LOD or no LOD and flags correct sector to reDraw
+//Sends a chunk to be meshed if the meshWorker is not busy
 chunk_draw = function(chunkID){
 
 
@@ -423,7 +443,6 @@ chunk_draw = function(chunkID){
 		
 
 }
-
 
 
 //Create chunk
@@ -535,20 +554,23 @@ chunk_process = function() {
 			if(chunk[chunkID]!=null){
 				//If the chunk is outside of your normal processing range 
 				if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
-
+					//Get distance from player chunk
 					var dist = distance_3d(player.chunk,chunk[chunkID].coords);
 					if(dist >= blockSettings.LODdistance[0]){
+						//FAR LOD 
 						if(dist>=blockSettings.LODdistance[1]){
 							if(chunk[chunkID].LOD!=4){
 								chunk[chunkID].LOD=4;
 								chunk[chunkID].flags.reDraw=1;
 							}
+						//NEAR LOD
 						}else{
 							if(chunk[chunkID].LOD!=2){
 								chunk[chunkID].LOD=2;
 								chunk[chunkID].flags.reDraw=1;
 							}
 						}
+					//NO LOD
 					}else{
 						if(chunk[chunkID].LOD!=1){
 							chunk[chunkID].LOD=1;
@@ -556,6 +578,7 @@ chunk_process = function() {
 						}	
 					}
 					
+					//Redraw if flagged
 					if(chunk[chunkID].flags.reDraw>0){
 						if(chunk[chunkID].flags.reDraw>=dist){
 							chunk_draw(chunkID);
@@ -569,6 +592,7 @@ chunk_process = function() {
 			
 			}
 			
+			//Iterate coordinates
 			blockSettings.processCoords[0]+=1;
 			
 			//Check X
@@ -661,7 +685,7 @@ sector_create = function(x,y,z){
 		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
-		gl.vertexAttribPointer(programInfo.attribLocations.position,3,drawGL,false,0,0);
+		gl.vertexAttribPointer(programInfo.attribLocations.position,3,dataTypeGL,false,0,0);
 		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
@@ -673,18 +697,12 @@ sector_create = function(x,y,z){
 }
 
 
-/*
-We can pre-allocate arrays for the sector drawing. The idea behind this is: instead of creting a big new Float32Array to upload
-to the GPU every time we update a sector, we can simply just pre-allocate one big array in advance and re-use it every time
-we need to draw a sector.
-*/
 
 
-//Draws a sector, this is called everytime a chunk within the sector changes 
+//Draws a sector if the meshWorker is not busy
 sector_draw = function(sectorPos,sectorID){
 	
-	
-	
+
 	
 	if(meshWorker.busy<1){
 		sector[sectorID].reDraw=0;

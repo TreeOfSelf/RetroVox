@@ -8,27 +8,27 @@ This file will contain all the keyboard / mouse controls
 
 var loadMap = document.getElementById('loadMap');
 
+
+//On file change for the map loading
 loadMap.onchange=function(e){
+	//Reset all chunk/sector data
 	chunk = [];
 	sector = [];
 	activeChunks=[];
 	activeSectors=[];
-	meshWorker.worker.postMessage({
-		id : 'start',
-		chunkSpace : blockSettings.chunk.space,
-		sectorXYZ : blockSettings.sector.XYZ,
-		drawType : drawType,
-	});
+	mesh_start();
 	
   var fileToLoad = loadMap.files[0];
   var fileReader = new FileReader();
   fileReader.onload = function(fileLoadedEvent){
       var textFromFileLoaded = fileLoadedEvent.target.result;
       var loadObject = JSON.parse(textFromFileLoaded);
+	  //Loop through save object
 	  for(var k = 0 ; k<loadObject.length; k++){
 		  console.log(k+1+'/'+loadObject.length);
 		  var chunkID = chunk_returnID(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
 		  chunk_create(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
+		  //Decompress data and flag chunk to reDraw
 		  chunk[chunkID].blockArray = new Int8Array(LZString.decompress(loadObject[k][1]).split(','));
 		  chunk[chunkID].blockType = new Uint8Array(LZString.decompress(loadObject[k][2]).split(','));
 		  chunk[chunkID].flags.reDraw=1;
@@ -46,19 +46,20 @@ document.onkeydown=function(e){
 
 	//File save
 	if(e.key=='F1'){
-		console.time();
 		var saveArray = [];
 		//Loop through active chunks
 		for(var k = 0 ; k<activeChunks.length; k++){
 			console.log(k+1+'/'+activeChunks.length);
+			
+			//Compress data and save to array
 			var blockArray = LZString.compress(chunk[activeChunks[k]].blockArray.toString());
 			var typeArray = LZString.compress(chunk[activeChunks[k]].blockType.toString());
 			
 			saveArray.push([chunk[activeChunks[k]].coords,blockArray,typeArray]);
 		}
+		//Download text file of map save
 		download(JSON.stringify(saveArray),'saveOne');
 
-		console.timeEnd();
 	}
 	
 	//Pressure decrease
@@ -217,10 +218,10 @@ keyboard_controls = function(){
 	
 	//Vertical movement
 	if(controls.keys['O']==1){
-		player.position[2]-=0.1;
+		player.position[2]-=player.acceleration;
 	}
 	if(controls.keys['P']==1){
-		player.position[2]+=0.1;
+		player.position[2]+=player.acceleration;
 	}
 	
 	//Single build key

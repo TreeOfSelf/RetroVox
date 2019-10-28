@@ -156,53 +156,12 @@ function render(now){
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);
 
-	//Loop through nearby sectors 
-	
-	
-	/*for(var xCheck=-renderSettings.viewDistance.XY;xCheck<=renderSettings.viewDistance.XY;xCheck++){
-	for(var yCheck=-renderSettings.viewDistance.XY;yCheck<=renderSettings.viewDistance.XY;yCheck++){
-	for(var zCheck=-renderSettings.viewDistance.Z;zCheck<=renderSettings.viewDistance.Z;zCheck++){
-
-		//Get coordinates of current sector using offset
-		var sectorCoords =[ player.sector[0]+xCheck, player.sector[1]+yCheck,player.sector[2]+zCheck];
-		//Return ID for the sector
-		var sectorID = sector_returnID(sectorCoords[0],sectorCoords[1],sectorCoords[2]);
-
-		//If the sector exists
-		if(sector[sectorID]!=null){
-				
-			//Check if sector needs reDraw
-			if(sector[sectorID].reDraw>0){
-				var dist = distance_3d(player.sector,sectorCoords);
-				sector[sectorID].reDraw+= 1/dist;
-				
-				if(sector[sectorID].reDraw>=1){
-					sector_draw(sectorID);
-				}
-			}
-			
-			if(sector[sectorID].buffers.size>0){
-					
-				//drawLength+=sector[sectorID].buffers.size;
-				//Bind VAO
-				gl.bindVertexArray(sector[sectorID].vao);
-				fps.drawLength+=sector[sectorID].buffers.size;
-				//Draw the triangles 
-				if(renderSettings.wireframe==0){		
-			
-					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
-				//Draw wireframe
-				}else{
-					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
-				}	
-			}
-		}
-
-	}
-	}
-	}*/
+	//Loop through active sectors 
 	
 	for(var k=0; k<activeSectors.length;k++){
+		
+		
+		//Redraw sectors flagged to be reDrawn
 		if(sector[activeSectors[k]].reDraw>0){
 			if(sector[activeSectors[k]].reDraw>=distance_3d(sector[activeSectors[k]].coords,player.sector)){
 				sector_draw(sector[activeSectors[k]].coords,activeSectors[k]);
@@ -211,6 +170,7 @@ function render(now){
 			}
 		}
 		
+		//Draw sector if there is information to be drawn
 		if(sector[activeSectors[k]].buffers.size>0){
 				
 			//drawLength+=sector[sectorID].buffers.size;
