@@ -32,7 +32,7 @@ var controls = {
 	//Chunk data for cursor
 	cursorChunkData : new Int16Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(64), 
 	//Type data for cursor (filled so that it actually meshes correctly)
-	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(1), 
+	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(127), 
 	//List of coordinates to create blocks from using the cursor build/delete
 	cursorList : [],
 	//Draw data for cursor
@@ -51,7 +51,7 @@ var controls = {
 //Set up vertex array object with our buffers for the controls.cursorDraw 
 gl.bindVertexArray(controls.cursorDraw.vao);
 gl.bindBuffer(gl.ARRAY_BUFFER,controls.cursorDraw.buffers.position);
-gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
+gl.vertexAttribPointer(programInfo.attribLocations.position,3,drawGL,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);

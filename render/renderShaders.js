@@ -72,11 +72,14 @@ void main() {
 
 	gl_PointSize = 35.0;
 	//Get screen position
-	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
+	
+	
+	
+	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0]*0.1,-aPosition[2]*0.1,aPosition[1]*0.1,1.0);
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*uLight);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0]*0.1,aPosition[1]*0.1,aPosition[2]*0.1))*uLight);	
 
 
 	//Different depth depending on orthographic/perspective
@@ -141,32 +144,5 @@ const programInfo = {
 
 //Init
 //Cursor init
-
-var blockBuildVao = gl.createVertexArray();
-var blockBuildPosition = gl.createBuffer();
-var blockBuildColor = gl.createBuffer();
-var blockBuildIndexBuffer = gl.createBuffer();
-//Bind VAO for cursor
-gl.bindVertexArray(blockBuildVao);
-//Premade index buffer 
-gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,blockBuildIndexBuffer);
-var indice=[];
-for(var k=0;k<=100;k++){
-	var q=k*4;
-	indice.push(q,q+1,q+2,q,q+2,q+3);
-}
-gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indice), gl.STATIC_DRAW)
-//Building buffer for the block infront of you
-gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildPosition);
-gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
-gl.enableVertexAttribArray(programInfo.attribLocations.position);	
-//Set color buffer
-gl.bindBuffer(gl.ARRAY_BUFFER,blockBuildColor);
-gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array([
-90,90,90,90,90,90,90,90,90,90,90,90,150,150,150,150,150,150,150,150,150,150,150,150,50,50,50,50,50,50,50,50,50,50,50,50,110,110,110,110,110,110,110,110,110,170,170,170,170,170,170,170,170,170,170,170,170,210,210,210,210,210,210,210,210,210,210,210,210,
-]),gl.STATIC_DRAW);
-gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
-gl.enableVertexAttribArray(programInfo.attribLocations.color);
-//The position buffer is set every frame from  player_physics
 
 

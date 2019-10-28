@@ -13,6 +13,13 @@ loadMap.onchange=function(e){
 	sector = [];
 	activeChunks=[];
 	activeSectors=[];
+	meshWorker.worker.postMessage({
+		id : 'start',
+		chunkSpace : blockSettings.chunk.space,
+		sectorXYZ : blockSettings.sector.XYZ,
+		drawType : drawType,
+	});
+	
   var fileToLoad = loadMap.files[0];
   var fileReader = new FileReader();
   fileReader.onload = function(fileLoadedEvent){

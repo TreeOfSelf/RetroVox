@@ -6,6 +6,22 @@ This file will contain everything relating to sectors/chunks/blocks
 
 
 
+var drawType = 0
+
+switch(drawType){
+	case 0:
+	drawArray = Float32Array;
+	drawGL = gl.FLOAT;
+	break;
+	case 1:
+	drawArray = Int16Array;
+	drawGL = gl.SHORT;
+	break;
+}
+
+
+
+
 var meshWorker ={ 
 	worker : new Worker('./render/renderMesher.js'),
 	busy : 0,
@@ -37,39 +53,59 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bindVertexArray(controls.cursorDraw.vao);
 			//Set data for indice
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, controls.cursorDraw.buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.STATIC_DRAW);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.STATIC_DRAW);
+			gl.bufferData(gl.ARRAY_BUFFER,new drawArray(message.result[0]),gl.DYNAMIC_DRAW);
 			//colorsss
 			gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.STATIC_DRAW);
-		}
+			gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
+		}	
 		break;
 		
 		case 'sector':
 		meshWorker.busy=0;
 		
 		message.indice =new Uint32Array(message.indice);
-		message.position = new Float32Array(message.position);
+		message.position = new drawArray(message.position);
 		message.color = new Uint8Array(message.color);
+		
 		//Set size of the sector to how many verticies 
 		sector[message.sectorID].buffers.size=message.size;
-		//Bind this sector VAO
-		gl.bindVertexArray(sector[message.sectorID].vao);
-		//Set data for indice
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
-		//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
-		//position
-		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
-		//color
-		gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
-		gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
-		//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);	
 		
+		if(sector[message.sectorID].buffers.maxIndiceSize < message.indice.length || sector[message.sectorID].buffers.maxPositionSize < message.position.length ||  sector[message.sectorID].buffers.maxColorSize < message.color.length){
+			sector[message.sectorID].buffers.maxIndiceSize = message.indice.length;
+			sector[message.sectorID].buffers.maxColorSize = message.color.length;
+			sector[message.sectorID].buffers.maxPositionSize = message.position.length;
+			//Bind this sector VAO
+			gl.bindVertexArray(sector[message.sectorID].vao);
+			//Set data for indice
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
+			//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
+			//position
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
+			gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
+			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
+			//color
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
+			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
+			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);
+			
+			
+		}else{
+			//Bind this sector VAO
+			gl.bindVertexArray(sector[message.sectorID].vao);
+			//Set data for indice
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
+			gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
+			//position
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
+			gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
+			//color
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
+			gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);	
+		}
 		
 		
 		break;
@@ -77,6 +113,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 	}
 
 });
+
 
 
 mesh_naive = function(chunkID,chunkData,chunkType,chunkDim,chunkPos,Lod){
@@ -122,21 +159,24 @@ var blockSettings = {
 	
 	sector : {
 		space : 32,
-		XYZ : 1,
+		XYZ : 10,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 5,
-		Z : 5,
+		XY : 3,
+		Z : 3,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
 	processDistanceFar : 20,
-	
+	processDistanceFarSearchLimit : 1000,
 	
 	//Amount of chunks allowed to process in one frame
-	processLimit : 10,
+	processLimit : 1,
+	
+	//LOD distances Near/Far
+	LODdistance : [10,15]
 	
 }
 
@@ -144,8 +184,9 @@ meshWorker.worker.postMessage({
 	id : 'start',
 	chunkSpace : blockSettings.chunk.space,
 	sectorXYZ : blockSettings.sector.XYZ,
+	drawType : drawType,
 });
-
+	
 
 //Coordinates for where we are in our farther our processing 
 blockSettings.processCoords = [
@@ -292,7 +333,7 @@ block_change = function(x,y,z,del,amount,buildType){
 		//Set density of block
 
 		//Set type of block
-		if(chunk[chunkID].blockType[blockIndex]==0){
+		if(chunk[chunkID].blockType[blockIndex]==127){
 			chunk[chunkID].blockType[blockIndex]=buildType;
 		}
 		
@@ -316,7 +357,7 @@ block_change = function(x,y,z,del,amount,buildType){
 		//Delete previous block type if we arent a visible block anymore
 
 		if(chunk[chunkID].blockArray[blockIndex]>=0){
-			chunk[chunkID].blockType[blockIndex]=0;
+			chunk[chunkID].blockType[blockIndex]=127;
 		}
 	break;
 	case 2:
@@ -374,7 +415,7 @@ chunk_draw = function(chunkID){
 
 
 	//Draw regular chunk if no LOD
-	if(meshWorker.busy==0){
+	if(meshWorker.busy<1){
 		chunk[chunkID].flags.reDraw=0;		
 		mesh_naive(chunkID,chunk[chunkID].blockArray,chunk[chunkID].blockType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[chunk[chunkID].coords[0]*((blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD),chunk[chunkID].coords[1]*( (blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD),chunk[chunkID].coords[2]*((blockSettings.chunk.XYZ-2)/chunk[chunkID].LOD)],chunk[chunkID].LOD);
 	}
@@ -402,16 +443,8 @@ chunk_create = function(x,y,z){
 			//List of block densities , filled for chunk dimensions cubed 
 			blockArray : new Int8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(64),
 			//List of block types , filled for chunk dimensions cubed 
-			blockType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(0),
+			blockType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(127),
 			//Draw 
-			drawData : {
-				//XYZ positions of verticies 
-				position : [],
-				//RGB colors of verticies 
-				color : [],
-				//Indice list of verticies 
-				indice : [],
-			},
 			flags : {
 				reDraw : 0,
 				processing : 0,
@@ -427,146 +460,151 @@ chunk_create = function(x,y,z){
 
 chunk_process = function() {
 	
-	
 
-	//Agressive nearby processing 
-	
-	//Create empty list of chunk ID's we are going to process.
-	var processList = [];
-	//Amount of chunks we have processed
-	var procAmount =0;
-	//Loop through our process distance (Not the same as view distance, you might be able to see farther than you process (Just like IRL)).
-	//These will determine the offsets we add to our camera chunk to select a chunk to process nearby.
-	for(var xx=-blockSettings.processDistance.XY ;xx<=blockSettings.processDistance.XY;xx++){
-	for(var yy=-blockSettings.processDistance.XY ;yy<=blockSettings.processDistance.XY;yy++){
-	for(var zz=-blockSettings.processDistance.Z ;zz<=blockSettings.processDistance.Z;zz++){
+		//Agressive nearby processing 
 		
-		//Get chunkID using camX+xOffset for each offset
-		var chunkID= chunk_returnID(player.chunk[0]+xx,player.chunk[1]+yy,player.chunk[2]+zz);
-		//If the chunk exists add it to our lists and add the distance to camera.
-		if(chunk[chunkID]!=null){
-			processList.push([chunkID,distance_3d(chunk[chunkID].coords,player.chunk)]);	
-		}
-	}}}
-	
-	//Sort the list of chunks by distance
-	processList.sort(function(a,b){
-		return(a[1]-b[1]);
-	});
+		//Create empty list of chunk ID's we are going to process.
+		var processList = [];
+		//Amount of chunks we have processed
+		var procAmount =0;
+		//Loop through our process distance (Not the same as view distance, you might be able to see farther than you process (Just like IRL)).
+		//These will determine the offsets we add to our camera chunk to select a chunk to process nearby.
+		for(var xx=-blockSettings.processDistance.XY ;xx<=blockSettings.processDistance.XY;xx++){
+		for(var yy=-blockSettings.processDistance.XY ;yy<=blockSettings.processDistance.XY;yy++){
+		for(var zz=-blockSettings.processDistance.Z ;zz<=blockSettings.processDistance.Z;zz++){
+			
+			//Get chunkID using camX+xOffset for each offset
+			var chunkID= chunk_returnID(player.chunk[0]+xx,player.chunk[1]+yy,player.chunk[2]+zz);
+			//If the chunk exists add it to our lists and add the distance to camera.
+			if(chunk[chunkID]!=null){
+				processList.push([chunkID,distance_3d(chunk[chunkID].coords,player.chunk)]);	
+			}
+		}}}
+		
+		//Sort the list of chunks by distance
+		processList.sort(function(a,b){
+			return(a[1]-b[1]);
+		});
 
-	
-	//Loop through the process list. 
-	
-	for(var k = 0 ; k<processList.length ; k++){
-		var chunkID = processList[k][0];
+		
+		//Loop through the process list. 
+		
+		for(var k = 0 ; k<processList.length ; k++){
+			var chunkID = processList[k][0];
 
-		if(chunk[chunkID].LOD!=1){
-			chunk[chunkID].LOD=1;
-			chunk[chunkID].flags.reDraw=1;
-		}
+			if(chunk[chunkID].LOD!=1){
+				chunk[chunkID].LOD=1;
+				chunk[chunkID].flags.reDraw=1;
+			}
 
-		//If chunk is flagged to be re-drawn
-		if( chunk[chunkID].flags.reDraw>=1){
-			if(chunk[chunkID].flags.reDraw>=20){
-				procAmount+=1;
-				chunk_draw(chunkID);
-			}else{
-				chunk[chunkID].flags.reDraw+=1;
+			//If chunk is flagged to be re-drawn
+			if( chunk[chunkID].flags.reDraw>=1){
+				if(chunk[chunkID].flags.reDraw>=processList[k][1]/2){
+					procAmount+=1;
+					chunk_draw(chunkID);
+				}else{
+					chunk[chunkID].flags.reDraw+=1;
+				}
+			}
+			
+			//End loop if we have hit our processLimit
+			if(procAmount>=blockSettings.processLimit){
+				break;
 			}
 		}
+
 		
-		//End loop if we have hit our processLimit
-		if(procAmount>=blockSettings.processLimit){
-			break;
+
+		//Less aggressive 
+		
+		//Flag to keep the less aggressive far loop going 
+		var farLoop=1;
+		
+		//Skip loop if we have hit our limit
+		if(procAmount>=blockSettings.processLimit || meshWorker.busy==1){
+			farLoop=0;
 		}
-	}
+		//Reset process amount to keep track of how many chunks far out we are processing 
+		//Amount allowed to process in one frame
+		var checkLimit = blockSettings.processDistanceFarSearchLimit;
+		while(farLoop==1){
+			checkLimit--;
+			//Get chunkID using camX+xOffset for each offset
+			var chunkID= chunk_returnID(player.chunk[0]+blockSettings.processCoords[0],player.chunk[1]+blockSettings.processCoords[1],player.chunk[2]+blockSettings.processCoords[2]);
+			//If the chunk exists add it to our lists and add the distance to camera.
+			if(chunk[chunkID]!=null){
+				//If the chunk is outside of your normal processing range 
+				if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
 
-	
-
-	//Less aggressive 
-	
-	//Flag to keep the less aggressive far loop going 
-	var farLoop=1;
-	
-	//Skip loop if we have hit our limit
-	if(procAmount>=blockSettings.processLimit){
-		farLoop=0;
-	}
-	//Reset process amount to keep track of how many chunks far out we are processing 
-	//Amount allowed to process in one frame
-	var checkLimit = 2000;
-	while(farLoop==1){
-		checkLimit--;
-		//Get chunkID using camX+xOffset for each offset
-		var chunkID= chunk_returnID(player.chunk[0]+blockSettings.processCoords[0],player.chunk[1]+blockSettings.processCoords[1],player.chunk[2]+blockSettings.processCoords[2]);
-		//If the chunk exists add it to our lists and add the distance to camera.
-		if(chunk[chunkID]!=null){
-			//If the chunk is outside of your normal processing range 
-			if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
-
-				var dist = distance_3d(player.chunk,chunk[chunkID].coords);
-				if(dist >= 10){
-					if(dist>=15){
-						if(chunk[chunkID].LOD!=4){
-							chunk[chunkID].LOD=4;
-							chunk[chunkID].flags.reDraw=1;
+					var dist = distance_3d(player.chunk,chunk[chunkID].coords);
+					if(dist >= blockSettings.LODdistance[0]){
+						if(dist>=blockSettings.LODdistance[1]){
+							if(chunk[chunkID].LOD!=4){
+								chunk[chunkID].LOD=4;
+								chunk[chunkID].flags.reDraw=1;
+							}
+						}else{
+							if(chunk[chunkID].LOD!=2){
+								chunk[chunkID].LOD=2;
+								chunk[chunkID].flags.reDraw=1;
+							}
 						}
 					}else{
-						if(chunk[chunkID].LOD!=2){
-							chunk[chunkID].LOD=2;
+						if(chunk[chunkID].LOD!=1){
+							chunk[chunkID].LOD=1;
 							chunk[chunkID].flags.reDraw=1;
+						}	
+					}
+					
+					if(chunk[chunkID].flags.reDraw>0){
+						if(chunk[chunkID].flags.reDraw>=dist){
+							chunk_draw(chunkID);
+							procAmount+=1;
+						}else{
+							chunk[chunkID].flags.reDraw+=1;
 						}
 					}
-				}
 				
-				if(chunk[chunkID].flags.reDraw>0){
-					//if(chunk[chunkID].flags.reDraw>=dist/2){
-						chunk_draw(chunkID);
-						procAmount+=1;
-					//}else{
-						//chunk[chunkID].flags.reDraw+=1;
-					//}
 				}
 			
 			}
-		
-		}
-		
-		blockSettings.processCoords[0]+=1;
-		
-		//Check X
-		switch(blockSettings.processCoords[0]){
-			//Go to next number if we hit the limit
-			case blockSettings.processDistanceFar:
-				blockSettings.processCoords[0] = -blockSettings.processDistanceFar;
-				blockSettings.processCoords[1]+=1;
-			break;
-		}
-		//Check Y
-		switch(blockSettings.processCoords[1]){
-			//Go to next number if we hit the limit
-			case blockSettings.processDistanceFar:
-				blockSettings.processCoords[1] = -blockSettings.processDistanceFar
-				blockSettings.processCoords[2]+=1;
-			break;
-		}
-		//Check Z
-		switch(blockSettings.processCoords[2]){
-			//End the loop and reset our number if we finish the loop
-			case blockSettings.processDistanceFar:
-				blockSettings.processCoords[2] = -blockSettings.processDistanceFar;
+			
+			blockSettings.processCoords[0]+=1;
+			
+			//Check X
+			switch(blockSettings.processCoords[0]){
+				//Go to next number if we hit the limit
+				case blockSettings.processDistanceFar:
+					blockSettings.processCoords[0] = -blockSettings.processDistanceFar;
+					blockSettings.processCoords[1]+=1;
+				break;
+			}
+			//Check Y
+			switch(blockSettings.processCoords[1]){
+				//Go to next number if we hit the limit
+				case blockSettings.processDistanceFar:
+					blockSettings.processCoords[1] = -blockSettings.processDistanceFar
+					blockSettings.processCoords[2]+=1;
+				break;
+			}
+			//Check Z
+			switch(blockSettings.processCoords[2]){
+				//End the loop and reset our number if we finish the loop
+				case blockSettings.processDistanceFar:
+					blockSettings.processCoords[2] = -blockSettings.processDistanceFar;
+					farLoop=0;
+				break;
+			}
+			
+			//End loop if we hit process limit or check limit
+			if(procAmount>=blockSettings.processLimit || checkLimit <=0){
 				farLoop=0;
-			break;
-		}
-		
-		//End loop if we hit process limit or check limit
-		if(procAmount>=blockSettings.processLimit || checkLimit <=0){
-			farLoop=0;
-		}
+			}
 
+		
+		
+		}
 	
-	
-	}
 }
 	
 
@@ -598,7 +636,7 @@ sector_create = function(x,y,z){
 			coords : [x,y,z],
 			//Buffer data for draw calls, this is compiled from chunks in our space. 
 			buffers : {
-				//3 floats XYZ 
+				//3 shorts XYZ 
 				position :gl.createBuffer(),
 				//3 integers 0-255  RGB
 				color : gl.createBuffer(),
@@ -606,6 +644,10 @@ sector_create = function(x,y,z){
 				indice : gl.createBuffer(),
 				//How many indices we are going to draw
 				size : 0,
+				//How big our allocated buffer size is
+				maxPositionSize : 0,
+				maxColorSize : 0,
+				maxIndiceSize : 0,
 			},
 			//Vertex Array Object, this contains draw information that can be used in one call.
 			vao : gl.createVertexArray(),
@@ -616,16 +658,16 @@ sector_create = function(x,y,z){
 		gl.bindVertexArray(sector[sectorID].vao);
 		
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
-		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
-		gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
-		//gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(programInfo.attribLocations.position,3,drawGL,false,0,0);
+		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
 		gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
-		//gl.bufferData(gl.ARRAY_BUFFER,99999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.color);
 	}
 }
@@ -637,11 +679,6 @@ to the GPU every time we update a sector, we can simply just pre-allocate one bi
 we need to draw a sector.
 */
 
-var sectorBuffer = {
-	position : new Float32Array(9999999),
-	color : new Uint8Array(9999999),
-	indice : new Uint32Array(9999999),
-}
 
 //Draws a sector, this is called everytime a chunk within the sector changes 
 sector_draw = function(sectorPos,sectorID){
@@ -649,7 +686,7 @@ sector_draw = function(sectorPos,sectorID){
 	
 	
 	
-	if(meshWorker.busy==0){
+	if(meshWorker.busy<1){
 		sector[sectorID].reDraw=0;
 		meshWorker.busy=1;
 		

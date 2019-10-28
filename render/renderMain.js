@@ -204,7 +204,7 @@ function render(now){
 	
 	for(var k=0; k<activeSectors.length;k++){
 		if(sector[activeSectors[k]].reDraw>0){
-			if(sector[activeSectors[k]].reDraw>=20){
+			if(sector[activeSectors[k]].reDraw>=distance_3d(sector[activeSectors[k]].coords,player.sector)){
 				sector_draw(sector[activeSectors[k]].coords,activeSectors[k]);
 			}else{
 				sector[activeSectors[k]].reDraw+=1;
