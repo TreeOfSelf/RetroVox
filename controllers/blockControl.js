@@ -257,9 +257,7 @@ block_build = function(x,y,z,del){
 	var blockLocation = [(Math.round(x)) - (blockChunk[0]*blockSettings.chunk.XYZ), (Math.round(y)) - (blockChunk[1]*blockSettings.chunk.XYZ),(Math.round(z)) - (blockChunk[2]*blockSettings.chunk.XYZ)];
 	
 	//Displace edges 
-	
-	
-	
+
 	if(blockLocation[0]==0){
 		x-=2;
 	}

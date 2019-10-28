@@ -7,7 +7,7 @@ It takes a blockArray and returns the verticie information that draws the triang
 
 
 //Container for all of our chunk data
-var chunk = [];
+var chunk = new Map();
 
 
 /* NOISE JS 
@@ -23,8 +23,7 @@ copyright notice and this permission notice appear in all copies.
 THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
 REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
 AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+INDIRECT, OR CONSEQUENTIAL DAM+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
@@ -40,7 +39,7 @@ self.addEventListener('message', function(e) {
 		
 		case "start":
 		//Clear chunk list and create new blockSettings
-			chunk=[];
+			chunk= new Map();
 			blockSettings = {
 				chunk : {
 					
@@ -150,9 +149,6 @@ color_return = function(type,position){
 		case 4:
 
 		return([60+noise.simplex2(position[0]/15,position[1]/15)*20,10+noise.simplex2(position[0]/5,position[1]/5)*5,0]);
-			
-		
-
 
 		break;
 		//Red Cloth
