@@ -92,8 +92,9 @@ function render(now){
 	
 	gl.disable(gl.BLEND);
 	keyboard_controls();
+	mobile_controls();
 	player_physics();
-	chunk_process();
+	//chunk_process();
 	
 	//Test to see if the browser window has changed from our set size
 	if(window.innerWidth*renderSettings.resolution!=renderSettings.screenSize[0] || window.innerHeight*renderSettings.resolution!=renderSettings.screenSize[1]){
@@ -160,15 +161,6 @@ function render(now){
 	
 	for(var k=0; k<activeSectors.length;k++){
 		
-		
-		//Redraw sectors flagged to be reDrawn
-		if(sector[activeSectors[k]].reDraw>0){
-			if(sector[activeSectors[k]].reDraw>=distance_3d(sector[activeSectors[k]].coords,player.sector)){
-				sector_draw(sector[activeSectors[k]].coords,activeSectors[k]);
-			}else{
-				sector[activeSectors[k]].reDraw+=1;
-			}
-		}
 		
 		//Draw sector if there is information to be drawn
 		if(sector[activeSectors[k]].buffers.size>0){

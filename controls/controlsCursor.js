@@ -8,7 +8,6 @@ This file contins the code for setting the cursor shape and controlling the bloc
 //Snaps block from game position to grid position
 block_build_cursor = function(x,y,z,del){
 	
-
 	//Snap XYZ to the center of the chunk
 	x+=blockSettings.chunk.XYZ/2;
 	y+=blockSettings.chunk.XYZ/2;
@@ -87,10 +86,10 @@ block_change_cursor = function(x,y,z,del){
 function cursor_draw(){
 		
 		//Get cursor mesh data
-		
-		if(controls.cursorList.length>0){
-			 mesh_naive('cursor',controls.cursorChunkData,controls.cursorChunkType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[0,0,0],1);
-		}
+		cursor_sendData();	
+		//if(controls.cursorList.length>0){
+		 mesh_naive('cursor',controls.cursorChunkData,controls.cursorChunkType,[blockSettings.chunk.XYZ,blockSettings.chunk.XYZ,blockSettings.chunk.XYZ],[0,0,0],1);
+		//}
 }
 
 function cursor_set_shape(){
@@ -130,6 +129,8 @@ function cursor_set_shape(){
 			}
 			break;
 		}
+		
+		controls.cursorString = JSON.stringify(controls.cursorList);
 		
 		//Draw final cursor data
 		cursor_draw();

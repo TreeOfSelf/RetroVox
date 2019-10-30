@@ -35,6 +35,8 @@ var controls = {
 	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(127), 
 	//List of coordinates to create blocks from using the cursor build/delete
 	cursorList : [],
+	//Cursor string 
+	cursorString : "",
 	//Draw data for cursor
 	cursorDraw  : { 
 		vao : gl.createVertexArray(), 
@@ -137,5 +139,5 @@ function player_physics(){
 
 }
 
-
+mesh_start();
 render();

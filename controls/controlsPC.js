@@ -4,6 +4,13 @@ RetroVox PC controls 9/24/2019
 This file will contain all the keyboard / mouse controls 
 */
 
+cursor_sendData = function(){
+	meshWorker.worker.postMessage({
+		id : 'cursorData',
+		buildStrength : controls.buildStrength,
+		buildType : controls.buildType,
+	});
+}
 
 
 var loadMap = document.getElementById('loadMap');
@@ -21,18 +28,10 @@ loadMap.onchange=function(e){
   var fileToLoad = loadMap.files[0];
   var fileReader = new FileReader();
   fileReader.onload = function(fileLoadedEvent){
-      var textFromFileLoaded = fileLoadedEvent.target.result;
-      var loadObject = JSON.parse(textFromFileLoaded);
-	  //Loop through save object
-	  for(var k = 0 ; k<loadObject.length; k++){
-		  console.log(k+1+'/'+loadObject.length);
-		  var chunkID = chunk_returnID(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
-		  chunk_create(loadObject[k][0][0],loadObject[k][0][1],loadObject[k][0][2]);
-		  //Decompress data and flag chunk to reDraw
-		  chunk[chunkID].blockArray = new Int8Array(LZString.decompress(loadObject[k][1]).split(','));
-		  chunk[chunkID].blockType = new Uint8Array(LZString.decompress(loadObject[k][2]).split(','));
-		  chunk[chunkID].flags.reDraw=1;
-	  }
+      meshWorker.worker.postMessage({
+		id : 'loadMap',
+		text: fileLoadedEvent.target.result,
+	  });
   };
 
   fileReader.readAsText(fileToLoad, "UTF-8");
@@ -46,20 +45,9 @@ document.onkeydown=function(e){
 
 	//File save
 	if(e.key=='F1'){
-		var saveArray = [];
-		//Loop through active chunks
-		for(var k = 0 ; k<activeChunks.length; k++){
-			console.log(k+1+'/'+activeChunks.length);
-			
-			//Compress data and save to array
-			var blockArray = LZString.compress(chunk[activeChunks[k]].blockArray.toString());
-			var typeArray = LZString.compress(chunk[activeChunks[k]].blockType.toString());
-			
-			saveArray.push([chunk[activeChunks[k]].coords,blockArray,typeArray]);
-		}
-		//Download text file of map save
-		download(JSON.stringify(saveArray),'saveOne');
-
+		meshWorker.worker.postMessage({
+			id : 'mapSave',
+		});
 	}
 	
 	//Pressure decrease
@@ -218,26 +206,30 @@ keyboard_controls = function(){
 	
 	//Vertical movement
 	if(controls.keys['O']==1){
-		player.position[2]-=player.acceleration;
+		player.position[2]-=player.acceleration*20.0;
 	}
 	if(controls.keys['P']==1){
-		player.position[2]+=player.acceleration;
+		player.position[2]+=player.acceleration*20.0;
 	}
 	
 	//Single build key
 	if(controls.keys['E']==1){
-		var loopLen=controls.cursorList.length;
-		for(var k=0; k<loopLen; k++){
-			block_build(controls.cursorPosition[0]+controls.cursorList[k][0],controls.cursorPosition[1]+controls.cursorList[k][1],controls.cursorPosition[2]+controls.cursorList[k][2],0);
-		}
+		meshWorker.worker.postMessage({
+			id : 'blockChange',
+			cursorList : controls.cursorString,
+			buildType : 0,
+			cursorPosition : controls.cursorPosition
+		});
 	}
 
 	//Single delete key
 	if(controls.keys['C']==1){
-		var loopLen=controls.cursorList.length;
-		for(var k=0; k<loopLen; k++){
-			block_build(controls.cursorPosition[0]+controls.cursorList[k][0],controls.cursorPosition[1]+controls.cursorList[k][1],controls.cursorPosition[2]+controls.cursorList[k][2],1);
-		}
+		meshWorker.worker.postMessage({
+			id : 'blockChange',
+			cursorList : controls.cursorString,
+			buildType : 1,
+			cursorPosition : controls.cursorPosition,
+		});
 	}
 
 	
