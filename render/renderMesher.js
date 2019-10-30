@@ -450,6 +450,7 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
 					hit=1;
 					//Get chunk to the left
 					var chunkIDCheck=chunk_get(chunk[chunkID].coords[0]-1,chunk[chunkID].coords[1],chunk[chunkID].coords[2]);
+					console.log(chunkIDCheck);
 					//Check if chunk exists
 					if(chunk[chunkIDCheck]!=null){
 						nvolume[n++]=chunk[chunkIDCheck].blockArray[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))+blockSettings.chunkXYZ-1];
@@ -464,7 +465,6 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
 				//Right
 				case ndims[2]-1:
 					hit=1;
-					console.log('de fuck');
 					var chunkIDCheck=chunk_get(chunk[chunkID].coords[0]+1,chunk[chunkID].coords[1],chunk[chunkID].coords[2]);
 					if(chunk[chunkIDCheck]!=null){
 						nvolume[n++]=chunk[chunkIDCheck].blockArray[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))-blockSettings.chunkXYZ-2];
