@@ -6,6 +6,8 @@ This file will contain the main webGL related code relating to the canvas, shade
 
 
 
+
+
 //Definitions 
 
 
@@ -16,8 +18,8 @@ var renderSettings = {
 	orthographic : 0,
 	zoom : 75.0,
 	fov : 95,
-	resolution : 0.75,
-	lightIntensity : 0.001,
+	resolution : 0.35,
+	lightIntensity : 0.0005,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
 		XY : 1,

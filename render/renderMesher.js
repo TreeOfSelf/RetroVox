@@ -11,6 +11,10 @@ var chunk = new Map();
 //Container for all of our sector data
 var sector = new Map();
 
+var sectorCoolDownLimit = 1500;
+var sectorCoolDown = Date.now();
+
+
 //Array containing chunks active
 var activeChunks = [];
 //Array for sectors active
@@ -255,6 +259,7 @@ var cube_edges = new Int32Array(24)
 var buffer = new Int32Array(4096);
 
 return function(data,dataType, dims,chunkPos,lod,chunkID) {
+	var drawlod = lod;
   var vertices = []
     , faces = []
 	, finalVert = []
@@ -280,13 +285,15 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
     var colorSave=0;
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
-    
+          
       //Read in 8 field values around this vertex and store them in an array
       //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
       var mask = 0, g = 0, idx = n;
       for(var k=0; k<2; ++k, idx += dims[0]*(dims[1]-2))
       for(var j=0; j<2; ++j, idx += dims[0]-2)      
       for(var i=0; i<2; ++i, ++g, ++idx) {
+		  
+		  
         var p = data[idx]*0.0001;
 		if(dataType[idx]!=127){
 			colorSave = dataType[idx];
@@ -345,17 +352,33 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
       for(var i=0; i<3; ++i) {
         v[i] = x[i] + s * v[i];
       }
-      
+
       //Add vertex to buffer, store pointer to vertex index in buffer
       buffer[m] = vertices.length;
 	  vertices.push(v);
-	  finalVert.push( (((v[0]+chunkPos[0])*lod)*10), (((v[1]+chunkPos[1])*lod)*10), (((v[2]+chunkPos[2])*lod)*10));
+	  var posMod=1;
+	  if(lod!=1){
+		if( Math.floor(v[0])==0 || Math.ceil(v[0]) == dims[0]-1 || Math.floor(v[1])==0 || Math.ceil(v[1]) == dims[1]-1  || Math.floor(v[2])==0 || Math.ceil(v[2]) == dims[2]-1){
+			switch(lod){
+					case 2:
+						posMod=1.1;
+					break;
+					case 4:
+						posMod=1.4;
+					break;
+			
+			}
+			
+		}
+	  }
+	  
+	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)*10), (((v[1]*posMod+chunkPos[1])*lod)*10), (((v[2]*posMod+chunkPos[2])*lod)*10));
 	  //finalColor.push(v[0]*255,v[1]*255,v[2]*255);
 	  var color = color_return(colorSave,[v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]]);
 	  color=[Math.min(Math.max(0,color[0]),255),Math.min(Math.max(0,color[1]),255),Math.min(Math.max(0,color[2]),255)];
 	  //finalColor.push(color[0]+Math.abs(Math.sin(v[0]+v[1]))*20,color[1]+Math.abs(Math.sin(v[1]+v[2]))*20,color[2]+Math.abs(Math.sin(v[2]+v[0]))*20);
 	  finalColor.push(color[0],color[1],color[2]);
-
+	  
       //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
         //The first three entries of the edge_mask count the crossings along the edge
@@ -440,47 +463,8 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
     if(lod*i < dims[0] && lod*j < dims[1] && lod*k < dims[2]) {
 		//If on the border set to no volume (because it won't seam properly)
 		if(k == 0 || k==ndims[2]-1 || j == 0 || j==ndims[1]-1 || i==0 || i==ndims[0]-1){
-			
-			//X
-			var hit=0;
-			
-			switch(k){
-				//Left
-				case 0:
-					hit=1;
-					//Get chunk to the left
-					var chunkIDCheck=chunk_get(chunk[chunkID].coords[0]-1,chunk[chunkID].coords[1],chunk[chunkID].coords[2]);
-					console.log(chunkIDCheck);
-					//Check if chunk exists
-					if(chunk[chunkIDCheck]!=null){
-						nvolume[n++]=chunk[chunkIDCheck].blockArray[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))+blockSettings.chunkXYZ-1];
-						nType[l++]=chunk[chunkIDCheck].blockType[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))+blockSettings.chunkXYZ-1]
-					}else{
-						//Set to nothing if there is no chunk there
-						nvolume[n++]=64;
-						nType[l++]=127;
-					}
-				break;
-				
-				//Right
-				case ndims[2]-1:
-					hit=1;
-					var chunkIDCheck=chunk_get(chunk[chunkID].coords[0]+1,chunk[chunkID].coords[1],chunk[chunkID].coords[2]);
-					if(chunk[chunkIDCheck]!=null){
-						nvolume[n++]=chunk[chunkIDCheck].blockArray[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))-blockSettings.chunkXYZ-2];
-						nType[l++]=chunk[chunkIDCheck].blockType[(lod*i + dims[0] * (lod*j + dims[1] * (lod* k)))-blockSettings.chunkXYZ-2]
-					}else{
-						//Set to nothing if there is no chunk there
-						nvolume[n++]=64;
-						nType[l++]=127;
-					}
-				break;
-			}
-			
-			if(hit==0){
 			nvolume[n++]=64;
 			nType[l++]=127;
-			}
 		}else{
 		nvolume[n++] = volume[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))];
 		nType[l++] = type[lod*i + dims[0] * (lod*j + dims[1] * (lod* k))]
@@ -782,6 +766,9 @@ chunk_create = function(x,y,z){
 			//Scale of LOD 1,2,4
 			LOD : 1,
 			
+			//Distance of last LOD change 
+			lastLOD : 0,
+			
 			//Individual drawData for each LOD is stored at meshing
 			drawData : { 
 			1 : 
@@ -805,6 +792,17 @@ chunk_create = function(x,y,z){
 			}
 		}
 	
+	}
+	
+	var dist = distance_3d(player.chunk,chunk[chunkID].coords);
+	if(dist>=blockSettings.LODdistance[1]){
+			chunk[chunkID].LOD=4;
+	//NEAR LOD
+	}else{
+		if(dist>=blockSettings.LODdistance[0]){
+			chunk[chunkID].LOD=2;
+		}
+
 	}
 }
 
@@ -889,8 +887,8 @@ chunk_process = function() {
 			}
 
 			//If chunk is flagged to be re-drawn
-			if( chunk[chunkID].flags.reDraw>=1){
-				if(chunk[chunkID].flags.reDraw>=processList[k][1]/2+4){
+			if( chunk[chunkID].flags.reDraw>=1 ){
+				if(chunk[chunkID].flags.reDraw>=processList[k][1]/2+4 || processList[k][1]<=1){
 					procAmount+=1;
 					 
 					chunk_mesh(chunkID);
@@ -930,17 +928,21 @@ chunk_process = function() {
 				//If the chunk is outside of your normal processing range 
 				if( Math.abs(chunk[chunkID].coords[0] - player.chunk[0]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[1] - player.chunk[1]) > blockSettings.processDistance.XY || Math.abs(chunk[chunkID].coords[2] - player.chunk[2]) > blockSettings.processDistance.Z){ 
 					//Get distance from player chunk
+
 					var dist = distance_3d(player.chunk,chunk[chunkID].coords);
+	
 					if(dist >= blockSettings.LODdistance[0]){
 						//FAR LOD 
 						if(dist>=blockSettings.LODdistance[1]){
-							if(chunk[chunkID].LOD!=4){
+							if(chunk[chunkID].LOD!=4 && Math.abs(chunk[chunkID].lastLOD-dist) > 4){	
+								chunk[chunkID].lastLOD=dist;
 								chunk[chunkID].LOD=4;
 								chunk_draw_sector(chunkID);
 							}
 						//NEAR LOD
 						}else{
-							if(chunk[chunkID].LOD!=2){
+							if(chunk[chunkID].LOD!=2 && Math.abs(chunk[chunkID].lastLOD-dist) > 4){
+								chunk[chunkID].lastLOD=dist;
 								chunk[chunkID].LOD=2;
 								chunk_draw_sector(chunkID);
 		
@@ -1080,17 +1082,21 @@ sector_process = function(){
 				if(sector[sectorID].reDraw>=processList[k][1]*2+10){
 					procAmount+=1;
 					 
-					var result = sector_draw(sector[sectorID].coords,blockSettings.sector.XYZ);
-					self.postMessage({
-						id : 'sector',
-						sectorID : sectorID,
-						coords : sector[sectorID].coords,
-						size : result[0],
-						indice : result[1],
-						position : result[2],
-						color : result[3],
-					},[result[1],result[2],result[3]]);
-					sector[sectorID].reDraw=0;
+					if( Date.now() - sectorCoolDown > sectorCoolDownLimit || processList[k][0]<=0){
+						 sectorCoolDown = Date.now();
+						var result = sector_draw(sector[sectorID].coords,blockSettings.sector.XYZ);
+						self.postMessage({
+							id : 'sector',
+							sectorID : sectorID,
+							coords : sector[sectorID].coords,
+							size : result[0],
+							indice : result[1],
+							position : result[2],
+							color : result[3],
+						},[result[1],result[2],result[3]]);
+						sector[sectorID].reDraw=0;
+					
+					}
 					
 				}else{
 					sector[sectorID].reDraw+=1;

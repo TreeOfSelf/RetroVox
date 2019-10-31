@@ -140,6 +140,8 @@ mesh_naive = function(chunkID,chunkData,chunkType,chunkDim,chunkPos,Lod){
 var chunk=new Map();
 var sector=new Map();
 
+
+
 //list of active chunks.
 var activeChunks=[];
 //list of active sectors
@@ -171,19 +173,19 @@ var blockSettings = {
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 10,
-		Z : 10,
+		XY : 6,
+		Z : 6,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 20,
-	processDistanceFarSearchLimit : 10000,
+	processDistanceFar : 30,
+	processDistanceFarSearchLimit : 9000,
 	
 	//Amount of chunks allowed to process in one frame
 	processLimit : 20,
 	
 	//LOD distances Near/Far
-	LODdistance : [15,19]
+	LODdistance : [11,16]
 	
 }
 
