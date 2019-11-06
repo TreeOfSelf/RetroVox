@@ -14,10 +14,14 @@ var lookPosEnd =[0,0];
 var movePosEnd=[0,0];
 
 //Mobile
+canvas.ontouchstart = function(e){
+		canvas.requestFullscreen();
+}
+
 document.body.ontouchstart = function(e){
 	
 	e.preventDefault();
-	canvas.requestFullscreen();
+
 	//If there is more than one touch
 	for(var k=0;k<e.changedTouches.length;k++){
 		if(e.changedTouches[k].screenX>window.innerWidth/2){

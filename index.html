@@ -19,20 +19,44 @@ just going to add a new array that defines the type of voxel, then in the mesher
 possibly using the position to slightly distort the colors. Wow, almost a month of work.
 
 -->
-
+<html>
+<head>
+<style>
+body {
+	background-color: #2d324d;
+}
+</style>
+</head>
 
 <!-- Load Map -->
-<input type="file"id="loadMap">
-<p id="result" > No map selected </p>
+<input  style="position:absolute;left:30px;top:10px;color:red;" type="file"id="loadMap">
+<b> <p style="position:absolute;left:30px;top:15px;color:red;" id="result" > No map selected </p> </b>
+
+
+<!-- Settings Sliders -->
+<input style="position:absolute;left:30px;top:55px;color:red;" type="range" min="1" max="15" value="1" class="slider" id="viewDistance">
+<p  style="position:absolute;left:60px;top:55px;color:red;" id='viewDistanceOutput'> View Distance : 1 </p>
+
+<input style="position:absolute;left:30px;top:100px;color:red;" type="range" min="1" max="100" value="50" class="slider" id="resolution">
+<p  style="position:absolute;left:60px;top:105px;color:red;" id='resolutionOutput'> Resolution : 50% </p>
+
+<input style="position:absolute;left:30px;top:150px;color:red;" type="range" min="1" max="1000" value="100" class="slider" id="sectorDelay">
+<p  style="position:absolute;left:60px;top:155px;color:red;" id='sectorDelayOutput'> Sector Delay : 100ms </p>
+
+<input style="position:absolute;left:30px;top:200px;color:red;" type="range" min="1" max="20" value="5" class="slider" id="processDistance">
+<p  style="position:absolute;left:60px;top:205px;color:red;" id='processDistanceOutput'> Process Distance : 5 </p>
+
+
+
 
 <!-- Libraries -->
 <script src="lib/retroLibrary.js"> </script>
 <script src="lib/gl-matrix-min.js"> </script>
 <!-- Render -->
-<canvas id="retroCanvas"> </canvas>
+<canvas  style="position:relative;left:300px;top:0%;" id="retroCanvas"> </canvas>
 <script src="render/renderMain.js"> </script>
 <script src="render/renderShaders.js"> </script>
-
+<script src="render/renderSimplify.js"> </script>
 <!-- Controls -->
 <script src="controls/controlsPC.js"> </script>
 <script src="controls/controlsCursor.js"> </script>
@@ -42,3 +66,4 @@ possibly using the position to slightly distort the colors. Wow, almost a month 
 <script src="controllers/playerControl.js"> </script>
 
 
+</html>

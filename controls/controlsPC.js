@@ -12,6 +12,45 @@ cursor_sendData = function(){
 	});
 }
 
+var viewDistanceSlider = document.getElementById('viewDistance');
+var viewDistanceOutput = document.getElementById('viewDistanceOutput');
+viewDistanceSlider.oninput = function(){
+	renderSettings.viewDistance.XY = this.value;
+	renderSettings.viewDistance.Z = this.value;
+	viewDistanceOutput.innerHTML = "View Distance: "+this.value;
+}
+
+var resolutionSlider = document.getElementById('resolution');
+var resolutionOutput = document.getElementById('resolutionOutput');
+resolutionSlider.oninput = function(){
+	renderSettings.resolution = this.value / 100;
+	resolutionOutput.innerHTML = "Resolution: "+this.value+'%';
+}
+
+var sectorDelaySlider = document.getElementById('sectorDelay');
+var sectorDelayOutput = document.getElementById('sectorDelayOutput');
+sectorDelaySlider.oninput = function(){
+	
+	meshWorker.worker.postMessage({
+		id : 'sectorDelay',
+		delay : this.value,
+	});
+	sectorDelayOutput.innerHTML = "Sector Delay: "+this.value+'ms';
+}
+
+var processDistanceSlider = document.getElementById('processDistance');
+var processDistanceOutput = document.getElementById('processDistanceOutput');
+processDistanceSlider.oninput = function(){
+	
+	meshWorker.worker.postMessage({
+		id : 'processDistance',
+		distance : this.value,
+	});
+	processDistanceOutput.innerHTML = "Process Distance: "+this.value;
+}
+
+
+
 
 var loadMap = document.getElementById('loadMap');
 
@@ -171,9 +210,13 @@ keyboard_controls = function(){
 	
 	
 	if(controls.keys['SHIFT']!=1){
-		player.acceleration = 0.015;
+		if(controls.keys['CONTROL']==1){
+			player.acceleration = 0.03;		
+		}else{
+			player.acceleration = 0.07;
+		}
 	}else{
-		player.acceleration = 0.05;		
+		player.acceleration = 0.4;
 	}
 	
 	//WASD MOVEMENT

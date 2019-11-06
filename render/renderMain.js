@@ -17,8 +17,8 @@ var renderSettings = {
 	wireframe : 0,
 	orthographic : 0,
 	zoom : 75.0,
-	fov : 95,
-	resolution : 0.35,
+	fov : 80,
+	resolution : 0.5,
 	lightIntensity : 0.0005,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
@@ -66,7 +66,7 @@ function loadTexture(gl,url){
 canvas = document.getElementById("retroCanvas");
 const gl = canvas.getContext("webgl2",{
 	alpha: false,
-	antialias : false,
+	antialias : true,
 	//premultipliedAlpha: false, 
 });
 canvas.style.imageRendering='pixelated';
@@ -79,7 +79,37 @@ gl.cullFace(gl.BACK);
 gl.enable(gl.BLEND);
 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 gl.lineWidth(15.0);
-gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,1.0);
+
+var d = new Date();
+var day = d.getDate();
+var mont = d.getMonth();
+var seconds = d.getTime();
+
+var color = [noise.perlin3(mont/10,day/100,seconds/400000),noise.perlin3(day/100,mont/10,seconds/400000),noise.perlin3(seconds/400000,day/100,mont/10)];
+color = [Math.abs(color[0]),Math.abs(color[1]),Math.abs(color[2])];
+gl.clearColor(color[0],color[1],color[2],1.0);
+
+
+renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
+
+
+setInterval(function(){
+d = new Date();
+var day = d.getDate();
+var mont = d.getMonth();
+var seconds = d.getTime();
+
+
+var color = [noise.perlin3(mont/10,day/100,seconds/400000),noise.perlin3(day/100,mont/10,seconds/400000),noise.perlin3(seconds/400000,day/100,mont/10)];
+color = [Math.abs(color[0]),Math.abs(color[1]),Math.abs(color[2])];
+gl.clearColor(color[0],color[1],color[2],1.0);
+
+
+renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
+
+
+},2000);
+//gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,1.0);
 
 //Load Texture
 
@@ -159,28 +189,31 @@ function render(now){
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);
 
+
+	for(var xx=-renderSettings.viewDistance.XY;xx<=renderSettings.viewDistance.XY;xx++){
+	for(var yy=-renderSettings.viewDistance.XY;yy<=renderSettings.viewDistance.XY;yy++){
+	for(var zz=-renderSettings.viewDistance.XY;zz<=renderSettings.viewDistance.XY;zz++){
+		var sectorPos = [xx+player.sector[0],yy+player.sector[1],zz+player.sector[2]];
+		var sectorID = sector_returnID(sectorPos[0],sectorPos[1],sectorPos[2]);
+		if(sector[sectorID]!=null){
+			if(sector[sectorID].buffers.size>0){
+				gl.bindVertexArray(sector[sectorID].vao);
+				fps.drawLength+=sector[sectorID].buffers.size;
+				//Draw the triangles 
+				if(renderSettings.wireframe==0){		
+			
+					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+				//Draw wireframe
+				}else{
+					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+				}			
+			}
+		}
+	
+	}}}
 	//Loop through active sectors 
 	
-	for(var k=0; k<activeSectors.length;k++){
-		
-		
-		//Draw sector if there is information to be drawn
-		if(sector[activeSectors[k]].buffers.size>0){
-				
-			//drawLength+=sector[sectorID].buffers.size;
-			//Bind VAO
-			gl.bindVertexArray(sector[activeSectors[k]].vao);
-			fps.drawLength+=sector[activeSectors[k]].buffers.size;
-			//Draw the triangles 
-			if(renderSettings.wireframe==0){		
-		
-				gl.drawElements(gl.TRIANGLES, sector[activeSectors[k]].buffers.size,gl.UNSIGNED_INT,0);
-			//Draw wireframe
-			}else{
-				gl.drawElements(gl.LINES, sector[activeSectors[k]].buffers.size,gl.UNSIGNED_INT,0);					
-			}	
-		}	
-	}
+	
 	
 	//If there is a cursor to be drawn
 	if(controls.cursorDraw.size!=0){

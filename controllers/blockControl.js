@@ -4,7 +4,20 @@ RetroVox Main Render 9/23/2019
 This file will contain everything relating to sectors/chunks/blocks 
 */
 
-
+testObj = {
+	vertices : [
+	1,2,3,
+	3,4,5,
+	5,6,7,
+	7,8,9,
+	8,10,12,
+	13,14,15,
+	],
+	faces : [
+	0,1,2,
+	3,4,5,
+	],
+}
 
 
 //0 = drawing with Float32Arrays (more accuracy)
@@ -37,6 +50,11 @@ meshWorker.worker.addEventListener('message', function(e) {
 	var message = e.data;
 	switch(message.id){
 		
+		case 'testObj':
+		
+			testObj.vertices = message.vertices;
+			testObj.faces = message.faces;
+		break;
 	
 		case 'finishSave':
 		download(message.text,'save');
@@ -168,24 +186,24 @@ var blockSettings = {
 	
 	sector : {
 		space : 32,
-		XYZ : 10,
+		XYZ : 8,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 6,
-		Z : 6,
+		XY : 4,
+		Z : 4,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 30,
-	processDistanceFarSearchLimit : 9000,
+	processDistanceFar : 15,
+	processDistanceFarSearchLimit : 15000,
 	
 	//Amount of chunks allowed to process in one frame
-	processLimit : 20,
+	processLimit : 10,
 	
 	//LOD distances Near/Far
-	LODdistance : [11,16]
+	LODdistance : [8,12]
 	
 }
 
