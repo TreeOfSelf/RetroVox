@@ -189,30 +189,45 @@ function render(now){
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);
 
-
+	var processList = [];
+	
 	for(var xx=-renderSettings.viewDistance.XY;xx<=renderSettings.viewDistance.XY;xx++){
 	for(var yy=-renderSettings.viewDistance.XY;yy<=renderSettings.viewDistance.XY;yy++){
 	for(var zz=-renderSettings.viewDistance.XY;zz<=renderSettings.viewDistance.XY;zz++){
 		var sectorPos = [xx+player.sector[0],yy+player.sector[1],zz+player.sector[2]];
 		var sectorID = sector_returnID(sectorPos[0],sectorPos[1],sectorPos[2]);
-		if(sector[sectorID]!=null){
-			if(sector[sectorID].buffers.size>0){
-				gl.bindVertexArray(sector[sectorID].vao);
-				fps.drawLength+=sector[sectorID].buffers.size;
-				//Draw the triangles 
-				if(renderSettings.wireframe==0){		
-			
-					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
-				//Draw wireframe
-				}else{
-					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
-				}			
-			}
-		}
 	
+		if(sector[sectorID]!=null){
+			processList.push([sectorID,distance_3d(sector[sectorID].coords,player.sector)]);	
+		}
+		
 	}}}
+	
+	//Sort the list of chunks by distance
+	processList.sort(function(a,b){
+		return(a[1]-b[1]);
+	});
+	
 	//Loop through active sectors 
 	
+	
+	for(var k=0 ; k<processList.length ; k++){
+		var sectorID = processList[k][0];
+		if(sector[sectorID].buffers.size>0){
+			gl.bindVertexArray(sector[sectorID].vao);
+			fps.drawLength+=sector[sectorID].buffers.size;
+			//Draw the triangles 
+			if(renderSettings.wireframe==0){		
+		
+				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+			//Draw wireframe
+			}else{
+				gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+			}			
+		}
+	
+
+	}
 	
 	
 	//If there is a cursor to be drawn

@@ -176,6 +176,56 @@ self.addEventListener('message', function(e) {
 //Takes a type and returns a color
 //Different mathematical functions for each block type
 //Variation of sine waves , cosine waves, and simplex noise
+color_returnD= function(type,position){
+	
+	switch(type){
+	
+	default:
+		return([100,50,50]);
+	break;
+	//Grass
+	case 1:
+		return([0,60,0]);
+	break;
+	//Dirt
+	case 2:
+		return([100,40,0]);
+	break;
+	//Rock
+	case 3:
+		return([40,40,40]);
+	break;
+	//Wood
+	case 4:
+		return([60,10,0]);
+	break;
+	//Red
+	case 5:
+		return([100,0,0]);
+	break;
+	//Sand
+	case 6:
+		return([200,100,0]);
+	break;
+	//Leaves
+	case 7:
+		return([20,110,5]);
+	break;
+	//Water
+	case 8:
+		return([0,10,100]);
+	break;
+	//Cloud
+	case 9:
+		return([230,230,230]);
+	break;
+	//Black
+	case 0:
+		return([5,5,5]);
+	break;
+	}
+}
+
 color_return = function(type,position){
 	switch(type){
 		default:
@@ -389,8 +439,8 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 	  if(collisionObj[id]==null){
 		  collisionObj[id]=[];
 	  }
-	  collisionObj[id].push( (((v[0]*posMod+chunkPos[0])*lod)*10), (((v[1]*posMod+chunkPos[1])*lod)*10), (((v[2]*posMod+chunkPos[2])*lod)*10))
-	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)*10), (((v[1]*posMod+chunkPos[1])*lod)*10), (((v[2]*posMod+chunkPos[2])*lod)*10));
+	//  collisionObj[id].push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)))
+	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)*10), (((v[1]*posMod+chunkPos[1])*lod)*10), (((v[2]*posMod+chunkPos[2])*lod))*10);
 	  //finalColor.push(v[0]*255,v[1]*255,v[2]*255);
 	  var color = color_return(colorSave,[v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]]);
 	  color=[Math.min(Math.max(0,color[0]),255),Math.min(Math.max(0,color[1]),255),Math.min(Math.max(0,color[2]),255)];
@@ -439,18 +489,21 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		
 		//Set draw data for chunk
 		
-		if(faces.length!=0){
-			self.postMessage({
-				id : 'testObj',
-				vertices : finalVert,
-				faces : faces,
-				
-			});
+		/*var chunkObj = {
+			vertices : finalVert,
+			faces : faces,
+			colors : finalColor,
 		}
-		
+		var retObj = SimplifyModifier.modify(chunkObj);
+		*/
 		chunk[chunkID].drawData[lod].position = new dataArrayType(finalVert);
 		chunk[chunkID].drawData[lod].color = new Uint8Array(finalColor);
 		chunk[chunkID].drawData[lod].indice = new Uint32Array(faces);
+		
+		// chunk[chunkID].drawData[lod].position = new dataArrayType(retObj.vertices);
+		// chunk[chunkID].drawData[lod].color = new Uint8Array(retObj.colors);
+		// chunk[chunkID].drawData[lod].indice = new Uint32Array(retObj.faces);
+		
 		
 		chunk_draw_sector(chunkID);
 		
@@ -461,11 +514,12 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		var cursorObj = {
 			vertices : finalVert,
 			faces : faces,
+			colors : finalColor,
 		}
 		var retObj = SimplifyModifier.modify(cursorObj);
 		
 		//return [(new dataArrayType(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer];
-		return [(new dataArrayType(retObj.vertices)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(retObj.faces)).buffer];
+		return [(new dataArrayType(retObj.vertices)).buffer, (new Uint8Array(retObj.colors)).buffer, (new Uint32Array(retObj.faces)).buffer];
 
 	}
   //All done!  Return the result
@@ -626,7 +680,11 @@ block_change = function(x,y,z,del,amount,buildType){
 	
 	//get location of chunk from block XYZ
 	var chunkPosition = chunk_get(x,y,z);
-		
+	
+	 // if(chunkPosition[0] != 0 || chunkPosition[1] != 0 || chunkPosition[2]!=0){
+		 // return(-1);
+	 // }
+	
 	//get id from location of chunks
 	var chunkID = chunk_returnID(chunkPosition[0],chunkPosition[1],chunkPosition[2]);
 	//formula to get location of block relative inside of the chunks space.
@@ -1379,12 +1437,13 @@ SimplifyModifier.modify =
 	// 	this[2] = z;
 	// };
 
-	function Vertex(vector) {
+	function Vertex(vector,color) {
 		this.p = glMatrix.vec3.fromValues(vector[0],vector[1],vector[2]);
 		this.tstart = -1;
 		this.tcount = -1;
 		this.q = new SymetricMatrix();
 		this.border = false;
+		this.color = color.slice();
 	}
 
 	function Ref() {
@@ -1393,7 +1452,7 @@ SimplifyModifier.modify =
 	}
 
 
-	function init(origVertices, origFaces) {
+	function init(origVertices, origFaces,origColor) {
 			
 		/*vertices = origVertices.map(
 			v => {
@@ -1404,7 +1463,7 @@ SimplifyModifier.modify =
 		
 		vertices = [];
 		for(var i=0; i<origVertices.length; i+=3){
-			var vert = new Vertex([origVertices[i],origVertices[i+1],origVertices[i+2]]);
+			var vert = new Vertex([origVertices[i],origVertices[i+1],origVertices[i+2]],[origColor[i],origColor[i+1],origColor[i+2]]);
 			vertices.push(vert);
 		}
 
@@ -1417,15 +1476,7 @@ SimplifyModifier.modify =
 			tri.v[2] = origFaces[i+2];
 			triangles.push(tri);
 		}
-		
-		/*
-		triangles = origFaces.map( f => {
-			var tri = new Triangle();
-			tri.v[0] = f[0];
-			tri.v[1] = f[1];
-			tri.v[2] = f[2];
-			return tri;
-		});*/
+
 	}
 
 	var triangles = []; // Triangle
@@ -1437,10 +1488,7 @@ SimplifyModifier.modify =
 			return array.splice(count);
 		}
 
-		if (count > array.length) {
-			// in JS, arrays need not be expanded
-			// console.log('more');
-		}
+
 	}
 
 	//
@@ -1456,7 +1504,6 @@ SimplifyModifier.modify =
 
 		// TODO normalize_mesh to max length 1?
 
-		console.time('simplify_mesh');
 
 		var i, il;
 
@@ -1466,7 +1513,6 @@ SimplifyModifier.modify =
 		}
 
 
-		console.timeEnd('simplify_mesh');
 
 		// main iteration loop
 
@@ -1476,13 +1522,11 @@ SimplifyModifier.modify =
 
 
 		for (var iteration = 0; iteration < 100; iteration++ ) {
-			console.log("iteration %d - triangles %d, tris\n",
-				iteration, triangle_count - deleted_triangles, triangles.length);
-
+	 
+			
 
 
 			if ( triangle_count - deleted_triangles <= target_count ){
-			console.log('BROKE',triangle_count,deleted_triangles,target_count);
 				break;
 			}
 			// update mesh once in a while
@@ -1519,9 +1563,15 @@ SimplifyModifier.modify =
 						var i1 = t.v[ (j + 1) % 3 ];
 						var v1 = vertices[ i1 ];
 
+
+					//Only mesh same color
+						if(v0.color[0] != v1.color[0] || v0.color[1] != v1.color[1] || v0.color[2] != v1.color[2]) continue;
+						
+
 						// Border check
 						if (v0.border != v1.border) continue;
-
+						
+	
 						// Compute vertex to collapse to
 						var p = glMatrix.vec3.create();
 						calculate_error( i0, i1, p );
@@ -1585,8 +1635,7 @@ SimplifyModifier.modify =
 		compact_mesh();
 
 		// ready
-		console.timeEnd('simplify_mesh');
-
+	
 		// int timeEnd=timeGetTime();
 		// printf("%s - %d/%d %d%% removed in %d ms\n",__FUNCTION__,
 		// 	triangle_count-deleted_triangles,
@@ -1696,7 +1745,6 @@ SimplifyModifier.modify =
 				}
 			}
 
-			console.log('not deleted dst', triangles.length, dst);
 			triangles.splice( dst );
 
 		}
@@ -1790,7 +1838,7 @@ SimplifyModifier.modify =
 
 		// Write References
 		// resize(refs, triangles.length * 3)
-		console.log('pre ref', refs.length, triangles.length * 3);
+
 		for (var i = refs.length; i < triangles.length * 3; i++) {
 			refs[i] = new Ref();
 		}
@@ -1861,7 +1909,6 @@ SimplifyModifier.modify =
 
 	function compact_mesh()
 	{
-		console.log('compact_mesh');
 		var /*int */ dst=0;
 		for (var i = 0; i < vertices.length; i++) {
 			vertices[i].tcount=0;
@@ -1889,9 +1936,8 @@ SimplifyModifier.modify =
 			for (var j = 0; j < 3; j++)
 				t.v[j] = vertices[t.v[j]].tstart;
 		}
-		console.log('%cCompact Mesh', 'background:#f00', vertices.length, dst);
 		resize(vertices, dst);
-		console.log('%cCompact Mesh ok', 'background:#f00', vertices.length, dst);
+		
 	}
 
 	// Error between vertex and Quadric
@@ -1951,38 +1997,47 @@ SimplifyModifier.modify =
 	}
 	return function simplifyModify(geometry) {
 
+		vertices=[];
+		faces=[];
+		triangles = []; // Triangle
+		refs = []; // Ref
+		vcount = [];
+		vids = [];
+		deleted1=[];
+		deleted0=[];
 
 
 		// convert format
-		init( geometry.vertices, geometry.faces );
+		init( geometry.vertices, geometry.faces, geometry.colors );
 
 		// simplify!
 		// simplify_mesh(geometry.faces.length * 0.5 | 0, 7);
 		// simplify_mesh(geometry.faces.length - 2, 4);
 
-		console.time('simplify')
 		//simplify_mesh(150, 7);
-		simplify_mesh(geometry.faces.length/3/10,8);
-		console.timeEnd('simplify')
+		simplify_mesh(geometry.faces.length/3/100,1);
+		//simplify_mesh(20,10);
 
 
-		console.log('old vertices ' + geometry.vertices.length, 'old faces ' + geometry.faces.length);
+		//console.log('old vertices ' + geometry.vertices.length, 'old faces ' + geometry.faces.length);
 
-		console.log('new vertices ' + vertices.length, 'old faces ' + triangles.length);
+		//console.log('new vertices ' + vertices.length*3, 'new faces ' + triangles.length*3);
 
 
 		// TODO convert to buffer geometry.
 		var newGeo = {
 			vertices : [],
 			faces : [],
+			colors : [],
 		}
 
 		for ( i = 0; i < vertices.length; i ++ ) {
 
 			var v = vertices[ i ];
 			newGeo.vertices.push( v.p[0],v.p[1],v.p[2])
-
+			newGeo.colors.push( v.color[0],v.color[1],v.color[2]);
 		}
+		
 
 		for ( i = 0; i < triangles.length; i ++ ) {
 

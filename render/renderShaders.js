@@ -65,49 +65,50 @@ uniform float uLight;
 uniform float uTransparency;
 
 out lowp vec4 vPixelColor;
-out lowp float vColor;
-out lowp float vTransparency;
+//out lowp float vColor;
+//out lowp float vTransparency;
 
 void main() {
 
-	gl_PointSize = 35.0;
+	//gl_PointSize = 35.0;
 	//Get screen position
 	
 	
 	
-	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0]*0.1,-aPosition[2]*0.1,aPosition[1]*0.1,1.0);
+	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0]/10.0,-aPosition[2]/10.0,aPosition[1]/10.0,1.0);
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0]*0.1,aPosition[1]*0.1,aPosition[2]*0.1))*uLight);	
+	//vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0]/10.0,aPosition[1]/10.0,aPosition[2]/10.0))*uLight);	
 
 
 	//Different depth depending on orthographic/perspective
-	if(uOrtho==1){
+	//if(uOrtho==1){
 		gl_Position[2]*=0.5;
-	}
-	if(uOrtho==2){
-		gl_Position[2]*=0.1;
-	}
+	//}
+	//if(uOrtho==2){
+	//	gl_Position[2]*=0.1;
+	//}
 
 	//Set color 0-1 based on 255 values
 	vPixelColor = vec4(aColor[0]/255.0,aColor[1]/255.0,aColor[2]/255.0,1.0);
-	vTransparency = uTransparency;
+	//vTransparency = uTransparency;
 }
 `;
 
 //Fragment Shader
 const fsSource = `#version 300 es
 in lowp vec4 vPixelColor;
-in lowp float vColor;
-in lowp float vTransparency;
+//in lowp float vColor;
+//in lowp float vTransparency;
 
 out lowp vec4 fragColor;
 
 void main() {
 	//Mix color with shading
-	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
-	fragColor.a = vTransparency;
+	//fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
+	fragColor = vPixelColor;
+	//fragColor.a = vTransparency;
 }
 `;
 

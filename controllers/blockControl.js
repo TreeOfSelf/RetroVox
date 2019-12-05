@@ -186,7 +186,7 @@ var blockSettings = {
 	
 	sector : {
 		space : 32,
-		XYZ : 8,
+		XYZ : 4,
 	},
 	
 	//Determines how far out to process chunks
