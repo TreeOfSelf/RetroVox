@@ -65,7 +65,7 @@ uniform float uLight;
 uniform float uTransparency;
 
 out lowp vec4 vPixelColor;
-//out lowp float vColor;
+out lowp float vColor;
 //out lowp float vTransparency;
 
 void main() {
@@ -75,11 +75,11 @@ void main() {
 	
 	
 	
-	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0]/10.0,-aPosition[2]/10.0,aPosition[1]/10.0,1.0);
+	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
 	
 
 	//Size based on distance for shading
-	//vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0]/10.0,aPosition[1]/10.0,aPosition[2]/10.0))*uLight);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.0001);	
 
 
 	//Different depth depending on orthographic/perspective
@@ -99,15 +99,15 @@ void main() {
 //Fragment Shader
 const fsSource = `#version 300 es
 in lowp vec4 vPixelColor;
-//in lowp float vColor;
+in lowp float vColor;
 //in lowp float vTransparency;
 
 out lowp vec4 fragColor;
 
 void main() {
 	//Mix color with shading
-	//fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
-	fragColor = vPixelColor;
+	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
+	//fragColor = vPixelColor;
 	//fragColor.a = vTransparency;
 }
 `;

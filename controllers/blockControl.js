@@ -22,7 +22,7 @@ testObj = {
 
 //0 = drawing with Float32Arrays (more accuracy)
 //1 = drawing with Int16 (less data bandwidth)
-var drawType = 1
+var drawType = 0
 var loadDisplay = document.getElementById('result');
 switch(drawType){
 	case 0:
@@ -180,30 +180,30 @@ var activeSectors=[];
 //Settings object 
 var blockSettings = {
 	chunk : {
-		space : 64,
-		XYZ : 32,
+		space : 200,
+		XYZ : 64,
 	},
 	
 	sector : {
-		space : 32,
+		space : 200,
 		XYZ : 4,
 	},
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 4,
-		Z : 4,
+		XY : 3,
+		Z : 3,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 15,
-	processDistanceFarSearchLimit : 15000,
+	processDistanceFar : 40,
+	processDistanceFarSearchLimit : 150000000,
 	
 	//Amount of chunks allowed to process in one frame
-	processLimit : 10,
+	processLimit : 5000000,
 	
 	//LOD distances Near/Far
-	LODdistance : [8,12]
+	LODdistance : [15,30]
 	
 }
 
@@ -228,7 +228,9 @@ setInterval(function(){
 		id : 'player',
 		player : JSON.stringify(player),
 	});
-},500);
+},1);
+
+
 
 //Coordinates for where we are in our farther our processing 
 blockSettings.processCoords = [

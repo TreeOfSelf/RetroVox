@@ -232,15 +232,15 @@ function render(now){
 	
 	//If there is a cursor to be drawn
 	if(controls.cursorDraw.size!=0){
-		gl.enable(gl.BLEND);
+		//gl.enable(gl.BLEND);
 		//Displace cursor 
 		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
 		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
 		gl.uniform1f(programInfo.uniformLocations.transparency,controls.buildStrength/30);
 		//Draw cursor
 		gl.bindVertexArray(controls.cursorDraw.vao);
-		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
-		gl.disable(gl.BLEND);
+		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+		//gl.disable(gl.BLEND);
 		gl.drawElements(gl.LINES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 	}
 	

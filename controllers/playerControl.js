@@ -140,4 +140,7 @@ function player_physics(){
 }
 
 mesh_start();
+meshWorker.worker.postMessage({
+	id : 'generate_world',
+});
 render();

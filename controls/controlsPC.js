@@ -211,12 +211,12 @@ keyboard_controls = function(){
 	
 	if(controls.keys['SHIFT']!=1){
 		if(controls.keys['CONTROL']==1){
-			player.acceleration = 0.03;		
+			player.acceleration = 0.01;		
 		}else{
-			player.acceleration = 0.07;
+			player.acceleration = 0.03;
 		}
 	}else{
-		player.acceleration = 0.4;
+		player.acceleration = 0.07;
 	}
 	
 	//WASD MOVEMENT
