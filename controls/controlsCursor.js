@@ -60,10 +60,7 @@ block_build_cursor = function(x,y,z,del){
 block_change_cursor = function(x,y,z,del){
 	var blockLocation = [x,y,z]
 	//Fill edges of bordering chunk(s)
-	
-	
-	
-	
+
 	//get 1d index from relative location
 	var blockIndex = blockLocation[0]+blockLocation[1]*blockSettings.chunk.XYZ+blockLocation[2]*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
 
@@ -71,11 +68,11 @@ block_change_cursor = function(x,y,z,del){
 	//Build
 	case 0:
 		//Set density of block
-		controls.cursorChunkData[blockIndex]=-127
+		controls.cursorChunkData[blockIndex]=127
 	break;
 	//Delete
 	case 1:
-		controls.cursorChunkData[blockIndex]=127;
+		controls.cursorChunkData[blockIndex]=255;
 	break;
 	}
 }
@@ -94,7 +91,7 @@ function cursor_draw(){
 
 function cursor_set_shape(){
 		//Clear cursor chunk array and clear cursot list to populate with new values
-		controls.cursorChunkData = new Int8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(64);
+		controls.cursorChunkData = new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(255);
 		controls.cursorList = [];
 		switch(controls.cursorShape){
 			//None

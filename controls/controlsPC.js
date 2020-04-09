@@ -9,6 +9,8 @@ cursor_sendData = function(){
 		id : 'cursorData',
 		buildStrength : controls.buildStrength,
 		buildType : controls.buildType,
+		cursorChunk : controls.cursorChunk,
+		cursorFixedPosition : controls.cursorFixedPosition
 	});
 }
 

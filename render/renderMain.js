@@ -5,9 +5,6 @@ This file will contain the main webGL related code relating to the canvas, shade
 */
 
 
-
-
-
 //Definitions 
 
 
@@ -93,6 +90,8 @@ gl.clearColor(color[0],color[1],color[2],1.0);
 renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
 
 
+//Set background color based on time
+
 setInterval(function(){
 d = new Date();
 var day = d.getDate();
@@ -109,7 +108,6 @@ renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
 
 
 },2000);
-//gl.clearColor(Math.random()*0.5+0.1,Math.random()*0.2,Math.random()*0.7+0.3,1.0);
 
 //Load Texture
 

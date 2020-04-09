@@ -30,7 +30,7 @@ switch(drawType){
 	dataTypeGL = gl.FLOAT;
 	break;
 	case 1:
-	dataType = Int16Array;
+	dataType = Int8Array;
 	dataTypeGL = gl.SHORT;
 	break;
 }
@@ -181,7 +181,7 @@ var activeSectors=[];
 var blockSettings = {
 	chunk : {
 		space : 200,
-		XYZ : 64,
+		XYZ : 32,
 	},
 	
 	sector : {
@@ -191,16 +191,16 @@ var blockSettings = {
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 3,
-		Z : 3,
+		XY : 2,
+		Z : 2,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 40,
-	processDistanceFarSearchLimit : 150000000,
+	processDistanceFar : 4,
+	processDistanceFarSearchLimit : 5,
 	
-	//Amount of chunks allowed to process in one frame
-	processLimit : 5000000,
+	//Amount of chunks allowed to proceaass in one frame
+	processLimit : 5000,
 	
 	//LOD distances Near/Far
 	LODdistance : [15,30]
@@ -228,7 +228,13 @@ setInterval(function(){
 		id : 'player',
 		player : JSON.stringify(player),
 	});
+	
 },1);
+setInterval(function(){
+	cursor_sendData();
+},60);
+
+			
 
 
 
