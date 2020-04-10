@@ -66,6 +66,9 @@ const gl = canvas.getContext("webgl2",{
 	antialias : true,
 	//premultipliedAlpha: false, 
 });
+
+const texture = loadTexture(gl,'grass.png');
+
 canvas.style.imageRendering='pixelated';
 //Depth testing
 gl.enable(gl.DEPTH_TEST);  

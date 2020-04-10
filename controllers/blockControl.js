@@ -77,7 +77,7 @@ meshWorker.worker.addEventListener('message', function(e) {
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
 		//position
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,new dataType(message.result[0]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.DYNAMIC_DRAW);
 		//colorsss
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
 		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
@@ -186,7 +186,7 @@ var blockSettings = {
 	
 	sector : {
 		space : 200,
-		XYZ : 4,
+		XYZ : 6,
 	},
 	
 	//Determines how far out to process chunks
@@ -196,7 +196,7 @@ var blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 4,
+	processDistanceFar : 7,
 	processDistanceFarSearchLimit : 5,
 	
 	//Amount of chunks allowed to proceaass in one frame

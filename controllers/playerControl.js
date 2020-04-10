@@ -30,7 +30,7 @@ var controls = {
 	//Current cursor shape
 	cursorShape : 0,
 	//Chunk data for cursor
-	cursorChunkData : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(255), 
+	cursorChunkData : new Float32Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(255), 
 	//Type data for cursor (filled so that it actually meshes correctly)
 	cursorChunkType : new Uint8Array(Math.pow(blockSettings.chunk.XYZ,3)).fill(127), 
 	//List of coordinates to create blocks from using the cursor build/delete
