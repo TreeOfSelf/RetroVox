@@ -45,6 +45,7 @@ var controls = {
 			position : gl.createBuffer(),
 			color : gl.createBuffer(),
 			indice :  gl.createBuffer(),
+			texture : gl.createBuffer(),
 		}
 	}
 }

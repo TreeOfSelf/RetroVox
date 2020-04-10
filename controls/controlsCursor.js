@@ -68,7 +68,7 @@ block_change_cursor = function(x,y,z,del){
 	//Build
 	case 0:
 		//Set density of block
-		controls.cursorChunkData[blockIndex]=127
+		controls.cursorChunkData[blockIndex]=0
 	break;
 	//Delete
 	case 1:
@@ -124,6 +124,35 @@ function cursor_set_shape(){
 			}
 			}
 			}
+			break;
+			//Post 
+			case 4:
+			block_build_cursor(0,0,0,0);
+			block_build_cursor(0,0,-1,0);
+			block_build_cursor(0,0,-2,0);
+			block_build_cursor(0,0,-3,0);
+			block_build_cursor(0,0,-4,0);
+			block_build_cursor(0,0,-5,0);
+			block_build_cursor(0,0,-6,0);
+			block_build_cursor(0,0,-7,0);
+			
+			block_build_cursor(-1,0,0,0);
+			block_build_cursor(-1,0,-1,0);
+			block_build_cursor(-1,0,-2,0);
+			block_build_cursor(-1,0,-3,0);
+			block_build_cursor(-1,0,-4,0);
+			block_build_cursor(-1,0,-5,0);
+			block_build_cursor(-1,0,-6,0);
+			block_build_cursor(-1,0,-7,0);
+			
+			block_build_cursor(1,0,0,0);
+			block_build_cursor(1,0,-1,0);
+			block_build_cursor(1,0,-2,0);
+			block_build_cursor(1,0,-3,0);
+			block_build_cursor(1,0,-4,0);
+			block_build_cursor(1,0,-5,0);
+			block_build_cursor(1,0,-6,0);
+			block_build_cursor(1,0,-7,0);
 			break;
 		}
 		

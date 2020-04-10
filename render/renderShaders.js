@@ -48,7 +48,8 @@ const vsSource = `#version 300 es
 in vec3 aPosition;
 //Block Color
 in vec3 aColor;
-
+//Block Texture
+in vec3 aTexture;
 
 
 //Camera Position
@@ -66,6 +67,8 @@ uniform float uTransparency;
 
 out lowp vec4 vPixelColor;
 out lowp float vColor;
+out lowp vec3  vTexture;
+out lowp vec3 vCoords;
 //out lowp float vTransparency;
 
 void main() {
@@ -79,7 +82,7 @@ void main() {
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.0001);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.01);	
 
 
 	//Different depth depending on orthographic/perspective
@@ -92,6 +95,8 @@ void main() {
 
 	//Set color 0-1 based on 255 values
 	vPixelColor = vec4(aColor[0]/255.0,aColor[1]/255.0,aColor[2]/255.0,1.0);
+	vTexture = aTexture;
+	vCoords =  vec3(aPosition[0],aPosition[1],aPosition[2]);
 	//vTransparency = uTransparency;
 }
 `;
@@ -100,13 +105,32 @@ void main() {
 const fsSource = `#version 300 es
 in lowp vec4 vPixelColor;
 in lowp float vColor;
+in lowp vec3 vTexture;
+in lowp vec3 vCoords;
 //in lowp float vTransparency;
+
+uniform sampler2D uSampler;
 
 out lowp vec4 fragColor;
 
 void main() {
 	//Mix color with shading
-	fragColor = mix(vPixelColor,vec4(0.0,0.0,0.0,1.0),vColor);
+	lowp vec3 blending = abs( vTexture );
+	blending = normalize(max(blending, 0.00001)); // Force weights to sum to 1.0
+	lowp float b = (blending.x + blending.y + blending.z);
+	blending /= vec3(b, b, b);
+	
+	
+	// x -z y
+	// 0 -2 1
+	
+	lowp vec4 xaxis = texture( uSampler, vCoords.yz *0.05);
+	lowp vec4 yaxis = texture( uSampler, vCoords.xz *0.1);
+	lowp  vec4 zaxis = texture( uSampler, vCoords.xy*0.1);
+	// blend the results of the 3 planar projections.
+	fragColor = mix(xaxis * blending.x + yaxis * blending.y + zaxis * blending.z,vec4(0.0,0.0,0.0,1.0),vColor);
+	//fragColor =texture(uSampler,vTexture.xy);
+	//fragColor = texture(uSampler,vTexture);
 	//fragColor = vPixelColor;
 	//fragColor.a = vTransparency;
 }
@@ -120,10 +144,12 @@ const programInfo = {
 	program: shaderProgram,
 	
 	attribLocations: {
-	// Position 3v (shorts only) 	
+	// Position 3v 
 	  position: gl.getAttribLocation(shaderProgram, 'aPosition'),
 	  // Color 3v (works on 255 scale)
 	  color : gl.getAttribLocation(shaderProgram, 'aColor'),
+	  // vertex normal 3v 
+	  texture : gl.getAttribLocation(shaderProgram, 'aTexture'),
 	},
 	
 	uniformLocations: {
@@ -139,6 +165,8 @@ const programInfo = {
 		light : gl.getUniformLocation(shaderProgram,'uLight'),
 		//Transparency 
 		transparency : gl.getUniformLocation(shaderProgram, 'uTransparency'),
+		//Texture Sampler 
+		textureSampler : gl.getUniformLocation(shaderProgram, 'uSampler'),
 
 	},
 };

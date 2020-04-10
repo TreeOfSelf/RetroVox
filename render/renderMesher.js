@@ -81,7 +81,7 @@ self.addEventListener('message', function(e) {
 		
 		case 'chunkGenerate':
 		
-			chunk_generate(message.position[0],message.position[1],message.position[2]);
+			//chunk_generate(message.position[0],message.position[1],message.position[2]);
 		break;
 		
 		case 'loadMap':
@@ -133,6 +133,7 @@ self.addEventListener('message', function(e) {
 				position : new dataArrayType(99999999),
 				color : new Uint8Array(99999999),
 				indice : new Uint32Array(99999999),
+				texture : new Float32Array(99999999),
 			}
 			
 			//Flag mesher to start now that we have required block information
@@ -169,7 +170,7 @@ self.addEventListener('message', function(e) {
 					id : "mesh",
 					chunkID : message.chunkID,
 					result : result,
-				},[result[0],result[1],result[2]]);
+				},[result[0],result[1],result[2],result[3]]);
 						
 			}
 		
@@ -246,6 +247,20 @@ color_return = function(type,position){
 }
 
 
+
+function calculate_normal(vertexOne,vertexTwo,vertexThree){
+	var pointOne = glMatrix.vec3.fromValues(vertexOne[0],vertexOne[1],vertexOne[2]);
+	var pointTwo = glMatrix.vec3.fromValues(vertexTwo[0],vertexTwo[1],vertexTwo[2]);
+	var pointThree =  glMatrix.vec3.fromValues(vertexThree[0],vertexThree[1],vertexThree[2]);
+	var vecOne = glMatrix.vec3.create();
+	glMatrix.vec3.subtract(vecOne,pointTwo,pointOne);
+	var vecTwo = glMatrix.vec3.create();
+	glMatrix.vec3.subtract(vecTwo,pointThree,pointOne);
+	var cross = glMatrix.vec3.create();
+	glMatrix.vec3.cross(cross,vecOne,vecTwo);
+	return(cross);
+}
+
 //Function for creating chunk meshes from blockData
 var mesh_naive = (function() {
 "use strict";
@@ -287,13 +302,13 @@ var cube_edges = new Int32Array(24)
 var buffer = new Int32Array(4096);
 
 return function(data,dataType, dims,chunkPos,lod,chunkID) {
-	var drawlod = lod;
-	var collisionObj = [];
   var vertices = []
+	, vertFaces= []
     , faces = []
-	, textureCoords = [],
+	, textureCoords = []
 	, finalVert = []
 	, finalColor = []
+	, faceNormals = []
     , n = 0
     , x = new Int32Array(3)
     , R = new Int32Array([1, (dims[0]+1), (dims[0]+1)*(dims[0]+1)])
@@ -326,7 +341,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
       for(var i=0; i<2; ++i, ++g, ++idx) {
 		  
 		  
-        var p = ((data[idx]-128) * (Math.abs(data[idx]-128 )))
+        var p = ((data[idx]-128))
 		if(dataType[idx]!=127){
 			colorSave = dataType[idx];
 		}
@@ -388,9 +403,8 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 
       //Add vertex to buffer, store pointer to vertex index in buffer
       buffer[m] = vertices.length;
+	  vertFaces.push(glMatrix.vec3.create());
 	  vertices.push(v);
-	  var posMod=1;
-	  
 	  
 	  //Fix LOD position 
 	  
@@ -413,8 +427,13 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 	  /*if(collisionObj[id]==null){
 		  collisionObj[id]=[];
 	  }*/
-	//  collisionObj[id].push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)))
-	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)));
+	  
+	
+		
+	  
+	// 	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)));
+
+	 finalVert.push( (((v[0]+chunkPos[0]))), (((v[1]+chunkPos[1]))), (((v[2]+chunkPos[2]))));
 	  var color = color_return(colorSave,[v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]]);
 	  color=[Math.min(Math.max(0,color[0]),255),Math.min(Math.max(0,color[1]),255),Math.min(Math.max(0,color[2]),255)];
 	  finalColor.push(color[0],color[1],color[2]);
@@ -439,29 +458,54 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
         var du = R[iu]
           , dv = R[iv];
         
+
         //Remember to flip orientation depending on the sign of the corner.
         if(mask & 1) {
-        //  faces.push([buffer[m], buffer[m-du], buffer[m-du-dv], buffer[m-dv]]);
-			textureCoords.push(0.0,0.0,1.0,0.0);
+
+			//THIS IS HOW YOU GET THE VERICY TO CCALCULATE NORMALS
+			//console.log(vertices[buffer[m]])
+			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-du]],vertices[buffer[m-du-dv]]);
+			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalOne);
 			faces.push(buffer[m], buffer[m-du], buffer[m-du-dv]);
+			var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-dv]],vertices[buffer[m]]);
 			faces.push(  buffer[m-du-dv],buffer[m-dv],buffer[m]);
+			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
+			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalTwo);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
         } else {
-         // faces.push([buffer[m], buffer[m-dv], buffer[m-du-dv], buffer[m-du]]);
-		  
-			textureCoords.push(1.0,1.0,0.0,1.0);
+			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-dv]],vertices[buffer[m-du-dv]]);
+			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalOne);
 			faces.push(buffer[m], buffer[m-dv], buffer[m-du-dv]);
+			var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-du]],vertices[buffer[m]]);
+			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
+			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalTwo);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
 			faces.push(buffer[m-du-dv],buffer[m-du],buffer[m]);
         }
       }
     }
   }
+  
+  for(var vv=0; vv<vertFaces.length;vv++){
+	  glMatrix.vec3.normalize(vertFaces[vv],vertFaces[vv]);
+
+	  textureCoords.push(vertFaces[vv][0],vertFaces[vv][1],vertFaces[vv][2]);
+	  
+  }
+  //Loop over 
+  
 	//Set draw data to the specified chunk
 	
 	if(chunkID!='cursor'){
 
 		chunk[chunkID].drawData.position = new Float32Array(finalVert);
 		chunk[chunkID].drawData.color = new Uint8Array(finalColor);
-		chunk[chunkID].drawData.indice = new Uint32Array(faces);			
+		chunk[chunkID].drawData.indice = new Uint32Array(faces);		
+		chunk[chunkID].drawData.texture = new Float32Array(textureCoords);
 		chunk_draw_sector(chunkID);
 
 	//Return draw data for cursor chunk
@@ -471,7 +515,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 			faces : faces,
 			colors : finalColor,
 		}
-		return [(new dataArrayType(cursorObj.vertices)).buffer, (new Uint8Array(cursorObj.colors)).buffer, (new Uint32Array(cursorObj.faces)).buffer];
+		return [(new dataArrayType(cursorObj.vertices)).buffer, (new Uint8Array(cursorObj.colors)).buffer, (new Uint32Array(cursorObj.faces)).buffer,(new Float32Array(textureCoords)).buffer];
 
 	}
   //All done!  Return the result
@@ -640,7 +684,7 @@ chunk_returnID = function(x,y,z){
 //Seams together multiple chunk's draw datas into one sector
 sector_draw = function(sectorPos,XYZ,sectorID){
 	//Keep strack of where we are inside of the pre-allocated buffers
-	var positionOffset=0;var colorOffset=0;var indiceOffset=0;
+	var positionOffset=0;var colorOffset=0;var indiceOffset=0;var textureOffset=0;
 	//Loop through chunks in our sector space
 	for(xx=0;xx<blockSettings.sector.XYZ;xx++){
 	for(yy=0;yy<blockSettings.sector.XYZ;yy++){
@@ -691,7 +735,10 @@ sector_draw = function(sectorPos,XYZ,sectorID){
 				//colors
 				sectorBuffer.color.set(chunk[chunkID].drawData.color,colorOffset);
 				colorOffset+=chunk[chunkID].drawData.color.length;	
-				
+				//colors
+				sectorBuffer.texture.set(chunk[chunkID].drawData.texture,textureOffset);
+				textureOffset+=chunk[chunkID].drawData.texture.length;	
+								
 				//Find out where we are starting inside of the indice, so that we know which indice's need to be offset.
 				var indiceBefore = indiceOffset
 				//indice
@@ -717,7 +764,7 @@ sector_draw = function(sectorPos,XYZ,sectorID){
 		
 	}}}
 	sector[sectorID].reDraw=0;
-	return([indiceOffset,sectorBuffer.indice.slice(0,indiceOffset).buffer,sectorBuffer.position.slice(0,positionOffset).buffer,sectorBuffer.color.slice(0,colorOffset).buffer]);
+	return([indiceOffset,sectorBuffer.indice.slice(0,indiceOffset).buffer,sectorBuffer.position.slice(0,positionOffset).buffer,sectorBuffer.color.slice(0,colorOffset).buffer,sectorBuffer.texture.slice(0,textureOffset).buffer]);
 
 }
 
@@ -979,6 +1026,7 @@ chunk_create = function(x,y,z){
 				position : [],
 				indice : [],
 				color : [],
+				texture : [],
 			}
 		}
 	
@@ -1290,11 +1338,7 @@ sector_process = function(){
 			//If chunk is flagged to be re-drawn
 			if( sector[sectorID].reDraw>=1){
 					procAmount+=1;
-					 
-					//if( Date.now() - sectorCoolDown >sectorCoolDownLimit){
-						 sectorCoolDown = Date.now();
 						var result = sector_draw(sector[sectorID].coords,blockSettings.sector.XYZ,sectorID);
-						
 						if(result!=null){
 						self.postMessage({
 							id : 'sector',
@@ -1304,7 +1348,8 @@ sector_process = function(){
 							indice : result[1],
 							position : result[2],
 							color : result[3],
-						},[result[1],result[2],result[3]]);
+							texture : result[4],
+						},[result[1],result[2],result[3],result[4]]);
 						}
 
 					
