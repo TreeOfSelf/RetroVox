@@ -83,7 +83,11 @@ meshWorker.worker.addEventListener('message', function(e) {
 		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
 		//texture
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.texture);
-		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[3]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[3]),gl.DYNAMIC_DRAW);
+		//type
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
+		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[4]),gl.DYNAMIC_DRAW);
 		break;
 		
 		//Sector drawing
@@ -96,17 +100,18 @@ meshWorker.worker.addEventListener('message', function(e) {
 		message.position = new dataType(message.position);
 		message.color = new Uint8Array(message.color);
 		message.texture = new Float32Array(message.texture);
-		
+		message.type = new Uint8Array(message.type);
 		//Set size of the sector to how many verticies 
 		sector[message.sectorID].buffers.size=message.size;
 		
 		//If the buffer is not big enough, create a new buffer with appropriote size
 		
-		if(sector[message.sectorID].buffers.maxIndiceSize < message.indice.length || sector[message.sectorID].buffers.maxTextureSize < message.texture.length || sector[message.sectorID].buffers.maxPositionSize < message.position.length ||  sector[message.sectorID].buffers.maxColorSize < message.color.length){
+		if(sector[message.sectorID].buffers.maxTypeSize < message.type.length ||  sector[message.sectorID].buffers.maxIndiceSize < message.indice.length || sector[message.sectorID].buffers.maxTextureSize < message.texture.length || sector[message.sectorID].buffers.maxPositionSize < message.position.length ||  sector[message.sectorID].buffers.maxColorSize < message.color.length){
 			sector[message.sectorID].buffers.maxIndiceSize = message.indice.length;
 			sector[message.sectorID].buffers.maxColorSize = message.color.length;
 			sector[message.sectorID].buffers.maxPositionSize = message.position.length;
 			sector[message.sectorID].buffers.maxTextureSize = message.texture.length;
+			sector[message.sectorID].buffers.maxTypeSize = message.type.length;
 			//Bind this sector VAO
 			gl.bindVertexArray(sector[message.sectorID].vao);
 			//Set data for indice
@@ -122,9 +127,10 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.STATIC_DRAW,0,message.color.length);
 			//texture
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.texture);
-			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.STATIC_DRAW,0,message.texture.length);
-						
-
+			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.STATIC_DRAW,0,message.texture.length);			
+			//type
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.type);
+			gl.bufferData(gl.ARRAY_BUFFER,message.type,gl.STATIC_DRAW,0,message.type.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);
 			
 		//If the buffer IS big enough, subData new sector draw data in
@@ -143,6 +149,9 @@ meshWorker.worker.addEventListener('message', function(e) {
 			//texture
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.texture);
 			gl.bufferSubData(gl.ARRAY_BUFFER,0,message.texture,0,message.texture.length);	
+			//type
+			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.type);
+			gl.bufferSubData(gl.ARRAY_BUFFER,0,message.type,0,message.type.length);
 		}
 		
 		
@@ -343,6 +352,8 @@ sector_create = function(x,y,z){
 				indice : gl.createBuffer(),
 				//Unsigned 32 bit integers representing the vertex for texture coordinates 
 				texture : gl.createBuffer(),
+				//Unsigned 4 bit integers representing the block type 0-255
+				type : gl.createBuffer(),
 				//How many indices we are going to draw
 				size : 0,
 				//How big our allocated buffer size is
@@ -350,6 +361,7 @@ sector_create = function(x,y,z){
 				maxColorSize : 0,
 				maxIndiceSize : 0,
 				maxTextureSize : 0,
+				maxTypeSize : 0,
 			},
 			//Vertex Array Object, this contains draw information that can be used in one call.
 			vao : gl.createVertexArray(),
@@ -374,6 +386,11 @@ sector_create = function(x,y,z){
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.texture);
 		gl.vertexAttribPointer(programInfo.attribLocations.texture,3,gl.FLOAT,false,0,0);
 		gl.enableVertexAttribArray(programInfo.attribLocations.texture);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.type);
+		gl.vertexAttribIPointer(programInfo.attribLocations.type,1,gl.UNSIGNED_BYTE,false,0,0);
+		gl.enableVertexAttribArray(programInfo.attribLocations.type);
+
 		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 
 	}

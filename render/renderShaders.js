@@ -50,7 +50,8 @@ in vec3 aPosition;
 in vec3 aColor;
 //Block Texture
 in vec3 aTexture;
-
+//Block Type
+in uint aBlockType;
 
 //Camera Position
 uniform vec3 uCam;
@@ -69,6 +70,7 @@ out lowp vec4 vPixelColor;
 out lowp float vColor;
 out lowp vec3  vTexture;
 out lowp vec3 vCoords;
+flat out lowp uint vBlockType;
 //out lowp float vTransparency;
 
 void main() {
@@ -82,7 +84,7 @@ void main() {
 	
 
 	//Size based on distance for shading
-	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.006);	
+	vColor =(distance(vec3(uCam[0],uCam[1],uCam[2]),vec3(aPosition[0],aPosition[1],aPosition[2]))*0.004);	
 
 
 	//Different depth depending on orthographic/perspective
@@ -96,7 +98,8 @@ void main() {
 	//Set color 0-1 based on 255 values
 	vPixelColor = vec4(aColor[0]/255.0,aColor[1]/255.0,aColor[2]/255.0,1.0);
 	vTexture = aTexture;
-	vCoords =  vec3(aPosition[0],aPosition[1],aPosition[2]);
+	vCoords =  aPosition;
+	vBlockType = aBlockType;
 	//vTransparency = uTransparency;
 }
 `;
@@ -107,9 +110,10 @@ in lowp vec4 vPixelColor;
 in lowp float vColor;
 in lowp vec3 vTexture;
 in lowp vec3 vCoords;
+flat in lowp uint vBlockType;
 //in lowp float vTransparency;
 
-uniform sampler2D uSampler;
+uniform  lowp sampler2DArray uSampler;
 
 out lowp vec4 fragColor;
 
@@ -123,10 +127,9 @@ void main() {
 	
 	// x -z y
 	// 0 -2 1
-	
-	lowp vec4 xaxis = texture( uSampler, vCoords.yz *0.05);
-	lowp vec4 yaxis = texture( uSampler, vCoords.xz *0.1);
-	lowp  vec4 zaxis = texture( uSampler, vCoords.xy*0.1);
+	lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType));
+	lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType));
+	lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType));
 	// blend the results of the 3 planar projections.
 	fragColor = mix(xaxis * blending.x + yaxis * blending.y + zaxis * blending.z,vec4(0.0,0.0,0.0,1.0),vColor);
 	//fragColor =texture(uSampler,vTexture.xy);
@@ -150,6 +153,8 @@ const programInfo = {
 	  color : gl.getAttribLocation(shaderProgram, 'aColor'),
 	  // vertex normal 3v 
 	  texture : gl.getAttribLocation(shaderProgram, 'aTexture'),
+	  // type of block 1i 
+	  type : gl.getAttribLocation(shaderProgram, 'aBlockType'),
 	},
 	
 	uniformLocations: {

@@ -134,6 +134,7 @@ self.addEventListener('message', function(e) {
 				color : new Uint8Array(99999999),
 				indice : new Uint32Array(99999999),
 				texture : new Float32Array(99999999),
+				type : new Uint8Array(99999999),
 			}
 			
 			//Flag mesher to start now that we have required block information
@@ -170,7 +171,7 @@ self.addEventListener('message', function(e) {
 					id : "mesh",
 					chunkID : message.chunkID,
 					result : result,
-				},[result[0],result[1],result[2],result[3]]);
+				},[result[0],result[1],result[2],result[3],result[4]]);
 						
 			}
 		
@@ -304,6 +305,7 @@ var buffer = new Int32Array(4096);
 return function(data,dataType, dims,chunkPos,lod,chunkID) {
   var vertices = []
 	, vertFaces= []
+	, finalType= []
     , faces = []
 	, textureCoords = []
 	, finalVert = []
@@ -344,6 +346,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
         var p = ((data[idx]-128))
 		if(dataType[idx]!=127){
 			colorSave = dataType[idx];
+
 		}
         grid[g] = p;
         mask |= (p < 0) ? (1<<g) : 0;
@@ -432,7 +435,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		
 	  
 	// 	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)));
-
+	finalType.push(colorSave);
 	 finalVert.push( (((v[0]+chunkPos[0]))), (((v[1]+chunkPos[1]))), (((v[2]+chunkPos[2]))));
 	  var color = color_return(colorSave,[v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]]);
 	  color=[Math.min(Math.max(0,color[0]),255),Math.min(Math.max(0,color[1]),255),Math.min(Math.max(0,color[2]),255)];
@@ -474,6 +477,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
+	
         } else {
 			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-dv]],vertices[buffer[m-du-dv]]);
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
@@ -485,6 +489,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
 			faces.push(buffer[m-du-dv],buffer[m-du],buffer[m]);
+
         }
       }
     }
@@ -506,16 +511,13 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		chunk[chunkID].drawData.color = new Uint8Array(finalColor);
 		chunk[chunkID].drawData.indice = new Uint32Array(faces);		
 		chunk[chunkID].drawData.texture = new Float32Array(textureCoords);
+		chunk[chunkID].drawData.type = new Uint8Array(finalType);
 		chunk_draw_sector(chunkID);
 
 	//Return draw data for cursor chunk
 	}else{
-		var cursorObj = {
-			vertices : finalVert,
-			faces : faces,
-			colors : finalColor,
-		}
-		return [(new dataArrayType(cursorObj.vertices)).buffer, (new Uint8Array(cursorObj.colors)).buffer, (new Uint32Array(cursorObj.faces)).buffer,(new Float32Array(textureCoords)).buffer];
+		
+		return [(new dataArrayType(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer,(new Float32Array(textureCoords)).buffer, (new Uint8Array(finalType)).buffer];
 
 	}
   //All done!  Return the result
@@ -684,7 +686,7 @@ chunk_returnID = function(x,y,z){
 //Seams together multiple chunk's draw datas into one sector
 sector_draw = function(sectorPos,XYZ,sectorID){
 	//Keep strack of where we are inside of the pre-allocated buffers
-	var positionOffset=0;var colorOffset=0;var indiceOffset=0;var textureOffset=0;
+	var positionOffset=0;var colorOffset=0;var indiceOffset=0;var textureOffset=0;var typeOffset=0;
 	//Loop through chunks in our sector space
 	for(xx=0;xx<blockSettings.sector.XYZ;xx++){
 	for(yy=0;yy<blockSettings.sector.XYZ;yy++){
@@ -738,7 +740,9 @@ sector_draw = function(sectorPos,XYZ,sectorID){
 				//colors
 				sectorBuffer.texture.set(chunk[chunkID].drawData.texture,textureOffset);
 				textureOffset+=chunk[chunkID].drawData.texture.length;	
-								
+				//type
+				sectorBuffer.type.set(chunk[chunkID].drawData.type,typeOffset);
+				typeOffset+=chunk[chunkID].drawData.type.length;				
 				//Find out where we are starting inside of the indice, so that we know which indice's need to be offset.
 				var indiceBefore = indiceOffset
 				//indice
@@ -764,7 +768,13 @@ sector_draw = function(sectorPos,XYZ,sectorID){
 		
 	}}}
 	sector[sectorID].reDraw=0;
-	return([indiceOffset,sectorBuffer.indice.slice(0,indiceOffset).buffer,sectorBuffer.position.slice(0,positionOffset).buffer,sectorBuffer.color.slice(0,colorOffset).buffer,sectorBuffer.texture.slice(0,textureOffset).buffer]);
+	return([indiceOffset,
+	sectorBuffer.indice.slice(0,indiceOffset).buffer,
+	sectorBuffer.position.slice(0,positionOffset).buffer,
+	sectorBuffer.color.slice(0,colorOffset).buffer,
+	sectorBuffer.texture.slice(0,textureOffset).buffer,
+	sectorBuffer.type.slice(0,typeOffset).buffer,	
+	]);
 
 }
 
@@ -1350,7 +1360,8 @@ sector_process = function(){
 							position : result[2],
 							color : result[3],
 							texture : result[4],
-						},[result[1],result[2],result[3],result[4]]);
+							type : result[5],
+						},[result[1],result[2],result[3],result[4],result[5]]);
 						}
 
 					

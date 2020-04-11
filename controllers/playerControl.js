@@ -46,6 +46,7 @@ var controls = {
 			color : gl.createBuffer(),
 			indice :  gl.createBuffer(),
 			texture : gl.createBuffer(),
+			type : gl.createBuffer(),
 		}
 	}
 }
@@ -60,6 +61,14 @@ gl.enableVertexAttribArray(programInfo.attribLocations.position);
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
 gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.color);
+
+gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.texture);
+gl.vertexAttribPointer(programInfo.attribLocations.texture,3,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.texture);
+
+gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
+gl.vertexAttribIPointer(programInfo.attribLocations.type,1,gl.UNSIGNED_BYTE,false,0,0);
+gl.enableVertexAttribArray(programInfo.attribLocations.type);
 
 
 //Player object

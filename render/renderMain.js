@@ -56,6 +56,14 @@ function loadTexture(gl,url){
 	return texture;
 }
 
+window.loadImage = function(url, onload) {
+	var img = new Image();
+	img.src = url;
+	img.onload = function() {
+		onload(img);
+	};
+	return img;
+};
 
 
 //Init (things that only need to be ran once at the beginning) 
@@ -70,6 +78,37 @@ const gl = canvas.getContext("webgl2",{
 const texture = loadTexture(gl,'grass.png');
 gl.bindTexture(gl.TEXTURE_2D,texture);
 gl.activeTexture(gl.TEXTURE0);
+
+
+var textureArray = gl.createTexture();
+loadImage('grass.png', function(image){
+
+var num=7
+var canvas2D = document.createElement('canvas');
+canvas2D.width = 256
+canvas2D.height = 256*num
+var ctx = canvas2D.getContext('2d');
+ctx.drawImage(image, 0, 0);
+var imageData = ctx.getImageData(0, 0, 256, 256*num);
+var pixels = new Uint8Array(imageData.data.buffer);
+gl.activeTexture(gl.TEXTURE0);
+gl.bindTexture(gl.TEXTURE_2D_ARRAY, textureArray);
+gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texImage3D(
+	gl.TEXTURE_2D_ARRAY,
+	0,
+	gl.RGBA,
+	256,
+	256,
+	num,
+	0,
+	gl.RGBA,
+	gl.UNSIGNED_BYTE,
+	pixels);
+});
+
+
 canvas.style.imageRendering='pixelated';
 //Depth testing
 gl.enable(gl.DEPTH_TEST);  
