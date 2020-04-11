@@ -86,17 +86,18 @@ var day = d.getDate();
 var mont = d.getMonth();
 var seconds = d.getTime();
 
+
 var color = [noise.perlin3(mont/10,day/100,seconds/400000),noise.perlin3(day/100,mont/10,seconds/400000),noise.perlin3(seconds/400000,day/100,mont/10)];
 color = [Math.abs(color[0]),Math.abs(color[1]),Math.abs(color[2])];
 gl.clearColor(color[0],color[1],color[2],1.0);
+gl.clearColor(0,0,0,1.0);
 
-
-renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
+renderSettings.lightIntensity = 0.009;
 
 
 //Set background color based on time
 
-setInterval(function(){
+/*setInterval(function(){
 d = new Date();
 var day = d.getDate();
 var mont = d.getMonth();
@@ -110,8 +111,9 @@ gl.clearColor(color[0],color[1],color[2],1.0);
 
 renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
 
+color=[0,0,0];
 
-},2000);
+},2000);*/
 
 //Load Texture
 

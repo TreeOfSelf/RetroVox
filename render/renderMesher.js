@@ -1255,6 +1255,7 @@ setInterval(function(){
 					indice : [],
 					positions : [],
 					color : [],
+					texture : [],
 				}
 
 				hit=1;
