@@ -262,6 +262,27 @@ function calculate_normal(vertexOne,vertexTwo,vertexThree){
 	return(cross);
 }
 
+function array_mostFrequent(arr1){
+	var mf = 1;
+	var m = 0;
+	var item;
+	for (var i=0; i<arr1.length; i++)
+	{
+			for (var j=i; j<arr1.length; j++)
+			{
+					if (arr1[i] == arr1[j])
+					 m++;
+					if (mf<m)
+					{
+					  mf=m; 
+					  item = arr1[i];
+					}
+			}
+			m=0;
+	}
+	return(item);
+}
+
 //Function for creating chunk meshes from blockData
 var mesh_naive = (function() {
 "use strict";
@@ -315,6 +336,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
     , x = new Int32Array(3)
     , R = new Int32Array([1, (dims[0]+1), (dims[0]+1)*(dims[0]+1)])
     , grid = new Float32Array(8)
+    , gridRef = new Float32Array(8)
     , buf_no = 1;
    
   //Resize buffer if necessary 
@@ -330,28 +352,30 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
     //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
     //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
     var m = 1 + (dims[0]+1) * (1 + buf_no * (dims[1]+1));
-    var colorSave=0;
 
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
+		    var colorSave=127;	
           
       //Read in 8 field values around this vertex and store them in an array
       //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
       var mask = 0, g = 0, idx = n;
+	 // colorSave= dataType[idx];
       for(var k=0; k<2; ++k, idx += dims[0]*(dims[1]-2))
       for(var j=0; j<2; ++j, idx += dims[0]-2)      
       for(var i=0; i<2; ++i, ++g, ++idx) {
-		  
+	  
 		  
         var p = ((data[idx]-128))
-		if(dataType[idx]!=127){
-			colorSave = dataType[idx];
-
+		if(dataType[idx]!=127 && colorSave==127){
+			colorSave=dataType[idx];
 		}
         grid[g] = p;
+		gridRef[g] =idx;
         mask |= (p < 0) ? (1<<g) : 0;
       }
-      
+		
+
       //Check for early termination if cell does not intersect boundary
       if(mask === 0 || mask === 0xff) {
         continue;
@@ -378,10 +402,17 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
           , e1 = cube_edges[(i<<1)+1]
           , g0 = grid[e0]                 //Unpack grid values
           , g1 = grid[e1]
+		  , gg0 = dataType[gridRef[e0]]
+		  , gg1 = dataType[gridRef[e1]]
           , t  = g0 - g1;                 //Compute point of intersection
+		
         if(Math.abs(t) > 1e-6) {
           t = g0 / t;
+
         } else {
+				/*if(gridRef[e0]<idx){
+				colorSave = gg0
+				}*/
           continue;
         }
         
@@ -426,7 +457,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		}
 	  }*/
 	  
-	  var id=x[0] + dims[0] * (x[1] + dims[1] * (x[2]));
+	 // var id=x[0] + dims[0] * (x[1] + dims[1] * (x[2]));
 	  /*if(collisionObj[id]==null){
 		  collisionObj[id]=[];
 	  }*/
@@ -460,7 +491,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
         //Otherwise, look up adjacent edges in buffer
         var du = R[iu]
           , dv = R[iv];
-        
+      
 
         //Remember to flip orientation depending on the sign of the corner.
         if(mask & 1) {
@@ -477,8 +508,10 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
+		
 	
         } else {
+
 			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-dv]],vertices[buffer[m-du-dv]]);
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
 			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalOne);
