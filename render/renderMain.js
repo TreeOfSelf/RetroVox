@@ -83,33 +83,35 @@ gl.activeTexture(gl.TEXTURE0);
 var textureArray = gl.createTexture();
 loadImage('grass.png', function(image){
 
-var num=7
+var num=8
 var canvas2D = document.createElement('canvas');
-canvas2D.width = 256
-canvas2D.height = 256*num
+canvas2D.width = 512
+canvas2D.height = 512*num
 var ctx = canvas2D.getContext('2d');
 ctx.drawImage(image, 0, 0);
-var imageData = ctx.getImageData(0, 0, 256, 256*num);
+var imageData = ctx.getImageData(0, 0, 512, 512*num);
 var pixels = new Uint8Array(imageData.data.buffer);
 gl.activeTexture(gl.TEXTURE0);
 gl.bindTexture(gl.TEXTURE_2D_ARRAY, textureArray);
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_WRAP_S,gl.REPEAT);
+gl.texParameteri(gl.TEXTURE_2D_ARRAY,gl.TEXTURE_WRAP_T,gl.REPEAT);
 gl.texImage3D(
 	gl.TEXTURE_2D_ARRAY,
 	0,
 	gl.RGBA,
-	256,
-	256,
+	512,
+	512,
 	num,
 	0,
 	gl.RGBA,
 	gl.UNSIGNED_BYTE,
 	pixels);
-});
 
+gl.generateMipmap(gl.TEXTURE_2D_ARRAY)
+gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR)
+});
 
 canvas.style.imageRendering='pixelated';
 //Depth testing
@@ -264,7 +266,7 @@ function render(now){
 			fps.drawLength+=sector[sectorID].buffers.size;
 			//Draw the triangles 
 			if(renderSettings.wireframe==0){		
-		
+				//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
 				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
 			//Draw wireframe
 			}else{

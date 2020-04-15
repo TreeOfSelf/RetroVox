@@ -51,7 +51,7 @@ in vec3 aColor;
 //Block Texture
 in vec3 aTexture;
 //Block Type
-in uint aBlockType;
+in vec2 aBlockType;
 
 //Camera Position
 uniform vec3 uCam;
@@ -70,7 +70,7 @@ out lowp vec4 vPixelColor;
 out lowp float vColor;
 out lowp vec3  vTexture;
 out lowp vec3 vCoords;
-flat out lowp uint vBlockType;
+flat out lowp vec2 vBlockType;
 //out lowp float vTransparency;
 
 void main() {
@@ -106,18 +106,51 @@ void main() {
 
 //Fragment Shader
 const fsSource = `#version 300 es
+precision lowp float;
 in lowp vec4 vPixelColor;
 in lowp float vColor;
 in lowp vec3 vTexture;
 in lowp vec3 vCoords;
-flat in lowp uint vBlockType;
+flat in lowp vec2 vBlockType;
 //in lowp float vTransparency;
 
 uniform  lowp sampler2DArray uSampler;
 
 out lowp vec4 fragColor;
 
+float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec4 mod289(vec4 x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
+vec4 perm(vec4 x){return mod289(((x * 34.0) + 1.0) * x);}
+
+float noise(vec3 p){
+    vec3 a = floor(p);
+    vec3 d = p - a;
+    d = d * d * (3.0 - 2.0 * d);
+
+    vec4 b = a.xxyy + vec4(0.0, 1.0, 0.0, 1.0);
+    vec4 k1 = perm(b.xyxy);
+    vec4 k2 = perm(k1.xyxy + b.zzww);
+
+    vec4 c = k2 + a.zzzz;
+    vec4 k3 = perm(c);
+    vec4 k4 = perm(c + 1.0);
+
+    vec4 o1 = fract(k3 * (1.0 / 41.0));
+    vec4 o2 = fract(k4 * (1.0 / 41.0));
+
+    vec4 o3 = o2 * d.z + o1 * (1.0 - d.z);
+    vec2 o4 = o3.yw * d.x + o3.xz * (1.0 - d.x);
+
+    return o4.y * d.y + o4.x * (1.0 - d.y);
+}
+
 void main() {
+	
+	
+
+
+		
+	
 	//Mix color with shading
 	lowp vec3 blending = abs( vTexture );
 	blending = normalize(max(blending, 0.00001)); // Force weights to sum to 1.0
@@ -127,15 +160,20 @@ void main() {
 	
 	// x -z y
 	// 0 -2 1
-	lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType));
-	lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType));
-	lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType));
-	// blend the results of the 3 planar projections.
-	fragColor = mix(xaxis * blending.x + yaxis * blending.y + zaxis * blending.z,vec4(0.0,0.0,0.0,1.0),vColor);
-	//fragColor =texture(uSampler,vTexture.xy);
-	//fragColor = texture(uSampler,vTexture);
-	//fragColor = vPixelColor;
-	//fragColor.a = vTransparency;
+
+	
+	if( (vBlockType[1]==127.0 ||  (noise((abs(vCoords))*1.0) >=0.4) &&  noise((abs(vCoords))*6.5) >=0.45) ){
+		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType[0]));
+		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType[0]));
+		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType[0]));
+		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
+	}else{
+		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType[1]));
+		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType[1]));
+		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType[1]));
+		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;	
+	}
+
 }
 `;
 

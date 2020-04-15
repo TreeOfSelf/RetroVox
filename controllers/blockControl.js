@@ -68,8 +68,19 @@ meshWorker.worker.addEventListener('message', function(e) {
 		case "mesh":
 		//Chunk mesh
 		//Set size of the sector to how many verticies 
-		message.result[2] = new Uint16Array(message.result[2]);
-		controls.cursorDraw.size=message.result[2].length/2;
+		message.result[2] = new Uint32Array(message.result[2]);
+		controls.cursorDraw.size=message.result[2].length;
+		
+		console.log({
+			finalVert : new Float32Array(message.result[0]),
+			color : new Uint8Array(message.result[1]),
+			faces : message.result[2],
+			texture : new Float32Array(message.result[3]),
+			type : new Uint8Array(message.result[4]),
+		});
+		
+		
+		
 		//Bind this sector VAO
 		gl.bindVertexArray(controls.cursorDraw.vao);
 		//Set data for indice
@@ -203,7 +214,7 @@ var activeSectors=[];
 var blockSettings = {
 	chunk : {
 		space : 200,
-		XYZ : 32,
+		XYZ : 24,
 	},
 	
 	sector : {
@@ -375,7 +386,7 @@ sector_create = function(x,y,z){
 		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
-		gl.vertexAttribPointer(programInfo.attribLocations.position,3,dataTypeGL,false,0,0);
+		gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
 		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
@@ -388,7 +399,7 @@ sector_create = function(x,y,z){
 		gl.enableVertexAttribArray(programInfo.attribLocations.texture);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.type);
-		gl.vertexAttribIPointer(programInfo.attribLocations.type,1,gl.UNSIGNED_BYTE,false,0,0);
+		gl.vertexAttribPointer(programInfo.attribLocations.type,2,gl.UNSIGNED_BYTE,false,0,0);
 		gl.enableVertexAttribArray(programInfo.attribLocations.type);
 
 		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);

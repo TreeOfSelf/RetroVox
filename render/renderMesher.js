@@ -336,7 +336,6 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
     , x = new Int32Array(3)
     , R = new Int32Array([1, (dims[0]+1), (dims[0]+1)*(dims[0]+1)])
     , grid = new Float32Array(8)
-    , gridRef = new Float32Array(8)
     , buf_no = 1;
    
   //Resize buffer if necessary 
@@ -355,8 +354,36 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
-		    var colorSave=127;	
+		    var colorSave=[127,127];	
           
+		  
+		  
+	  
+	/*	var blockIndex=0;
+
+	 for(var xxx=-1;xxx<=1;xxx++){
+	  for(var yyy=-1;yyy<=1;yyy++){
+	  for(var zzz=-1;zzz<=1;zzz++){
+		 
+			 blockIndex = (x[0]+xxx)+(x[1]+yyy)*32+(x[2]+zzz)*32*32;
+		
+		if(dataType[blockIndex]!=127 && colorSave[0]==127){
+			colorSave[0]=dataType[blockIndex];
+		}else{
+				if(dataType[blockIndex]!=127 && dataType[blockIndex]!=colorSave[0] && colorSave[1]==127 ){
+					colorSave[1]=dataType[blockIndex];
+				}
+		}
+						
+	  }}}
+	  
+	  if(colorSave[1]<colorSave[0]){
+		  var save=colorSave[1];
+		  colorSave[1]=colorSave[0];
+		  colorSave[0]=save;
+	  }*/
+	  
+		 
       //Read in 8 field values around this vertex and store them in an array
       //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
       var mask = 0, g = 0, idx = n;
@@ -365,16 +392,27 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
       for(var j=0; j<2; ++j, idx += dims[0]-2)      
       for(var i=0; i<2; ++i, ++g, ++idx) {
 	  
+	  
 		  
         var p = ((data[idx]-128))
-		if(dataType[idx]!=127 && colorSave==127){
-			colorSave=dataType[idx];
+		if(dataType[idx]!=127 && colorSave[0]==127){
+			colorSave[0]=dataType[idx];
+		}else{
+				if(dataType[idx]!=127 && dataType[idx]!=colorSave[0] && colorSave[1]==127 ){
+					colorSave[1]=dataType[idx];
+				}
 		}
         grid[g] = p;
-		gridRef[g] =idx;
         mask |= (p < 0) ? (1<<g) : 0;
       }
 		
+
+
+	  if(colorSave[1]<colorSave[0]){
+		  var save=colorSave[1];
+		  colorSave[1]=colorSave[0];
+		  colorSave[0]=save;
+	  }
 
       //Check for early termination if cell does not intersect boundary
       if(mask === 0 || mask === 0xff) {
@@ -386,6 +424,8 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
         , v = [0.0,0.0,0.0]
         , e_count = 0;
         
+		
+
       //For every edge of the cube...
       for(var i=0; i<12; ++i) {
       
@@ -402,17 +442,12 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
           , e1 = cube_edges[(i<<1)+1]
           , g0 = grid[e0]                 //Unpack grid values
           , g1 = grid[e1]
-		  , gg0 = dataType[gridRef[e0]]
-		  , gg1 = dataType[gridRef[e1]]
           , t  = g0 - g1;                 //Compute point of intersection
 		
         if(Math.abs(t) > 1e-6) {
           t = g0 / t;
 
         } else {
-				/*if(gridRef[e0]<idx){
-				colorSave = gg0
-				}*/
           continue;
         }
         
@@ -437,40 +472,31 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 
       //Add vertex to buffer, store pointer to vertex index in buffer
       buffer[m] = vertices.length;
-	  vertFaces.push(glMatrix.vec3.create());
+
 	  vertices.push(v);
 	  
 	  //Fix LOD position 
-	  
-	  /*if(lod!=1){
-		if( Math.floor(v[0])==0 || Math.ceil(v[0]) == dims[0]-1 || Math.floor(v[1])==0 || Math.ceil(v[1]) == dims[1]-1  || Math.floor(v[2])==0 || Math.ceil(v[2]) == dims[2]-1){
-			switch(lod){
-					case 2:
-						posMod=1.1;
-					break;
-					case 4:
-						posMod=1.4;
-					break;
-			
-			}
-			
-		}
-	  }*/
+
+					/*case 2:	posMod=1.1;
+					case 4:posMod=1.4;*/
+					
 	  
 	 // var id=x[0] + dims[0] * (x[1] + dims[1] * (x[2]));
-	  /*if(collisionObj[id]==null){
-		  collisionObj[id]=[];
-	  }*/
-	  
+
 	
 		
 	  
 	// 	 finalVert.push( (((v[0]*posMod+chunkPos[0])*lod)), (((v[1]*posMod+chunkPos[1])*lod)), (((v[2]*posMod+chunkPos[2])*lod)));
-	finalType.push(colorSave);
+	
+	
+	
+	
+	/*finalType.push(colorSave[0],colorSave[1]);
 	 finalVert.push( (((v[0]+chunkPos[0]))), (((v[1]+chunkPos[1]))), (((v[2]+chunkPos[2]))));
+	  vertFaces.push(glMatrix.vec3.create());
 	  var color = color_return(colorSave,[v[0]+chunkPos[0],v[1]+chunkPos[1],v[2]+chunkPos[2]]);
 	  color=[Math.min(Math.max(0,color[0]),255),Math.min(Math.max(0,color[1]),255),Math.min(Math.max(0,color[2]),255)];
-	  finalColor.push(color[0],color[1],color[2]);
+	  finalColor.push(color[0],color[1],color[2]);*/
 	  
       //Now we need to add faces together, to do this we just loop over 3 basis components
       for(var i=0; i<3; ++i) {
@@ -498,30 +524,165 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 
 			//THIS IS HOW YOU GET THE VERICY TO CCALCULATE NORMALS
 			//console.log(vertices[buffer[m]])
+				
+
+					
+
+					
+				var kk = vertices[buffer[m]];
+				
+				//colorSave=dataType[Math.floor(kk[0])+Math.floor(kk[1])*blockSettings.chunk.XYZ+Math.floor(kk[2])*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ]
+				
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+				
+				var kk = vertices[buffer[m-du]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+				var  kk = vertices[buffer[m-du-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);	
+				vertFaces.push(glMatrix.vec3.create());
+				
+
+				var kk = vertices[buffer[m-du-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				vertFaces.push(glMatrix.vec3.create());
+				finalColor.push(0,0,0);
+				var kk = vertices[buffer[m-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				vertFaces.push(glMatrix.vec3.create());
+				finalColor.push(0,0,0);
+				var kk = vertices[buffer[m]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+			
+			
 			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-du]],vertices[buffer[m-du-dv]]);
-			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
-			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalOne);
-			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalOne);
-			faces.push(buffer[m], buffer[m-du], buffer[m-du-dv]);
+			glMatrix.vec3.add(vertFaces[vertFaces.length-6],vertFaces[vertFaces.length-6],normalOne);
+			glMatrix.vec3.add(vertFaces[vertFaces.length-5],vertFaces[vertFaces.length-5],normalOne);
+			glMatrix.vec3.add(vertFaces[vertFaces.length-4],vertFaces[vertFaces.length-4],normalOne);
+			
 			var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-dv]],vertices[buffer[m]]);
+
+			glMatrix.vec3.add(vertFaces[vertFaces.length-3],vertFaces[vertFaces.length-3],normalTwo);
+			glMatrix.vec3.add(vertFaces[vertFaces.length-2],vertFaces[vertFaces.length-2],normalTwo);
+			glMatrix.vec3.add(vertFaces[vertFaces.length-1],vertFaces[vertFaces.length-1],normalTwo);
+			
+			
+			
+			/*faces.push(buffer[m], buffer[m-du], buffer[m-du-dv]);
 			faces.push(  buffer[m-du-dv],buffer[m-dv],buffer[m]);
+			
+			var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-dv]],vertices[buffer[m]]);
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
+			
+			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-du]],vertices[buffer[m-du-dv]]);
+			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalOne);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalOne);*/
+
+
+			
+
+				
 		
 	
         } else {
 
+				//colorSave[0]=dataType[v[0] + dims[0] * (x[1] + dims[1] * (x[2]))];
+				//colorSave[1]=127;
+		
+
+
+		
+		
+				var kk = vertices[buffer[m]];
+
+				
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+				
+				var kk = vertices[buffer[m-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+				var  kk = vertices[buffer[m-du-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+					faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);	
+				vertFaces.push(glMatrix.vec3.create());
+				
+
+				var kk = vertices[buffer[m-du-dv]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				vertFaces.push(glMatrix.vec3.create());
+				finalColor.push(0,0,0);
+				var kk = vertices[buffer[m-du]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				vertFaces.push(glMatrix.vec3.create());
+				finalColor.push(0,0,0);
+				var kk = vertices[buffer[m]];
+				finalVert.push((((kk[0]+chunkPos[0]))), (((kk[1]+chunkPos[1]))), (((kk[2]+chunkPos[2]))));
+				faces.push(finalVert.length/3-1);
+				finalType.push(colorSave[0],colorSave[1]);;
+				finalColor.push(0,0,0);
+				vertFaces.push(glMatrix.vec3.create());
+				
+				
+				var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-dv]],vertices[buffer[m-du-dv]]);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-6],vertFaces[vertFaces.length-6],normalOne);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-5],vertFaces[vertFaces.length-5],normalOne);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-4],vertFaces[vertFaces.length-4],normalOne);
+
+				var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-du]],vertices[buffer[m]]);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-3],vertFaces[vertFaces.length-3],normalTwo);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-2],vertFaces[vertFaces.length-2],normalTwo);
+				glMatrix.vec3.add(vertFaces[vertFaces.length-1],vertFaces[vertFaces.length-1],normalTwo);
+			
+			/*faces.push(buffer[m], buffer[m-dv], buffer[m-du-dv]);
+			faces.push(buffer[m-du-dv],buffer[m-du],buffer[m]);
+			
+			
+			
 			var normalOne = calculate_normal(vertices[buffer[m]],vertices[buffer[m-dv]],vertices[buffer[m-du-dv]]);
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalOne);
 			glMatrix.vec3.add(vertFaces[buffer[m-dv]],vertFaces[buffer[m-dv]],normalOne);
 			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalOne);
-			faces.push(buffer[m], buffer[m-dv], buffer[m-du-dv]);
+
 			var normalTwo = calculate_normal(vertices[buffer[m-du-dv]],vertices[buffer[m-du]],vertices[buffer[m]]);
 			glMatrix.vec3.add(vertFaces[buffer[m]],vertFaces[buffer[m]],normalTwo);
 			glMatrix.vec3.add(vertFaces[buffer[m-du]],vertFaces[buffer[m-du]],normalTwo);
-			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);
-			faces.push(buffer[m-du-dv],buffer[m-du],buffer[m]);
+			glMatrix.vec3.add(vertFaces[buffer[m-du-dv]],vertFaces[buffer[m-du-dv]],normalTwo);*/
+
+			
 
         }
       }
@@ -545,11 +706,23 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		chunk[chunkID].drawData.indice = new Uint32Array(faces);		
 		chunk[chunkID].drawData.texture = new Float32Array(textureCoords);
 		chunk[chunkID].drawData.type = new Uint8Array(finalType);
+		
+
 		chunk_draw_sector(chunkID);
 
 	//Return draw data for cursor chunk
 	}else{
+		console.log({
+			finalVert: finalVert,
+			finalColor : finalColor,
+			vertFaces : vertFaces,
+			faces : faces,
+			textureCoords :  textureCoords,
+			finalType :  finalType,
+			
+		})
 		
+		//                              0                               1                                 2                                           3                                 4
 		return [(new dataArrayType(finalVert)).buffer, (new Uint8Array(finalColor)).buffer, (new Uint32Array(faces)).buffer,(new Float32Array(textureCoords)).buffer, (new Uint8Array(finalType)).buffer];
 
 	}
@@ -611,7 +784,7 @@ chunk_generate = function(x,y,z){
 		chunk_create(x,y,z);
 	}
 
-	if(Math.abs(z)>3){
+	if(z>4 || z<-7){
 		return;
 	}
 
@@ -671,27 +844,30 @@ chunk_generate = function(x,y,z){
 		
 		//if(z!=-3 || (zOff==2 || zz==blockSettings.chunk.XYZ-2)){
 		var go=1;
-		if(z==-3 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
+		if(z==-7 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
 			go=0;
 		}
-		if(z==3 && zOff!=-2 && zz!=1){
+		if(z==4 && zOff!=-2 && zz!=1){
 			go=0;
 		}
 		if(go==1){
-		heightLimit = Math.abs(noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/100,(yy+yOff+y*blockSettings.chunk.XYZ)/100)*64);
-		LimitHeight = Math.abs(noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/500,(yy+yOff+y*blockSettings.chunk.XYZ)/500)*100);
-				
+		LimitHeight = noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/125,(yy+yOff+y*blockSettings.chunk.XYZ)/125)*300;
+			
 		
-		if(zz+zOff+z*blockSettings.chunk.XYZ>25){
-			LimitHeight=0;
-			heightLimit=21
-			blockSet=1;
+		if(zz+zOff+z*blockSettings.chunk.XYZ>60){
+			LimitHeight= noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/125,(yy+yOff+y*blockSettings.chunk.XYZ)/125)*23+50;
+			blockSet= Math.abs(noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/50,(yy+yOff+y*blockSettings.chunk.XYZ)/50)*3);
 		}else{
-			blockSet=Math.floor(heightLimit/10)+1;
+
+			blockSet= Math.round(Math.abs(LimitHeight - (zz+zOff+z*blockSettings.chunk.XYZ))*0.01)+3;
+		}
+		
+		if(Math.abs(noise.simplex3((xx+xOff+x*blockSettings.chunk.XYZ)/100,(yy+yOff+y*blockSettings.chunk.XYZ)/100,(zz+zOff+z*blockSettings.chunk.XYZ)/50))<0.05){
+			blockSet=4;
 		}
 		
 		
-		if(20<=Math.round(heightLimit) && ( (zz+zOff+z*blockSettings.chunk.XYZ>LimitHeight))){
+		if(( (zz+zOff+z*blockSettings.chunk.XYZ>LimitHeight))){
 			
 			//Get index and set block properties
 			blockIndex = xx+yy*blockSettings.chunk.XYZ+zz*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
@@ -955,7 +1131,7 @@ block_change = function(x,y,z,del,amount,buildType){
 		//Set type of block
 		
 		
-		if(chunk[chunkID].blockType[blockIndex]<128 && chunk[chunkID].blockType[blockIndex]==127){
+		if(chunk[chunkID].blockArray[blockIndex]<135 && chunk[chunkID].blockType[blockIndex]==127){
 			chunk[chunkID].blockType[blockIndex]=buildType;
 		}
 		
@@ -1175,7 +1351,10 @@ chunk_process = function() {
 		//Less aggressive 
 		
 		//Flag to keep the less aggressive far loop going 
-		var farLoop=1;
+		var farLoop=1
+		if(farTick!=10){
+			farLoop=0;
+		}
 		//Reset process amount to keep track of how many chunks far out we are processing 
 		//Amount allowed to process in one frame
 		var checkLimit = blockSettings.processDistanceFarSearchLimit;
@@ -1241,12 +1420,17 @@ chunk_process = function() {
 	
 }
 
+var farTick=0;
 setInterval(function(){
 	if(started==1){
+		farTick+=1;
 		chunk_process();
 		sector_process();
+		if(farTick>=10){
+			farTick=0;
+		}
 	}
-},20);
+},1);
 
 
 //Interval to process 
@@ -1311,7 +1495,7 @@ setInterval(function(){
 		}
 	}
 
-},1,indexChunk);
+},25,indexChunk);
 
 
 
