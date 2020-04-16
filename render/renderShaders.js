@@ -162,15 +162,17 @@ void main() {
 	// 0 -2 1
 
 	
-	if( (vBlockType[1]==127.0 ||  (noise((abs(vCoords))*1.0) >=0.4) &&  noise((abs(vCoords))*6.5) >=0.45) ){
-		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType[0]));
-		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType[0]));
-		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType[0]));
+	if( (vBlockType[1]==127.0 ||  (noise((abs(vCoords))*2.0) >=0.4  ) ) ){
+//
+	//if( vBlockType[1]==127.0){
+		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.23,vBlockType[0]));
+		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.23,vBlockType[0]));
+		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.23,vBlockType[0]));
 		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
 	}else{
-		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.1,vBlockType[1]));
-		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.1,vBlockType[1]));
-		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.1,vBlockType[1]));
+		lowp vec4 xaxis = texture( uSampler, vec3(vCoords.yz *0.23,vBlockType[1]));
+		lowp vec4 yaxis = texture( uSampler, vec3(vCoords.xz *0.23,vBlockType[1]));
+		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.23,vBlockType[1]));
 		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;	
 	}
 

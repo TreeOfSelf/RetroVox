@@ -355,24 +355,24 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
     for(x[1]=0; x[1]<dims[1]-1; ++x[1], ++n, m+=2)
     for(x[0]=0; x[0]<dims[0]-1; ++x[0], ++n, ++m) {
 		    var colorSave=[127,127];	
-          
+    
 		  
 		  
 	  
-	/*	var blockIndex=0;
+	/*var blockIndex=0;
 
 	 for(var xxx=-1;xxx<=1;xxx++){
-	  for(var yyy=-1;yyy<=1;yyy++){
-	  for(var zzz=-1;zzz<=1;zzz++){
+	 for(var yyy=-1;yyy<=1;yyy++){
+	 for(var zzz=-1;zzz<=1;zzz++){
 		 
-			 blockIndex = (x[0]+xxx)+(x[1]+yyy)*32+(x[2]+zzz)*32*32;
+		blockIndex = (x[0]+xxx)+(x[1]+yyy)*blockSettings.chunk.XYZ+(x[2]+zzz)*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
 		
 		if(dataType[blockIndex]!=127 && colorSave[0]==127){
 			colorSave[0]=dataType[blockIndex];
 		}else{
-				if(dataType[blockIndex]!=127 && dataType[blockIndex]!=colorSave[0] && colorSave[1]==127 ){
-					colorSave[1]=dataType[blockIndex];
-				}
+			if(dataType[blockIndex]!=127 && dataType[blockIndex]!=colorSave[0] && colorSave[1]==127 ){
+				colorSave[1]=dataType[blockIndex];
+			}
 		}
 						
 	  }}}
@@ -393,9 +393,11 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
       for(var i=0; i<2; ++i, ++g, ++idx) {
 	  
 	  
-		  
+		 
         var p = ((data[idx]-128))
-		if(dataType[idx]!=127 && colorSave[0]==127){
+		
+		
+		if (dataType[idx]!=127 && colorSave[0]==127){
 			colorSave[0]=dataType[idx];
 		}else{
 				if(dataType[idx]!=127 && dataType[idx]!=colorSave[0] && colorSave[1]==127 ){
@@ -408,11 +410,11 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 		
 
 
-	  if(colorSave[1]<colorSave[0]){
+	  /*if(colorSave[1]<colorSave[0]){
 		  var save=colorSave[1];
 		  colorSave[1]=colorSave[0];
 		  colorSave[0]=save;
-	  }
+	  }*/
 
       //Check for early termination if cell does not intersect boundary
       if(mask === 0 || mask === 0xff) {
@@ -1483,6 +1485,7 @@ setInterval(function(){
 					positions : [],
 					color : [],
 					texture : [],
+					type : [],
 				}
 
 				hit=1;
@@ -1495,7 +1498,7 @@ setInterval(function(){
 		}
 	}
 
-},25,indexChunk);
+},1,indexChunk);
 
 
 

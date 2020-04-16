@@ -224,8 +224,8 @@ var blockSettings = {
 	
 	//Determines how far out to process chunks
 	processDistance : {
-		XY : 2,
-		Z : 2,
+		XY : 3,
+		Z : 3,
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
