@@ -219,11 +219,7 @@ function render(now){
 	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix,false,lookMatrix);
 	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
-	gl.uniform3fv(programInfo.uniformLocations.look,[
-	-Math.sin(player.rotation[0])*Math.cos(player.rotation[1]), 
-	-Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]) ,
-	-Math.sin(player.rotation[1])
-	]);
+	gl.uniform3fv(programInfo.uniformLocations.reverseLight,[-0.5,-0.5,-1.0]);
 	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);

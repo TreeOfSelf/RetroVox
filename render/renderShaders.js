@@ -151,8 +151,8 @@ flat in lowp vec2 vBlockType;
 
 
 uniform  lowp sampler2DArray uSampler;
-uniform lowp vec3 uLook;
 uniform float uTransparency;
+uniform vec3 uReverseLight;
 
 out lowp vec4 fragColor;
 
@@ -211,7 +211,7 @@ void main() {
 		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;	
 	}
 	
-	fragColor.rgb*= max(0.5,min(dot(vTexture,normalize( vec3(0.5,0.5,-0.7)))*1.0,1.0));
+	fragColor.rgb*= max(0.5,min(dot(vTexture,normalize(uReverseLight))*1.0,1.0));
 	fragColor.a = uTransparency;
 
 }
@@ -253,8 +253,8 @@ const programInfo = {
 		transparency : gl.getUniformLocation(shaderProgram, 'uTransparency'),
 		//Texture Sampler 
 		textureSampler : gl.getUniformLocation(shaderProgram, 'uSampler'),
-		look : gl.getUniformLocation(shaderProgram, 'uLook'),
 		projectedTexture : gl.getUniformLocation(shaderProgram, 'uProjectedTexture'),
+		reverseLight : gl.getUniformLocation(shaderProgram,'uReverseLight'),
 
 
 	},
