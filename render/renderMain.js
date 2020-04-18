@@ -75,14 +75,14 @@ const gl = canvas.getContext("webgl2",{
 	//premultipliedAlpha: false, 
 });
 
+
+//Texture array for terrain materials
+
 const texture = loadTexture(gl,'grass.png');
 gl.bindTexture(gl.TEXTURE_2D,texture);
 gl.activeTexture(gl.TEXTURE0);
-
-
 var textureArray = gl.createTexture();
 loadImage('grass.png', function(image){
-
 var num=8
 var canvas2D = document.createElement('canvas');
 canvas2D.width = 512
@@ -108,10 +108,13 @@ gl.texImage3D(
 	gl.RGBA,
 	gl.UNSIGNED_BYTE,
 	pixels);
-
 gl.generateMipmap(gl.TEXTURE_2D_ARRAY)
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR)
 });
+
+
+
+
 
 canvas.style.imageRendering='pixelated';
 //Depth testing
@@ -124,42 +127,9 @@ gl.enable(gl.BLEND);
 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 gl.lineWidth(15.0);
 
-var d = new Date();
-var day = d.getDate();
-var mont = d.getMonth();
-var seconds = d.getTime();
 
-
-var color = [noise.perlin3(mont/10,day/100,seconds/400000),noise.perlin3(day/100,mont/10,seconds/400000),noise.perlin3(seconds/400000,day/100,mont/10)];
-color = [Math.abs(color[0]),Math.abs(color[1]),Math.abs(color[2])];
-gl.clearColor(color[0],color[1],color[2],1.0);
 gl.clearColor(0,0,0,1.0);
-
 renderSettings.lightIntensity = 0.009;
-
-
-//Set background color based on time
-
-/*setInterval(function(){
-d = new Date();
-var day = d.getDate();
-var mont = d.getMonth();
-var seconds = d.getTime();
-
-
-var color = [noise.perlin3(mont/10,day/100,seconds/400000),noise.perlin3(day/100,mont/10,seconds/400000),noise.perlin3(seconds/400000,day/100,mont/10)];
-color = [Math.abs(color[0]),Math.abs(color[1]),Math.abs(color[2])];
-gl.clearColor(color[0],color[1],color[2],1.0);
-
-
-renderSettings.lightIntensity = (1 - ((color[0]+color[1]+color[2])/3))*0.0009
-
-color=[0,0,0];
-
-},2000);*/
-
-//Load Texture
-
 
 
 
@@ -169,11 +139,11 @@ function render(now){
 	var time = Date.now();
 	fps.drawLength=0;
 	
-	gl.disable(gl.BLEND);
+	gl.enable(gl.BLEND);
 	keyboard_controls();
 	mobile_controls();
 	player_physics();
-	//chunk_process();
+
 	
 	//Test to see if the browser window has changed from our set size
 	if(window.innerWidth*renderSettings.resolution!=renderSettings.screenSize[0] || window.innerHeight*renderSettings.resolution!=renderSettings.screenSize[1]){
@@ -212,12 +182,26 @@ function render(now){
 		gl.clearDepth(0); 
 		glMatrix.mat4.ortho(projectionMatrix, -renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),-renderSettings.zoom,renderSettings.zoom,99999,0.0001);
 	}
+	
+	
+	var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+	player.position[2]+Math.sin(player.rotation[1])];
+	
+	
+	lookMatrix = glMatrix.mat4.create();
+     glMatrix.mat4.lookAt(
+		lookMatrix,
+        [player.position[0],-player.position[2],player.position[1]],          // position
+        [lookPosition[0],-lookPosition[2],lookPosition[1]], // target
+        [0, 1, 0],                                              // up
+    );	
 
 	//Rotate camera
-	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[1],[1,0,0]);
+	/*glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[1],[1,0,0]);
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[0],[0,1,0]);
 	//Translate Camera
-	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-(player.position[0]),(player.position[2]),-(player.position[1])]);
+	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-(player.position[0]),(player.position[2]),-(player.position[1])]);*/
 
 
 	
@@ -228,11 +212,18 @@ function render(now){
 
 
 
+
 	//Set uniforms
 	gl.uniform1i(programInfo.uniformLocations.textureSampler, 0);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,false,projectionMatrix);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
+	gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix,false,lookMatrix);
 	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
+	gl.uniform3fv(programInfo.uniformLocations.look,[
+	-Math.sin(player.rotation[0])*Math.cos(player.rotation[1]), 
+	-Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]) ,
+	-Math.sin(player.rotation[1])
+	]);
 	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);
@@ -284,12 +275,12 @@ function render(now){
 		//Displace cursor 
 		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
 		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
-		gl.uniform1f(programInfo.uniformLocations.transparency,controls.buildStrength/30);
+		gl.uniform1f(programInfo.uniformLocations.transparency,Math.min(controls.buildStrength/60+0.1,0.7));
 		//Draw cursor
 		gl.bindVertexArray(controls.cursorDraw.vao);
 		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 		//gl.disable(gl.BLEND);
-		gl.drawElements(gl.LINES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 	}
 	
 	//Create animation of render function

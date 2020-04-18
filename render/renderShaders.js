@@ -39,7 +39,36 @@ function loadShader(gl, type, source) {
   }
   return shader;
 }
+
+
+//Depth Shader
+
+const colorVS = `#version 300 es
+in vec4 aPosition;
+
+uniform mat4 uMatrix;
+uniform mat4 uModelMatrix;
+
+void main() {
+  // Multiply the position by the matrices.
+  gl_Position = uMatrix * uModelMatrix * aPosition;
+}
+`;
+
+const colorFS = `#version 300 es
+precision mediump float;
+
+out vec4 outColor;
+
+void main() {
+  outColor = vec4(1.0,0.0,0.0,1.0);
+}
+`;
  
+ 
+ 
+ 
+//Normal Shader
 
 //Vertex Shader
 const vsSource = `#version 300 es
@@ -55,23 +84,30 @@ in vec2 aBlockType;
 
 //Camera Position
 uniform vec3 uCam;
+
 //Perspective Matrix
 uniform mat4 uMatrix;
+
 //Model Matrix
 uniform mat4 uModelMatrix;
+
+//View Matrix
+uniform mat4 uView;
+
 //Orthographic
 uniform int uOrtho;
+
+
+
 //Light amount
 uniform float uLight;
-//Transparency 
-uniform float uTransparency;
+
 
 out lowp vec4 vPixelColor;
 out lowp float vColor;
 out lowp vec3  vTexture;
 out lowp vec3 vCoords;
 flat out lowp vec2 vBlockType;
-//out lowp float vTransparency;
 
 void main() {
 
@@ -80,7 +116,7 @@ void main() {
 	
 	
 	
-	gl_Position =  uMatrix * uModelMatrix * vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
+	gl_Position =  uMatrix * uView * uModelMatrix * vec4(aPosition[0],-aPosition[2],aPosition[1],1.0);
 	
 
 	//Size based on distance for shading
@@ -100,7 +136,6 @@ void main() {
 	vTexture = aTexture;
 	vCoords =  aPosition;
 	vBlockType = aBlockType;
-	//vTransparency = uTransparency;
 }
 `;
 
@@ -112,9 +147,12 @@ in lowp float vColor;
 in lowp vec3 vTexture;
 in lowp vec3 vCoords;
 flat in lowp vec2 vBlockType;
-//in lowp float vTransparency;
+
+
 
 uniform  lowp sampler2DArray uSampler;
+uniform lowp vec3 uLook;
+uniform float uTransparency;
 
 out lowp vec4 fragColor;
 
@@ -148,9 +186,6 @@ void main() {
 	
 	
 
-
-		
-	
 	//Mix color with shading
 	lowp vec3 blending = abs( vTexture );
 	blending = normalize(max(blending, 0.00001)); // Force weights to sum to 1.0
@@ -175,6 +210,9 @@ void main() {
 		lowp vec4 zaxis = texture( uSampler, vec3(vCoords.xy*0.23,vBlockType[1]));
 		fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;	
 	}
+	
+	fragColor.rgb*= max(0.5,min(dot(vTexture,normalize( vec3(0.5,0.5,-0.7)))*1.0,1.0));
+	fragColor.a = uTransparency;
 
 }
 `;
@@ -182,6 +220,7 @@ void main() {
 //Create shader program
 
 const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+const shaderProgramColor = initShaderProgram(gl, colorVS, colorFS);
 //Create shader program info
 const programInfo = {
 	program: shaderProgram,
@@ -204,6 +243,8 @@ const programInfo = {
 		projectionMatrix : gl.getUniformLocation(shaderProgram,'uMatrix'),
 		//Model Matrix
 		modelMatrix : gl.getUniformLocation(shaderProgram,'uModelMatrix'),
+		//View Matrix
+		viewMatrix : gl.getUniformLocation(shaderProgram,'uView'),
 		//Ortho view
 		ortho : gl.getUniformLocation(shaderProgram,'uOrtho'),
 		//Light 
@@ -212,6 +253,27 @@ const programInfo = {
 		transparency : gl.getUniformLocation(shaderProgram, 'uTransparency'),
 		//Texture Sampler 
 		textureSampler : gl.getUniformLocation(shaderProgram, 'uSampler'),
+		look : gl.getUniformLocation(shaderProgram, 'uLook'),
+		projectedTexture : gl.getUniformLocation(shaderProgram, 'uProjectedTexture'),
+
+
+	},
+};
+
+const programInfoColor = {
+	program: shaderProgramColor,
+	
+	attribLocations: {
+	// Position 3v 
+	  position: gl.getAttribLocation(shaderProgramColor, 'aPosition'),
+	},
+	
+	uniformLocations: {
+		//Projection Matrix
+		projectionMatrix : gl.getUniformLocation(shaderProgramColor,'uMatrix'),
+		//Model Matrix
+		modelMatrix : gl.getUniformLocation(shaderProgramColor,'uModelMatrix'),
+
 
 	},
 };

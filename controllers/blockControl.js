@@ -229,7 +229,7 @@ var blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 7,
+	processDistanceFar : 10,
 	processDistanceFarSearchLimit : 5,
 	
 	//Amount of chunks allowed to proceaass in one frame

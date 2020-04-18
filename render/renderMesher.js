@@ -404,6 +404,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 					colorSave[1]=dataType[idx];
 				}
 		}
+		
         grid[g] = p;
         mask |= (p < 0) ? (1<<g) : 0;
       }
@@ -776,6 +777,13 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
   
   return [nvolume,nType ,ndims];
 }
+
+
+
+
+
+
+
 
 
 chunk_generate = function(x,y,z){
@@ -1354,7 +1362,7 @@ chunk_process = function() {
 		
 		//Flag to keep the less aggressive far loop going 
 		var farLoop=1
-		if(farTick!=10){
+		if(farTick!=3){
 			farLoop=0;
 		}
 		//Reset process amount to keep track of how many chunks far out we are processing 
@@ -1428,7 +1436,7 @@ setInterval(function(){
 		farTick+=1;
 		chunk_process();
 		sector_process();
-		if(farTick>=10){
+		if(farTick>=3){
 			farTick=0;
 		}
 	}
