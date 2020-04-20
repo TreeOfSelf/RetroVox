@@ -219,7 +219,7 @@ var blockSettings = {
 	
 	sector : {
 		space : 200,
-		XYZ : 6,
+		XYZ : 3,
 	},
 	
 	//Determines how far out to process chunks
@@ -230,7 +230,7 @@ var blockSettings = {
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
 	processDistanceFar : 10,
-	processDistanceFarSearchLimit : 5,
+	processDistanceFarSearchLimit : 10,
 	
 	//Amount of chunks allowed to proceaass in one frame
 	processLimit : 5000,

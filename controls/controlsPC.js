@@ -188,6 +188,12 @@ canvas.addEventListener('wheel', function(e) {
 	//Move cursor distance
 	}else{
 		controls.cursorDistance-=(e.deltaY*0.001)*controls.cursorDistance;		
+		if(controls.cursorDistance>10.0){
+			controls.cursorDistance=10.0;
+		}
+		if(controls.cursorDistance<1){
+			controls.cursorDistance=1;
+		}
 	}
 });
 
@@ -200,13 +206,13 @@ keyboard_controls = function(){
 	
 	if(controls.keys['-'] || controls.keys['_']){
 		if(controls.buildStrength>2){
-			controls.buildStrength-=1;
+			controls.buildStrength-=0.1;
 		}
 	}
 	
 	if(controls.keys['='] || controls.keys['+']){
 		if(controls.buildStrength<20){
-			controls.buildStrength+=1;
+			controls.buildStrength+=0.1;
 		}
 	}
 	
@@ -276,6 +282,12 @@ keyboard_controls = function(){
 			cursorPosition : controls.cursorPosition,
 		});
 	}
+//Camera constraints
+	if(player.rotation[1]>1.57){
+		player.rotation[1]=1.57;
+	}
 
-	
+	if(player.rotation[1]<-1.57){
+		player.rotation[1]=-1.57;
+	}
 }

@@ -401,7 +401,7 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
 			colorSave[0]=dataType[idx];
 		}else{
 				if(dataType[idx]!=127 && dataType[idx]!=colorSave[0] && colorSave[1]==127 ){
-					colorSave[1]=dataType[idx];
+					//colorSave[1]=dataType[idx];
 				}
 		}
 		
@@ -787,16 +787,15 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
 
 
 chunk_generate = function(x,y,z){
-
+	if(z>4 || z<-10){
+		return;
+	}
 	//Get chunkID and create chunk if it does not exist
 	chunkID = chunk_returnID(x,y,z);
 	if(chunk[chunkID]==null){
 		chunk_create(x,y,z);
 	}
 
-	if(z>4 || z<-7){
-		return;
-	}
 
 
 	chunk[chunkID].flags.reDraw=1;
@@ -854,7 +853,7 @@ chunk_generate = function(x,y,z){
 		
 		//if(z!=-3 || (zOff==2 || zz==blockSettings.chunk.XYZ-2)){
 		var go=1;
-		if(z==-7 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
+		if(z==-10 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
 			go=0;
 		}
 		if(z==4 && zOff!=-2 && zz!=1){
@@ -869,7 +868,7 @@ chunk_generate = function(x,y,z){
 			blockSet= Math.abs(noise.simplex2((xx+xOff+x*blockSettings.chunk.XYZ)/50,(yy+yOff+y*blockSettings.chunk.XYZ)/50)*3);
 		}else{
 
-			blockSet= Math.round(Math.abs(LimitHeight - (zz+zOff+z*blockSettings.chunk.XYZ))*0.01)+3;
+			blockSet= Math.round(Math.abs(LimitHeight - (zz+zOff+z*blockSettings.chunk.XYZ))*0.007)+3;
 		}
 		
 		if(Math.abs(noise.simplex3((xx+xOff+x*blockSettings.chunk.XYZ)/100,(yy+yOff+y*blockSettings.chunk.XYZ)/100,(zz+zOff+z*blockSettings.chunk.XYZ)/50))<0.05){
@@ -881,8 +880,8 @@ chunk_generate = function(x,y,z){
 			
 			//Get index and set block properties
 			blockIndex = xx+yy*blockSettings.chunk.XYZ+zz*blockSettings.chunk.XYZ*blockSettings.chunk.XYZ;
-			chunk[chunkID].blockArray[blockIndex]=0
-			chunk[chunkID].blockType[blockIndex]=blockSet
+			chunk[chunkID].blockArray[blockIndex]=128-Math.abs(LimitHeight)*0.8
+			chunk[chunkID].blockType[blockIndex]=Math.min(blockSet,5);
 
 		}
 		
@@ -1411,9 +1410,10 @@ chunk_process = function() {
 				chunkID=chunk_returnID(chunkID[0],chunkID[1],chunkID[2]);
 				checkLimit--
 			}
+			
 
 			//Redraw if needed
-			if(chunk[chunkID].flags.reDraw>0){
+			if(chunk[chunkID] !=null && chunk[chunkID].flags.reDraw>0){
 				chunk_mesh(chunkID);
 				checkLimit--;
 				chunk[chunkID].flags.reDraw=0;
@@ -1452,15 +1452,15 @@ var indexChunk = -1;
 setInterval(function(){
 
 
-	indexChunk+=1;
 
 	hit=0;count=0;
-	while(hit==0 && count<=400){
+	while(hit==0 && count<100){
+		indexChunk+=1;
 		count++;
 		var curChunk = loadedChunks[indexChunk];
 
 				//If chunk is over 10 chunks away
-			if(curChunk!=null &&	distance_3d(chunk[curChunk[0]].coords,player.chunk)>10){
+			if(curChunk!=null &&	distance_3d(chunk[curChunk[0]].coords,player.chunk)>15){
 				
 				
 
@@ -1481,13 +1481,14 @@ setInterval(function(){
 				//hit=1;
 				//var time = Date.now();
 //				console.log(loadedChunks.length,[chunk[chunkID].blockArray,chunk[chunkID].blockType])
-				chunk[chunkID].compressed = pako.gzip(chunk[chunkID].blockArray);
-				chunk[chunkID].compressedType = pako.gzip(chunk[chunkID].blockType);
+				
+				//chunk[chunkID].compressed = pako.gzip(chunk[chunkID].blockArray);
+				//chunk[chunkID].compressedType = pako.gzip(chunk[chunkID].blockType);
 				//var now = Date.now() - time;
 
 				//Clear block array and draw data
-				chunk[chunkID].blockArray=[];
-				chunk[chunkID].blockType =[];
+				//chunk[chunkID].blockArray=[];
+				//chunk[chunkID].blockType =[];
 				chunk[chunkID].drawData = {
 					indice : [],
 					positions : [],
@@ -1495,12 +1496,12 @@ setInterval(function(){
 					texture : [],
 					type : [],
 				}
-
-				hit=1;
+				chunk[chunkID].flags.reDraw=1;
+				//hit=1;
 				
 			}
 		}
-		if(indexChunk==loadedChunks.length){
+		if(indexChunk>=loadedChunks.length){
 			indexChunk=0;
 			hit=1;
 		}

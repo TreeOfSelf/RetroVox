@@ -186,17 +186,35 @@ function render(now){
 	
 	var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
 	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+	
 	player.position[2]+Math.sin(player.rotation[1])];
 	
 	
+	var lookPositionOther = [Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+	Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+	Math.sin(player.rotation[1])];
+	
+		
 	lookMatrix = glMatrix.mat4.create();
      glMatrix.mat4.lookAt(
 		lookMatrix,
         [player.position[0],-player.position[2],player.position[1]],          // position
         [lookPosition[0],-lookPosition[2],lookPosition[1]], // target
-        [0, 1, 0],                                              // up
+        [0, 1, 0],                                              // upi
     );	
 
+	
+	lightMatrix = glMatrix.mat4.create();
+     glMatrix.mat4.lookAt(
+		lightMatrix,
+        [player.position[0],-player.position[2],player.position[1]],          // position
+        [lookPosition[0],-lookPosition[2],lookPosition[1]], // target
+        [0, 1, 0],                                              // upi
+    );	
+	var vecone= glMatrix.vec3.fromValues(player.position[0],player.position[1],player.position[2]);
+	glMatrix.vec3.subtract(vecone,player.position,[lookPosition[0],lookPosition[1],lookPosition[2]]);
+	reverseLightDirection=vecone;
+	//reverseLightDirection=[-reverseLightDirection[0],-reverseLightDirection[1],-reverseLightDirection[2]];
 	//Rotate camera
 	/*glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[1],[1,0,0]);
 	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[0],[0,1,0]);
@@ -215,11 +233,11 @@ function render(now){
 
 	//Set uniforms
 	gl.uniform1i(programInfo.uniformLocations.textureSampler, 0);
+	gl.uniform3fv(programInfo.uniformLocations.reverseLight,reverseLightDirection);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,false,projectionMatrix);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix,false,lookMatrix);
 	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
-	gl.uniform3fv(programInfo.uniformLocations.reverseLight,[-0.5,-0.5,-1.0]);
 	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
 	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
 	gl.uniform1f(programInfo.uniformLocations.transparency,1);
