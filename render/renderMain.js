@@ -83,7 +83,7 @@ gl.bindTexture(gl.TEXTURE_2D,texture);
 gl.activeTexture(gl.TEXTURE0);
 var textureArray = gl.createTexture();
 loadImage('grass.png', function(image){
-var num=8
+var num=9;
 var canvas2D = document.createElement('canvas');
 canvas2D.width = 512
 canvas2D.height = 512*num
@@ -232,7 +232,7 @@ function render(now){
 
 
 	//Set uniforms
-	gl.uniform1i(programInfo.uniformLocations.textureSampler, 0);
+	gl.uniform1i(programInfo.uniformLocations.textureSampler, texture);
 	gl.uniform3fv(programInfo.uniformLocations.reverseLight,reverseLightDirection);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,false,projectionMatrix);
 	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
