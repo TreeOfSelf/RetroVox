@@ -229,8 +229,8 @@ var blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 10,
-	processDistanceFarSearchLimit : 10,
+	processDistanceFar : 7,
+	processDistanceFarSearchLimit : 150,
 	
 	//Amount of chunks allowed to proceaass in one frame
 	processLimit : 5000,
@@ -382,6 +382,7 @@ sector_create = function(x,y,z){
 		//Set up vertex array object with our buffers
 		gl.bindVertexArray(sector[sectorID].vao);
 		
+
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
 		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
 		

@@ -125,6 +125,15 @@ document.onkeydown=function(e){
 			}
 		}
 	
+	//move light
+	if(e.key=='j' || e.key=='J'){
+		var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+		player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+		player.position[2]+Math.sin(player.rotation[1])];
+		light.pos = [player.position[0],-player.position[2],player.position[1]];
+		light.look = [lookPosition[0],-lookPosition[2],lookPosition[1]]
+	}
+	
 	//wireframe toggle
 	if(e.key=='n' || e.key=='N'){
 		if(renderSettings.wireframe==0){renderSettings.wireframe=1;

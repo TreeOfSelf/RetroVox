@@ -5,8 +5,6 @@ This file will contain the main webGL related code relating to the canvas, shade
 */
 
 
-//Definitions 
-
 
 //Object containing settings used at render time
 var renderSettings = {
@@ -42,10 +40,12 @@ var fps = {
 //Load Texture
 function loadTexture(gl,url){
 	const texture = gl.createTexture();
+gl.activeTexture(gl.TEXTURE1);
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 	gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,255,255]));
 	const image = new Image();
 	image.onload = function(){
+		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D,texture);
 		gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
 		gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
@@ -68,19 +68,10 @@ window.loadImage = function(url, onload) {
 
 //Init (things that only need to be ran once at the beginning) 
 
-canvas = document.getElementById("retroCanvas");
-const gl = canvas.getContext("webgl2",{
-	alpha: false,
-	antialias : true,
-	//premultipliedAlpha: false, 
-});
-
 
 //Texture array for terrain materials
-
-const texture = loadTexture(gl,'grass.png');
-gl.bindTexture(gl.TEXTURE_2D,texture);
-gl.activeTexture(gl.TEXTURE0);
+//const texture = loadTexture(gl,'grass.png');
+//gl.bindTexture(gl.TEXTURE_2D,texture);
 var textureArray = gl.createTexture();
 loadImage('grass.png', function(image){
 var num=9;
@@ -91,7 +82,6 @@ var ctx = canvas2D.getContext('2d');
 ctx.drawImage(image, 0, 0);
 var imageData = ctx.getImageData(0, 0, 512, 512*num);
 var pixels = new Uint8Array(imageData.data.buffer);
-gl.activeTexture(gl.TEXTURE0);
 gl.bindTexture(gl.TEXTURE_2D_ARRAY, textureArray);
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -112,6 +102,31 @@ gl.generateMipmap(gl.TEXTURE_2D_ARRAY)
 gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR)
 });
 
+const depthTexture = gl.createTexture();
+const depthTextureSize = 2048;
+gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+gl.texImage2D(
+  gl.TEXTURE_2D,      // target
+  0,                  // mip level
+  gl.DEPTH_COMPONENT32F, // internal format
+  depthTextureSize,   // width
+  depthTextureSize,   // height
+  0,                  // border
+  gl.DEPTH_COMPONENT, // format
+  gl.FLOAT,           // type
+  null);              // data
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+const depthFramebuffer = gl.createFramebuffer();
+gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
+gl.framebufferTexture2D(
+  gl.FRAMEBUFFER,       // target
+  gl.DEPTH_ATTACHMENT,  // attachment point
+  gl.TEXTURE_2D,        // texture target
+  depthTexture,         // texture
+  0);                   // mip level
 
 
 
@@ -132,8 +147,9 @@ gl.clearColor(0,0,0,1.0);
 renderSettings.lightIntensity = 0.009;
 
 
-
+get=1;
 //This is the main drawing function. It is ran once per frame to determine the image output. It also encapsulates the functions to run physics.
+
 
 function render(now){
 	var time = Date.now();
@@ -150,8 +166,8 @@ function render(now){
 		
 		//Update screen size, canvas, viewport
 		renderSettings.screenSize = [window.innerWidth*renderSettings.resolution,window.innerHeight*renderSettings.resolution];
-		canvas.width = renderSettings.screenSize[0];
-		canvas.height = renderSettings.screenSize[1];
+		canvas.width = renderSettings.screenSize[0]*0.98;
+		canvas.height = renderSettings.screenSize[1]*0.98;
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 		
 	}
@@ -162,85 +178,6 @@ function render(now){
 	//Set the average FPS after 60 frames
 	if(fps.fpsCount==60){fps.fpsReal=fps.fpsTotal/fps.fpsCount;fps.fpsTotal=0;fps.fpsCount=0;}
 	
-	
-	//Clear previous canvas from last frame
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-
-	//Create projection matrix
-	projectionMatrix = glMatrix.mat4.create();
-
-	//Perspective
-	if(renderSettings.orthographic==0){ 	
-		gl.depthFunc(gl.LESS)
-		gl.clearDepth(9999999); 	   		//     FOV                                       ASPECT                               NEAR FAR
-		glMatrix.mat4.perspective(projectionMatrix,renderSettings.fov * Math.PI / 180,gl.canvas.clientWidth / gl.canvas.clientHeight,0.01,9999999999);
-
-	//Orthographic
-	}else{
-		gl.depthFunc(gl.GREATER)
-		gl.clearDepth(0); 
-		glMatrix.mat4.ortho(projectionMatrix, -renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),renderSettings.zoom*(gl.canvas.clientWidth / gl.canvas.clientHeight),-renderSettings.zoom,renderSettings.zoom,99999,0.0001);
-	}
-	
-	
-	var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
-	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
-	
-	player.position[2]+Math.sin(player.rotation[1])];
-	
-	
-	var lookPositionOther = [Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
-	Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
-	Math.sin(player.rotation[1])];
-	
-		
-	lookMatrix = glMatrix.mat4.create();
-     glMatrix.mat4.lookAt(
-		lookMatrix,
-        [player.position[0],-player.position[2],player.position[1]],          // position
-        [lookPosition[0],-lookPosition[2],lookPosition[1]], // target
-        [0, 1, 0],                                              // upi
-    );	
-
-	
-	lightMatrix = glMatrix.mat4.create();
-     glMatrix.mat4.lookAt(
-		lightMatrix,
-        [player.position[0],-player.position[2],player.position[1]],          // position
-        [lookPosition[0],-lookPosition[2],lookPosition[1]], // target
-        [0, 1, 0],                                              // upi
-    );	
-	var vecone= glMatrix.vec3.fromValues(player.position[0],player.position[1],player.position[2]);
-	glMatrix.vec3.subtract(vecone,player.position,[lookPosition[0],lookPosition[1],lookPosition[2]]);
-	reverseLightDirection=vecone;
-	//reverseLightDirection=[-reverseLightDirection[0],-reverseLightDirection[1],-reverseLightDirection[2]];
-	//Rotate camera
-	/*glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[1],[1,0,0]);
-	glMatrix.mat4.rotate(projectionMatrix,projectionMatrix,player.rotation[0],[0,1,0]);
-	//Translate Camera
-	glMatrix.mat4.translate(projectionMatrix,projectionMatrix,[-(player.position[0]),(player.position[2]),-(player.position[1])]);*/
-
-
-	
-	//Model Matrix
-	modelMatrix = glMatrix.mat4.create();
-	//Set program
-	gl.useProgram(programInfo.program);
-
-
-
-
-	//Set uniforms
-	gl.uniform1i(programInfo.uniformLocations.textureSampler, texture);
-	gl.uniform3fv(programInfo.uniformLocations.reverseLight,reverseLightDirection);
-	gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,false,projectionMatrix);
-	gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
-	gl.uniformMatrix4fv(programInfo.uniformLocations.viewMatrix,false,lookMatrix);
-	gl.uniform3fv(programInfo.uniformLocations.cam,player.position);
-	gl.uniform1i(programInfo.uniformLocations.ortho,renderSettings.orthographic);	
-	gl.uniform1f(programInfo.uniformLocations.light,renderSettings.lightIntensity);
-	gl.uniform1f(programInfo.uniformLocations.transparency,1);
 
 	var processList = [];
 	
@@ -256,32 +193,23 @@ function render(now){
 		
 	}}}
 	
+	
 	//Sort the list of chunks by distance
 	processList.sort(function(a,b){
 		return(a[1]-b[1]);
 	});
 	
-	//Loop through active sectors 
-	
-	
-	for(var k=0 ; k<processList.length ; k++){
-		var sectorID = processList[k][0];
-		if(sector[sectorID].buffers.size>0){
-			gl.bindVertexArray(sector[sectorID].vao);
-			fps.drawLength+=sector[sectorID].buffers.size;
-			//Draw the triangles 
-			if(renderSettings.wireframe==0){		
-				//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
-				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
-			//Draw wireframe
-			}else{
-				gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
-			}			
-		}
-	
+	render_sectors(processList);
 
-	}
-	
+	//Create animation of render function
+	requestAnimationFrame(render);
+}
+
+
+
+
+function rendedr(now){
+
 	
 	//If there is a cursor to be drawn
 	if(controls.cursorDraw.size!=0){
@@ -296,12 +224,162 @@ function render(now){
 		//gl.disable(gl.BLEND);
 		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 	}
-	
-	//Create animation of render function
-	requestAnimationFrame(render);
-	
-	var result = Date.now() - time;
-	if(result>16){
-		console.log("FRAME TOOK: "+result);
-	}
+
 }
+
+
+
+
+
+
+
+
+
+
+function drawScene(
+  projectionMatrix,
+  cameraMatrix,
+  textureMatrix,
+  lightWorldMatrix,
+  programInfo,
+  processList) {
+	const viewMatrix = m4.inverse(cameraMatrix);
+
+	gl.useProgram(programInfo.program);
+
+
+	twgl.setUniforms(programInfo, {
+		u_view: viewMatrix,
+		u_projection: projectionMatrix,
+		u_textureMatrix: textureMatrix,
+		u_sampler : textureArray,
+		u_projectedTexture: depthTexture,
+		u_reverseLight: lightWorldMatrix.slice(8, 11),
+		u_world : m4.identity(),
+		u_transparency : 1,
+	});
+	for(var k=0 ; k<processList.length ; k++){
+		var sectorID = processList[k][0];
+		if(sector[sectorID].buffers.size>0){
+			gl.bindVertexArray(sector[sectorID].vao);
+
+			fps.drawLength+=sector[sectorID].buffers.size;
+			//Draw the triangles 
+			if(renderSettings.wireframe==0){		
+				//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
+				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+			//Draw wireframe
+			}else{
+				gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+			}			
+		}
+	
+
+	}	
+}
+
+light = {
+	pos : [5,5,5],
+	look : [0,0,0],
+}
+
+// Draw the scene.
+function render_sectors(processList) {
+
+
+gl.enable(gl.CULL_FACE);
+gl.enable(gl.DEPTH_TEST);
+
+var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+player.position[2]+Math.sin(player.rotation[1])];
+
+// first draw from the POV of the light
+const lightWorldMatrix = m4.lookAt(
+	//[player.position[0], -player.position[2]+5, player.position[1]],          // position
+	//[lookPosition[0], -lookPosition[2]+5, lookPosition[1]], // target
+	light.pos,
+	light.look,
+	[0, 1, 0],                                              // up
+);
+const lightProjectionMatrix = m4.perspective(
+	renderSettings.fov * Math.PI / 180,
+	1.0,
+	0.01,  // near
+	20000)   // far
+
+/*const lightProjectionMatrix = m4.orthographic(
+            -80 / 2,   // left
+             80 / 2,   // right
+            -80 / 2,  // bottom
+             80 / 2,  // top
+             0.5,                      // near
+             10000);    */
+	
+// draw to the depth texture
+gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
+gl.viewport(0, 0, depthTextureSize, depthTextureSize);
+gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+drawScene(
+	lightProjectionMatrix,
+	lightWorldMatrix,
+	m4.identity(),
+	lightWorldMatrix,
+	colorProgramInfo,
+	processList);
+
+
+// now draw scene to the canvas projecting the depth texture into the scene
+gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+gl.clearColor(1, 1, 1, 1);
+gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+let textureMatrix = m4.identity();
+textureMatrix = m4.translate(textureMatrix, 0.5, 0.5, 0.5);
+textureMatrix = m4.scale(textureMatrix, 0.5, 0.5, 0.5);
+
+textureMatrix = m4.multiply(textureMatrix, lightProjectionMatrix);
+
+// use the inverse of this world matrix to make
+// a matrix that will transform other positions
+// to be relative this this world space.
+
+var getter=m4.inverse(lightWorldMatrix);
+textureMatrix = m4.multiply(
+	textureMatrix,
+	m4.inverse(lightWorldMatrix));
+
+// Compute the projection matrix
+const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+const projectionMatrix =
+	m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.01, 20000);
+
+
+
+	
+
+
+// Compute the camera's matrix using look at.
+const cameraPosition = [player.position[0], -player.position[2], player.position[1]];
+const target = [lookPosition[0], -lookPosition[2], lookPosition[1]];
+const up = [0, 1, 0];
+const cameraMatrix = m4.lookAt(cameraPosition, target, up);
+
+drawScene(
+	projectionMatrix,
+	cameraMatrix,
+	textureMatrix,
+	lightWorldMatrix,
+	textureProgramInfo,
+	processList);
+ 
+}
+
+
+
+
+
+
+
