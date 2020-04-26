@@ -211,7 +211,7 @@ var activeSectors=[];
 
 
 //Settings object 
-var blockSettings = {
+blockSettings = {
 	chunk : {
 		space : 200,
 		XYZ : 24,
@@ -219,7 +219,7 @@ var blockSettings = {
 	
 	sector : {
 		space : 200,
-		XYZ : 3,
+		XYZ : 2,
 	},
 	
 	//Determines how far out to process chunks
@@ -229,11 +229,11 @@ var blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 7,
+	processDistanceFar : 15,
 	processDistanceFarSearchLimit : 150,
 	
 	//Amount of chunks allowed to proceaass in one frame
-	processLimit : 5000,
+	processLimit : 5,
 	
 	//LOD distances Near/Far
 	LODdistance : [15,30]

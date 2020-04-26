@@ -787,7 +787,7 @@ function NearestFilter(chunkID,volume, type, dims,lod) {
 
 
 chunk_generate = function(x,y,z){
-	if(z>4 || z<-5){
+	if(z>4 || z<-4){
 		return;
 	}
 	//Get chunkID and create chunk if it does not exist
@@ -853,7 +853,7 @@ chunk_generate = function(x,y,z){
 		
 		//if(z!=-3 || (zOff==2 || zz==blockSettings.chunk.XYZ-2)){
 		var go=1;
-		if(z==-5 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
+		if(z==-4 && zOff!=2 && zz!=blockSettings.chunk.XYZ-2){
 			go=0;
 		}
 		if(z==4 && zOff!=-2 && zz!=1){

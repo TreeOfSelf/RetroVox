@@ -103,7 +103,7 @@ gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_L
 });
 
 const depthTexture = gl.createTexture();
-const depthTextureSize = 2048;
+const depthTextureSize = 6000
 gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 gl.texImage2D(
   gl.TEXTURE_2D,      // target
@@ -242,7 +242,8 @@ function drawScene(
   textureMatrix,
   lightWorldMatrix,
   programInfo,
-  processList) {
+  processList,
+  type) {
 	const viewMatrix = m4.inverse(cameraMatrix);
 
 	gl.useProgram(programInfo.program);
@@ -258,30 +259,53 @@ function drawScene(
 		u_world : m4.identity(),
 		u_transparency : 1,
 	});
-	for(var k=0 ; k<processList.length ; k++){
-		var sectorID = processList[k][0];
-		if(sector[sectorID].buffers.size>0){
-			gl.bindVertexArray(sector[sectorID].vao);
-
-			fps.drawLength+=sector[sectorID].buffers.size;
-			//Draw the triangles 
-			if(renderSettings.wireframe==0){		
-				//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
-				gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
-			//Draw wireframe
-			}else{
-				gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
-			}			
-		}
 	
+	//Draw all if shadow rendering 
+	if(type==1){
+		for(var k=0 ; k<processList.length ; k++){
+			var sectorID = processList[k][0];
+			if(sector[sectorID].buffers.size>0){
+				gl.bindVertexArray(sector[sectorID].vao);
 
-	}	
+				fps.drawLength+=sector[sectorID].buffers.size;
+				//Draw the triangles 
+				if(renderSettings.wireframe==0){		
+					//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
+					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+				//Draw wireframe
+				}else{
+					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+				}			
+			}
+		}	
+	//Draw only in frustrum otherwise
+	}else{
+		for(var k=0 ; k<processList.length ; k++){
+			var sectorID = processList[k][0];
+			var sectorPos = sector[sectorID].coords;
+			var dist = distance_3d(player.sector,sectorPos);
+			if(sector[sectorID].buffers.size>0 && 	(check_frustrum( [(sectorPos[0]*blockSettings.chunk.XYZ)+blockSettings.chunk.XYZ/2,(sectorPos[1]*blockSettings.chunk.XYZ)+blockSettings.chunk.XYZ/2,(sectorPos[2]*blockSettings.chunk.XYZ)+(blockSettings.chunk.XYZ)/2])==true || dist<=1.0)){
+				gl.bindVertexArray(sector[sectorID].vao);
+
+				fps.drawLength+=sector[sectorID].buffers.size;
+				//Draw the triangles 
+				if(renderSettings.wireframe==0){		
+					//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
+					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+				//Draw wireframe
+				}else{
+					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+				}			
+			}
+		}			
+	}
 }
 
 light = {
 	pos : [5,5,5],
 	look : [0,0,0],
 }
+time =50;
 
 // Draw the scene.
 function render_sectors(processList) {
@@ -296,25 +320,28 @@ player.position[2]+Math.sin(player.rotation[1])];
 
 // first draw from the POV of the light
 const lightWorldMatrix = m4.lookAt(
-	//[player.position[0], -player.position[2]+5, player.position[1]],          // position
-	//[lookPosition[0], -lookPosition[2]+5, lookPosition[1]], // target
-	light.pos,
-	light.look,
+	[player.position[0]+time+0.1, 600, player.position[1]],
+	[player.position[0], 0, player.position[1]], 
+          // position
+
+	//light.pos,
+	//light.look,
 	[0, 1, 0],                                              // up
 );
-const lightProjectionMatrix = m4.perspective(
+/*const lightProjectionMatrix = m4.perspective(
 	renderSettings.fov * Math.PI / 180,
 	1.0,
 	0.01,  // near
 	20000)   // far
+*/
 
-/*const lightProjectionMatrix = m4.orthographic(
-            -80 / 2,   // left
-             80 / 2,   // right
-            -80 / 2,  // bottom
-             80 / 2,  // top
+const lightProjectionMatrix = m4.orthographic(
+            -450 / 2,   // left
+             450 / 2,   // right
+            -450 / 2,  // bottom
+             450 / 2,  // top
              0.5,                      // near
-             10000);    */
+             2000000);    
 	
 // draw to the depth texture
 gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
@@ -327,13 +354,14 @@ drawScene(
 	m4.identity(),
 	lightWorldMatrix,
 	colorProgramInfo,
-	processList);
+	processList,
+	1);
 
 
 // now draw scene to the canvas projecting the depth texture into the scene
 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-gl.clearColor(1, 1, 1, 1);
+gl.clearColor(0, 0, 0, 1);
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 let textureMatrix = m4.identity();
@@ -346,15 +374,25 @@ textureMatrix = m4.multiply(textureMatrix, lightProjectionMatrix);
 // a matrix that will transform other positions
 // to be relative this this world space.
 
-var getter=m4.inverse(lightWorldMatrix);
 textureMatrix = m4.multiply(
 	textureMatrix,
 	m4.inverse(lightWorldMatrix));
 
 // Compute the projection matrix
 const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-const projectionMatrix =
-	m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.01, 20000);
+
+if(renderSettings.orthographic==0){
+	var  projectionMatrix = m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.01, 20000);
+}else{
+	var projectionMatrix =  m4.orthographic(
+            -renderSettings.zoom / 2,   // left
+             renderSettings.zoom / 2,   // right
+            -renderSettings.zoom / 2,  // bottom
+             renderSettings.zoom / 2,  // top
+             0.5,                      // near
+             2000000);    
+	
+}
 
 
 
@@ -367,14 +405,18 @@ const target = [lookPosition[0], -lookPosition[2], lookPosition[1]];
 const up = [0, 1, 0];
 const cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
+create_frustrum();
+
+if(get==1){
 drawScene(
 	projectionMatrix,
 	cameraMatrix,
 	textureMatrix,
 	lightWorldMatrix,
 	textureProgramInfo,
-	processList);
- 
+	processList,
+	0);
+}
 }
 
 

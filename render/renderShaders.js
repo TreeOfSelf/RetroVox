@@ -143,7 +143,7 @@ void main() {
 	
 	
 	vec3 projectedTexcoord = v_projectedCoords.xyz / v_projectedCoords.w;
-	float currentDepth = projectedTexcoord.z  -0.0000006;//-0.00001;
+	float currentDepth = projectedTexcoord.z  -0.000005;//-0.0000006;//-0.00001;
 
 	bool inRange =
 	  projectedTexcoord.x >= 0.0 &&
@@ -167,7 +167,7 @@ void main() {
 	fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
 
 
-	fragColor.rgb*= max(0.5,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight)*0.6;
+	fragColor.rgb*= max(0.45,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight)*1.0;
 	fragColor.a = u_transparency;
 
 

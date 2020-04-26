@@ -72,7 +72,7 @@ gl.enableVertexAttribArray(programInfo.attribLocations.type);*/
 
 
 //Player object
-var player = {
+player = {
 	rotation : [0,0],
 	position : defaultPosition.slice(),
 	chunk : [0,0,0],
@@ -115,7 +115,11 @@ function player_physics(){
 	player.chunk = chunk_get_no_border(player.position[0],player.position[1],player.position[2]);
 	//Set player sector based on chunk
 	player.sector = sector_get(player.chunk[0],player.chunk[1],player.chunk[2]);
-	
+
+
+	//Set the cursor fixed position (where it is in game space)
+	player.fixedPosition =[player.position[0]+player.chunk[0]*2,player.position[1]+player.chunk[1]*2,player.position[2]+player.chunk[2]*2];
+
 	//Cursor positioning based on forward vector and build distance
 	
 	//Distance changed for bigger builds
