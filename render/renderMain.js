@@ -217,10 +217,40 @@ function rendedr(now){
 
 
 
+var pointBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,pointBuffer);
+gl.vertexAttribPointer(pointInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
+//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.STATIC_DRAW);
+gl.enableVertexAttribArray(pointInfo.attribLocations.position);	
 
+var pointColorBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,pointColorBuffer);
+gl.vertexAttribPointer(pointInfo.attribLocations.color,3,gl.FLOAT,false,0,0);
+//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.STATIC_DRAW);
+gl.enableVertexAttribArray(pointInfo.attribLocations.color);	
 
+function drawPoints(  projectionMatrix,
+  cameraMatrix,
+  ){
+				gl.bindVertexArray(null); 
+	gl.useProgram(pointProgramInfo.program);
+	const viewMatrix = m4.inverse(cameraMatrix);
 
-
+	twgl.setUniforms(pointProgramInfo, {
+		u_view: viewMatrix,
+		u_projection: projectionMatrix,
+		u_world : m4.identity(),
+		u_transparency : 1,
+	});
+	
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(frustPoints),gl.STATIC_DRAW);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, pointColorBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(frustColors),gl.STATIC_DRAW);
+	gl.drawArrays(gl.POINTS, 0,  frustPoints.length);	
+}
 
 
 
@@ -272,7 +302,7 @@ function drawScene(
 			var sectorID = processList[k][0];
 			var sectorPos = sector[sectorID].coords;
 			var dist = distance_3d(player.sector,sectorPos);
-			if(sector[sectorID].buffers.size>0 && 	(check_frustrum( [(sectorPos[0]*blockSettings.chunk.XYZ)+blockSettings.chunk.XYZ/2,(sectorPos[1]*blockSettings.chunk.XYZ)+blockSettings.chunk.XYZ/2,(sectorPos[2]*blockSettings.chunk.XYZ)+(blockSettings.chunk.XYZ)/2])==true || dist<=1.0)){
+			if(sector[sectorID].buffers.size>0 && 	(check_frustrum( [sectorPos[0]*(blockSettings.chunk.XYZ-2)*blockSettings.sector.XYZ,sectorPos[1]*(blockSettings.chunk.XYZ-2)*blockSettings.sector.XYZ,sectorPos[2]*(blockSettings.chunk.XYZ-2)*blockSettings.sector.XYZ])==true || dist<=1.0)){
 				gl.bindVertexArray(sector[sectorID].vao);
 
 				fps.drawLength+=sector[sectorID].buffers.size;
@@ -293,7 +323,7 @@ light = {
 	pos : [5,5,5],
 	look : [0,0,0],
 }
-time =50;
+time =230;
 
 // Draw the scene.
 function render_sectors(processList) {
@@ -420,6 +450,9 @@ function render_sectors(processList) {
 		//gl.disable(gl.BLEND);
 		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 	}
+	
+	drawPoints(projectionMatrix,cameraMatrix);
+
 
 }
 

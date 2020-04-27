@@ -219,7 +219,7 @@ blockSettings = {
 	
 	sector : {
 		space : 200,
-		XYZ : 2,
+		XYZ : 4,
 	},
 	
 	//Determines how far out to process chunks

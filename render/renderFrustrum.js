@@ -8,25 +8,43 @@ Code for how the frustrum shape is created
 
 
 */
-var zNear=0.001;
-var zFar=20000;
-var up = glMatrix.vec3.fromValues(0,0,-1);
+var zNear=10;
+var zFar=70;
+
+
+
+frustPoints = [];
+frustColors = [];
+doChange = 1;
 
 function create_frustrum(){
 
+	var up = glMatrix.vec3.fromValues(0,0,-1);
+
 	//Near plane
 	var nearSize=[];
-	 nearSize[1]= 2 * Math.tan( ((renderSettings.fov) * Math.PI / 180) *0.64) * zNear; // Height
+	 nearSize[1]= 2 * Math.tan( ((renderSettings.fov) * Math.PI / 180) *0.5) * zNear; // Height
 	 nearSize[0]= nearSize[1] * (gl.canvas.clientWidth / gl.canvas.clientHeight) //Width
 
 	//Far planes
 	var farSize=[];
-	 farSize[1]= 2 * Math.tan( ((renderSettings.fov)  * Math.PI / 180) *0.64) * zFar; // Height
+	 farSize[1]= 2 * Math.tan( ((renderSettings.fov)  * Math.PI / 180) *0.5) * zFar; // Height
 	 farSize[0]= farSize[1] * (gl.canvas.clientWidth / gl.canvas.clientHeight) //Width	
 	//Direction vector
 	var viewD =  glMatrix.vec3.fromValues(Math.sin(player.rotation[0])*Math.cos(player.rotation[1]),+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),Math.sin(player.rotation[1]));
+	
+	
+	
+	var viewD = glMatrix.vec3.fromValues(Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+	Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+	Math.sin(player.rotation[1]));
+	
+	glMatrix.vec3.normalize(viewD,viewD);
+	
+	
 	//Cam vector
-	var camv = glMatrix.vec3.fromValues(player.fixedPosition[0]*0.5,player.fixedPosition[1]*0.5,player.fixedPosition[2]*0.5);
+	var camv = glMatrix.vec3.fromValues(player.position[0],player.position[1],player.position[2]);
+	//var camv = glMatrix.vec3.fromValues(player.fixedPosition[0],player.fixedPosition[1],player.fixedPosition[2]);
 	//Bring the camera back a bit from your viewing
 
 	
@@ -36,15 +54,20 @@ function create_frustrum(){
 
 	//Right vector
 	var right = glMatrix.vec3.create();
-	glMatrix.vec3.cross(right,viewD,up);
+
+	glMatrix.vec3.cross(right,up,viewD);
 	glMatrix.vec3.normalize(right,right);
-
-	var reverse = glMatrix.vec3.fromValues( -(Math.sin(player.rotation[0])*Math.cos(player.rotation[1])) , -(Math.cos(player.rotation[0])*-Math.cos(player.rotation[1])) ,-Math.sin(player.rotation[1]));
+	//var reverse = glMatrix.vec3.fromValues( -(Math.sin(player.rotation[0])*Math.cos(player.rotation[1])) , -(Math.cos(player.rotation[0])*-Math.cos(player.rotation[1])) ,-Math.sin(player.rotation[1]));
+	var reverse = glMatrix.vec3.fromValues(-viewD[0],-viewD[1],-viewD[2])
+	
 	glMatrix.vec3.normalize(reverse,reverse);
-	glMatrix.vec3.cross(up,reverse,up);
-	glMatrix.vec3.cross(up,up,reverse);
-	glMatrix.vec3.normalize(up,up);
+	
+	
+	//glMatrix.vec3.cross(up,reverse,up);
+	//glMatrix.vec3.cross(up,up,reverse);
+	//glMatrix.vec3.normalize(up,up);
 
+	glMatrix.vec3.cross(up,right,viewD);
 
 	//View Direction Scaled Far
 	var viewDSF = glMatrix.vec3.create();
@@ -73,8 +96,13 @@ function create_frustrum(){
 	
 	var valFour = glMatrix.vec3.fromValues(nearSize[0]/2,nearSize[0]/2,nearSize[0]/2);	
 	glMatrix.vec3.multiply(valFour,valFour,right);
-	
 
+	if(doChange==1){
+
+	frustPoints=[];
+	frustColors = [];
+	
+	}
 
 //FAR CORNERS
 
@@ -82,6 +110,7 @@ function create_frustrum(){
 
 	glMatrix.vec3.add(farTopLeft,farCorner, valOne);
 	glMatrix.vec3.subtract(farTopLeft,farTopLeft,valTwo);
+	
 	
 	var farTopRight = glMatrix.vec3.create();	
 
@@ -118,7 +147,30 @@ function create_frustrum(){
 
 	glMatrix.vec3.subtract(nearBottomRight,nearCorner, valThree);	
 	glMatrix.vec3.add(nearBottomRight,nearBottomRight,valFour);	
-		
+
+	if(doChange==1){
+	frustPoints.push(farTopLeft[0],farTopLeft[1],farTopLeft[2]);
+	frustPoints.push(farTopRight[0],farTopRight[1],farTopRight[2]);
+	frustPoints.push(farBottomLeft[0],farBottomLeft[1],farBottomLeft[2]);
+	frustPoints.push(farBottomRight[0],farBottomRight[1],farBottomRight[2]);
+
+	frustColors.push(1.0,0.0,0.0);
+	frustColors.push(1.0,0.0,0.0);
+	frustColors.push(1.0,0.0,0.0);
+	frustColors.push(1.0,0.0,0.0);
+
+
+	frustPoints.push(nearTopLeft[0],nearTopLeft[1],nearTopLeft[2]);
+	frustPoints.push(nearTopRight[0],nearTopRight[1],nearTopRight[2]);
+	frustPoints.push(nearBottomLeft[0],nearBottomLeft[1],nearBottomLeft[2]);
+	frustPoints.push(nearBottomRight[0],nearBottomRight[1],nearBottomRight[2]);
+
+	frustColors.push(0.0,1.0,0.0);
+	frustColors.push(0.0,1.0,0.0);
+	frustColors.push(0.0,1.0,0.0);
+	frustColors.push(0.0,1.0,0.0);
+	}
+	
 //right
 
 	var  v = glMatrix.vec3.create();
@@ -174,12 +226,11 @@ function create_frustrum(){
 						
 }
 
-
-
+var amounty=1.25;
 
 check_frustrum= function(point){
-		var amountXY = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.5;
-		var amountZ = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.5;
+		var amountXY = -blockSettings.sector.XYZ*(blockSettings.chunk.XYZ-2)*amounty;
+		var amountZ = -blockSettings.sector.XYZ*(blockSettings.chunk.XYZ-2)*amounty;
 
 		//Position we are checking
 		

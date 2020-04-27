@@ -49,6 +49,41 @@ const gl = canvas.getContext("webgl2",{
 });
 
 
+//Point Shader
+
+const pointVS = `#version 300 es
+in vec3 a_position;
+in vec3 a_color;
+
+out vec3 v_color;
+
+uniform mat4 u_projection;
+uniform mat4 u_world;
+uniform mat4 u_view;
+
+void main() {
+  // Multiply the position by the matrices.
+	gl_Position =  u_projection	* u_view * u_world * vec4(a_position[0],-a_position[2],a_position[1],1.0);
+	gl_PointSize = 300.0/gl_Position[2];
+	v_color = a_color;
+
+}
+`;
+
+const pointFS = `#version 300 es
+precision mediump float;
+
+in vec3 v_color;
+
+out vec4 outColor;
+
+void main() {
+  outColor = vec4(0.0,1.0,0.0,1.0);
+  outColor.rgb = v_color;
+  //gl_FragDepth=-500.0;
+}
+`;
+ 
 
 
 
@@ -189,6 +224,7 @@ attribLocations: {
 };
 const textureProgramInfo = twgl.createProgramInfo(gl, [vsSource, fsSource], programOptions);
 const colorProgramInfo = twgl.createProgramInfo(gl, [colorVS, colorFS], programOptions);
+const pointProgramInfo = twgl.createProgramInfo(gl, [pointVS, pointFS]);
 
 
 // Tell the twgl to match position with a_position,
@@ -227,4 +263,11 @@ const programInfo = {
 	},
 };
 
-
+const pointInfo = {
+	program : pointProgramInfo,
+	
+	attribLocations : {
+		position: gl.getAttribLocation(textureProgramInfo.program, 'a_position'),
+		color: gl.getAttribLocation(textureProgramInfo.program, 'a_color'),
+	}
+}
