@@ -85,20 +85,20 @@ meshWorker.worker.addEventListener('message', function(e) {
 		gl.bindVertexArray(controls.cursorDraw.vao);
 		//Set data for indice
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, controls.cursorDraw.buffers.indice);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.result[2],gl.STATIC_DRAW);
 		//position
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.position);
-		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[0]),gl.STATIC_DRAW);
 		//colorsss
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[1]),gl.STATIC_DRAW);
 		//texture
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.texture);
-		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[3]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(message.result[3]),gl.STATIC_DRAW);
 		//type
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
-		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[4]),gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[4]),gl.STATIC_DRAW);
 		break;
 		
 		//Sector drawing
@@ -127,21 +127,21 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bindVertexArray(sector[message.sectorID].vao);
 			//Set data for indice
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.STATIC_DRAW,0,message.indice.length);
 			//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.STATIC_DRAW,0,message.position.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
 			//color
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.STATIC_DRAW,0,message.color.length);
 			//texture
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.texture);
-			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.DYNAMIC_DRAW,0,message.texture.length);			
+			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.STATIC_DRAW,0,message.texture.length);			
 			//type
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.type);
-			gl.bufferData(gl.ARRAY_BUFFER,message.type,gl.DYNAMIC_DRAW,0,message.type.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.type,gl.STATIC_DRAW,0,message.type.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);
 			
 		//If the buffer IS big enough, subData new sector draw data in
@@ -384,11 +384,11 @@ sector_create = function(x,y,z){
 		
 
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,sector[sectorID].buffers.indice);
-		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,999999,gl.STATIC_DRAW);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER,sector[sectorID].buffers.position);
 		gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
-		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.STATIC_DRAW);
 		gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, sector[sectorID].buffers.color);
@@ -403,7 +403,7 @@ sector_create = function(x,y,z){
 		gl.vertexAttribPointer(programInfo.attribLocations.type,2,gl.UNSIGNED_BYTE,false,0,0);
 		gl.enableVertexAttribArray(programInfo.attribLocations.type);
 
-		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.DYNAMIC_DRAW);
+		//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.STATIC_DRAW);
 
 	}
 }
