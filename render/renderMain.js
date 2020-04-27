@@ -13,12 +13,12 @@ var renderSettings = {
 	orthographic : 0,
 	zoom : 75.0,
 	fov : 80,
-	resolution : 0.5,
+	resolution : 1.0,
 	lightIntensity : 0.0005,
 	//First index is XY view, second is the Z view. 
 	viewDistance : {
-		XY : 1,
-		Z  : 1,
+		XY : 5,
+		Z  : 5,
 	},
 }
 
@@ -143,7 +143,7 @@ gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 gl.lineWidth(15.0);
 
 
-gl.clearColor(0,0,0,1.0);
+gl.clearColor(0.7,0.85,0.98,1.0);
 renderSettings.lightIntensity = 0.009;
 
 
@@ -276,6 +276,7 @@ function drawScene(
 		u_reverseLight: lightWorldMatrix.slice(8, 11),
 		u_world : m4.identity(),
 		u_transparency : 1,
+		u_cam : player.position,
 	});
 	
 	//Draw all if shadow rendering 
@@ -288,11 +289,12 @@ function drawScene(
 				fps.drawLength+=sector[sectorID].buffers.size;
 				//Draw the triangles 
 				if(renderSettings.wireframe==0){		
-					//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
-					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+					gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size);
+					//gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
 				//Draw wireframe
 				}else{
-					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+					gl.drawArrays(gl.LINES, 0,  sector[sectorID].buffers.size);
+					//gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
 				}			
 			}
 		}	
@@ -308,11 +310,12 @@ function drawScene(
 				fps.drawLength+=sector[sectorID].buffers.size;
 				//Draw the triangles 
 				if(renderSettings.wireframe==0){		
-					//gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size*3);
-					gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
+					gl.drawArrays(gl.TRIANGLES, 0,  sector[sectorID].buffers.size);
+					//gl.drawElements(gl.TRIANGLES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);
 				//Draw wireframe
 				}else{
-					gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
+					gl.drawArrays(gl.LINES, 0,  sector[sectorID].buffers.size);
+					//gl.drawElements(gl.LINES, sector[sectorID].buffers.size,gl.UNSIGNED_INT,0);					
 				}			
 			}
 		}			
@@ -338,8 +341,8 @@ function render_sectors(processList) {
 
 	// first draw from the POV of the light
 	const lightWorldMatrix = m4.lookAt(
-		[player.position[0]+time+0.1, 600, player.position[1]],
-		[player.position[0], 0, player.position[1]], 
+		[Math.round(player.position[0]+time)+0.1, 600, Math.round(player.position[1])],
+		[Math.round(player.position[0]), 0, Math.round(player.position[1])], 
 			  // position
 
 		//light.pos,
@@ -379,7 +382,6 @@ function render_sectors(processList) {
 	// now draw scene to the canvas projecting the depth texture into the scene
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-	gl.clearColor(0, 0, 0, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	let textureMatrix = m4.identity();
@@ -448,7 +450,8 @@ function render_sectors(processList) {
 		gl.bindVertexArray(controls.cursorDraw.vao);
 		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 		//gl.disable(gl.BLEND);
-		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+		gl.drawArrays(gl.TRIANGLES, 0,  controls.cursorDraw.size);
+		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
 	}
 	
 	drawPoints(projectionMatrix,cameraMatrix);

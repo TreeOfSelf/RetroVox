@@ -8,8 +8,8 @@ Code for how the frustrum shape is created
 
 
 */
-var zNear=10;
-var zFar=70;
+var zNear=0.01;
+var zFar=2000;
 
 
 
@@ -226,7 +226,7 @@ function create_frustrum(){
 						
 }
 
-var amounty=1.25;
+var amounty=1.65;
 
 check_frustrum= function(point){
 		var amountXY = -blockSettings.sector.XYZ*(blockSettings.chunk.XYZ-2)*amounty;

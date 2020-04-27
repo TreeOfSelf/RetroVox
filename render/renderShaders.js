@@ -122,22 +122,20 @@ const vsSource = `#version 300 es
 
 
 in vec3 a_position;
-in vec3 a_color;
 in vec3 a_normal;
-in vec2 a_type;
+in float a_type;
 
 
 uniform mat4 u_projection;
 uniform mat4 u_world;
 uniform mat4 u_view;
 uniform mat4 u_textureMatrix;
-
-
-out vec4 v_pixelColor;
+uniform vec3 u_cam;
 out vec3  v_normal;
 out vec3 v_coords;
 out vec4 v_projectedCoords;
-flat out vec2 v_type;
+out float v_mix;
+flat out float v_type;
 
 void main() {
 
@@ -149,21 +147,21 @@ void main() {
 
 	v_projectedCoords = u_textureMatrix *   vec4(a_position[0],-a_position[2],a_position[1],1.0);;
 	//Set color 0-1 based on 255 values
-	v_pixelColor = vec4(a_color[0]/255.0,a_color[1]/255.0,a_color[2]/255.0,1.0);
 	v_normal = a_normal;
 	v_coords =  a_position;
 	v_type = a_type;
+	v_mix = max(0.0,(distance(a_position,u_cam)-180.0))/30.0;
 }
 `;
 
 //Fragment Shader
 const fsSource = `#version 300 es
 precision highp float;
-in vec4 v_color;
 in vec3 v_normal;
 in vec3 v_coords;
 in vec4 v_projectedCoords;
-flat in vec2 v_type;
+in float v_mix;
+flat in float v_type;
 
 
 
@@ -195,14 +193,16 @@ void main() {
 	blending /= vec3(b, b, b);
 	
 	
-	
-	vec4 xaxis = texture( u_sampler, vec3(v_coords.yz *0.23,v_type[0]));
-	vec4 yaxis = texture( u_sampler, vec3(v_coords.xz *0.23,v_type[0]));
-	vec4 zaxis = texture( u_sampler, vec3(v_coords.xy*0.23,v_type[0]));
+
+	vec4 xaxis = texture( u_sampler, vec3(v_coords.yz *0.23,v_type));
+	vec4 yaxis = texture( u_sampler, vec3(v_coords.xz *0.23,v_type));
+	vec4 zaxis = texture( u_sampler, vec3(v_coords.xy*0.23,v_type));
 	fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
+	
 
 
 	fragColor.rgb*= max(0.45,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight);
+	fragColor.rgb = mix(fragColor.rgb,vec3(0.7,0.85,0.98),min(1.0,v_mix));
 	fragColor.a = u_transparency;
 
 
@@ -216,9 +216,8 @@ void main() {
 const programOptions = {
 attribLocations: {
   'a_position': 0,
-  'a_color':    1,
-  'a_normal':   2,
-  'a_type': 3,
+  'a_normal':   1,
+  'a_type': 2,
 
 },
 };
@@ -237,8 +236,6 @@ const programInfo = {
 	attribLocations: {
 	// Position 3v 
 	  position: gl.getAttribLocation(textureProgramInfo.program, 'a_position'),
-	  // Color 3v (works on 255 scale)
-	  color : gl.getAttribLocation(textureProgramInfo.program, 'a_color'),
 	  // vertex normal 3v 
 	  texture : gl.getAttribLocation(textureProgramInfo.program, 'a_normal'),
 	  // type of block 1i 
@@ -258,7 +255,7 @@ const programInfo = {
 		textureSampler : gl.getUniformLocation(textureProgramInfo.program, 'u_sampler'),
 		projectedTexture : gl.getUniformLocation(textureProgramInfo.program, 'u_projectedTexture'),
 		reverseLight : gl.getUniformLocation(textureProgramInfo.program,'u_reverseLight'),
-
+		reverseLight : gl.getUniformLocation(textureProgramInfo.program,'u_cam'),
 
 	},
 };
@@ -267,7 +264,7 @@ const pointInfo = {
 	program : pointProgramInfo,
 	
 	attribLocations : {
-		position: gl.getAttribLocation(textureProgramInfo.program, 'a_position'),
-		color: gl.getAttribLocation(textureProgramInfo.program, 'a_color'),
+		position: gl.getAttribLocation(pointProgramInfo.program, 'a_position'),
+		color: gl.getAttribLocation(pointProgramInfo.program, 'a_color'),
 	}
 }

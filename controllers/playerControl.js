@@ -43,8 +43,6 @@ var controls = {
 		size : 0,
 		buffers : { 
 			position : gl.createBuffer(),
-			color : gl.createBuffer(),
-			indice :  gl.createBuffer(),
 			texture : gl.createBuffer(),
 			type : gl.createBuffer(),
 		}
@@ -58,16 +56,14 @@ gl.bindBuffer(gl.ARRAY_BUFFER,controls.cursorDraw.buffers.position);
 gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.position);	
 
-gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.color);
-gl.vertexAttribPointer(programInfo.attribLocations.color,3,gl.UNSIGNED_BYTE,false,0,0);
-gl.enableVertexAttribArray(programInfo.attribLocations.color);
+
 
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.texture);
 gl.vertexAttribPointer(programInfo.attribLocations.texture,3,gl.FLOAT,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.texture);
 
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
-gl.vertexAttribPointer(programInfo.attribLocations.type,2,gl.UNSIGNED_BYTE,false,0,0);
+gl.vertexAttribPointer(programInfo.attribLocations.type,1,gl.UNSIGNED_BYTE,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.type);
 
 

@@ -14,69 +14,9 @@ cursor_sendData = function(){
 	});
 }
 
-var viewDistanceSlider = document.getElementById('viewDistance');
-var viewDistanceOutput = document.getElementById('viewDistanceOutput');
-viewDistanceSlider.oninput = function(){
-	renderSettings.viewDistance.XY = this.value;
-	renderSettings.viewDistance.Z = this.value;
-	viewDistanceOutput.innerHTML = "View Distance: "+this.value;
-}
-
-var resolutionSlider = document.getElementById('resolution');
-var resolutionOutput = document.getElementById('resolutionOutput');
-resolutionSlider.oninput = function(){
-	renderSettings.resolution = this.value / 100;
-	resolutionOutput.innerHTML = "Resolution: "+this.value+'%';
-}
-
-var sectorDelaySlider = document.getElementById('sectorDelay');
-var sectorDelayOutput = document.getElementById('sectorDelayOutput');
-sectorDelaySlider.oninput = function(){
-	
-	meshWorker.worker.postMessage({
-		id : 'sectorDelay',
-		delay : this.value,
-	});
-	sectorDelayOutput.innerHTML = "Sector Delay: "+this.value+'ms';
-}
-
-var processDistanceSlider = document.getElementById('processDistance');
-var processDistanceOutput = document.getElementById('processDistanceOutput');
-processDistanceSlider.oninput = function(){
-	
-	meshWorker.worker.postMessage({
-		id : 'processDistance',
-		distance : this.value,
-	});
-	processDistanceOutput.innerHTML = "Process Distance: "+this.value;
-}
 
 
 
-
-var loadMap = document.getElementById('loadMap');
-
-
-//On file change for the map loading
-loadMap.onchange=function(e){
-	//Reset all chunk/sector data
-	chunk = [];
-	sector = [];
-	activeChunks=[];
-	activeSectors=[];
-	mesh_start();
-	
-  var fileToLoad = loadMap.files[0];
-  var fileReader = new FileReader();
-  fileReader.onload = function(fileLoadedEvent){
-      meshWorker.worker.postMessage({
-		id : 'loadMap',
-		text: fileLoadedEvent.target.result,
-	  });
-  };
-
-  fileReader.readAsText(fileToLoad, "UTF-8");
-}
 
 
 //Key press event
