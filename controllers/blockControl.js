@@ -200,7 +200,7 @@ blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 12,
+	processDistanceFar : 10,
 	processDistanceFarSearchLimit : 10000,
 	
 	//Amount of chunks allowed to proceaass in one frame

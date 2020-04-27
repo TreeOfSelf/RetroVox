@@ -1499,7 +1499,7 @@ sector_process = function(){
 			var dist = distance_3d(player.sector,sector[sectorID].coords);
 			//If chunk is flagged to be re-drawn
 			if( sector[sectorID].reDraw>=1){
-					if(dist<3.0 || sector[sectorID].reDraw>10){
+					if(dist<3.0 || sector[sectorID].reDraw>=1){
 					procAmount+=1;
 						var result = sector_draw(sector[sectorID].coords,blockSettings.sector.XYZ,sectorID);
 						if(result!=null){

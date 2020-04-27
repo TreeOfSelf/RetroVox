@@ -190,6 +190,13 @@ keyboard_controls = function(){
 		player.momentum[1]+=player.acceleration;
 	}
 	
+	if(controls.keys['[']==1){
+		time-=1;
+	}
+	if(controls.keys[']']==1){
+		time+=1;
+	}
+	
 	//ARROW KEY LOOKING
 	if(controls.keys['ARROWUP']==1){
 		player.rotation[1]-=0.01;
