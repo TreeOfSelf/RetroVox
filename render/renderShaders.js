@@ -167,7 +167,7 @@ void main() {
 	fragColor = xaxis * blending.x + yaxis * blending.y + zaxis * blending.z;
 
 
-	fragColor.rgb*= max(0.45,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight)*1.0;
+	fragColor.rgb*= max(0.45,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight);
 	fragColor.a = u_transparency;
 
 
@@ -217,7 +217,7 @@ const programInfo = {
 		//View Matrix
 		viewMatrix : gl.getUniformLocation(textureProgramInfo.program,'u_view'),
 		//Transparency 
-		transparency : gl.getUniformLocation(textureProgramInfo.program, 'uTransparency'),
+		transparency : gl.getUniformLocation(textureProgramInfo.program, 'u_transparency'),
 		//Texture Sampler 
 		textureSampler : gl.getUniformLocation(textureProgramInfo.program, 'u_sampler'),
 		projectedTexture : gl.getUniformLocation(textureProgramInfo.program, 'u_projectedTexture'),

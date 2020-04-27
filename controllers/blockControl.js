@@ -127,21 +127,21 @@ meshWorker.worker.addEventListener('message', function(e) {
 			gl.bindVertexArray(sector[message.sectorID].vao);
 			//Set data for indice
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sector[message.sectorID].buffers.indice);
-			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.STATIC_DRAW,0,message.indice.length);
+			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,message.indice,gl.DYNAMIC_DRAW,0,message.indice.length);
 			//gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER,0,message.indice,0,message.indice.length);
 			//position
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.position);
-			gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.STATIC_DRAW,0,message.position.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.position,gl.DYNAMIC_DRAW,0,message.position.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.position,0,message.position.length);
 			//color
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.color);
-			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.STATIC_DRAW,0,message.color.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.color,gl.DYNAMIC_DRAW,0,message.color.length);
 			//texture
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.texture);
-			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.STATIC_DRAW,0,message.texture.length);			
+			gl.bufferData(gl.ARRAY_BUFFER,message.texture,gl.DYNAMIC_DRAW,0,message.texture.length);			
 			//type
 			gl.bindBuffer(gl.ARRAY_BUFFER, sector[message.sectorID].buffers.type);
-			gl.bufferData(gl.ARRAY_BUFFER,message.type,gl.STATIC_DRAW,0,message.type.length);
+			gl.bufferData(gl.ARRAY_BUFFER,message.type,gl.DYNAMIC_DRAW,0,message.type.length);
 			//gl.bufferSubData(gl.ARRAY_BUFFER,0,message.color,0,message.color.length);
 			
 		//If the buffer IS big enough, subData new sector draw data in
@@ -229,11 +229,11 @@ blockSettings = {
 	},
 	
 	//How far out multiplied by process Distance to less agressively process farther out chunks
-	processDistanceFar : 15,
-	processDistanceFarSearchLimit : 150,
+	processDistanceFar : 10,
+	processDistanceFarSearchLimit : 3500,
 	
 	//Amount of chunks allowed to proceaass in one frame
-	processLimit : 5,
+	processLimit : 5000,
 	
 	//LOD distances Near/Far
 	LODdistance : [15,30]

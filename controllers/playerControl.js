@@ -53,7 +53,7 @@ var controls = {
 
 
 //Set up vertex array object with our buffers for the controls.cursorDraw 
-/*gl.bindVertexArray(controls.cursorDraw.vao);
+gl.bindVertexArray(controls.cursorDraw.vao);
 gl.bindBuffer(gl.ARRAY_BUFFER,controls.cursorDraw.buffers.position);
 gl.vertexAttribPointer(programInfo.attribLocations.position,3,gl.FLOAT,false,0,0);
 gl.enableVertexAttribArray(programInfo.attribLocations.position);	
@@ -68,7 +68,7 @@ gl.enableVertexAttribArray(programInfo.attribLocations.texture);
 
 gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
 gl.vertexAttribPointer(programInfo.attribLocations.type,2,gl.UNSIGNED_BYTE,false,0,0);
-gl.enableVertexAttribArray(programInfo.attribLocations.type);*/
+gl.enableVertexAttribArray(programInfo.attribLocations.type);
 
 
 //Player object

@@ -211,19 +211,7 @@ function render(now){
 function rendedr(now){
 
 	
-	//If there is a cursor to be drawn
-	if(controls.cursorDraw.size!=0){
-		//gl.enable(gl.BLEND);
-		//Displace cursor 
-		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
-		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
-		gl.uniform1f(programInfo.uniformLocations.transparency,Math.min(controls.buildStrength/60+0.1,0.7));
-		//Draw cursor
-		gl.bindVertexArray(controls.cursorDraw.vao);
-		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
-		//gl.disable(gl.BLEND);
-		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
-	}
+
 
 }
 
@@ -311,112 +299,128 @@ time =50;
 function render_sectors(processList) {
 
 
-gl.enable(gl.CULL_FACE);
-gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.CULL_FACE);
+	gl.enable(gl.DEPTH_TEST);
 
-var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
-player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
-player.position[2]+Math.sin(player.rotation[1])];
+	var lookPosition = [player.position[0]+Math.sin(player.rotation[0])*Math.cos(player.rotation[1]) , 
+	player.position[1]+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),
+	player.position[2]+Math.sin(player.rotation[1])];
 
-// first draw from the POV of the light
-const lightWorldMatrix = m4.lookAt(
-	[player.position[0]+time+0.1, 600, player.position[1]],
-	[player.position[0], 0, player.position[1]], 
-          // position
+	// first draw from the POV of the light
+	const lightWorldMatrix = m4.lookAt(
+		[player.position[0]+time+0.1, 600, player.position[1]],
+		[player.position[0], 0, player.position[1]], 
+			  // position
 
-	//light.pos,
-	//light.look,
-	[0, 1, 0],                                              // up
-);
-/*const lightProjectionMatrix = m4.perspective(
-	renderSettings.fov * Math.PI / 180,
-	1.0,
-	0.01,  // near
-	20000)   // far
-*/
+		//light.pos,
+		//light.look,
+		[0, 1, 0],                                              // up
+	);
+	/*const lightProjectionMatrix = m4.perspective(
+		renderSettings.fov * Math.PI / 180,
+		1.0,
+		0.01,  // near
+		20000)   // far
+	*/
 
-const lightProjectionMatrix = m4.orthographic(
-            -450 / 2,   // left
-             450 / 2,   // right
-            -450 / 2,  // bottom
-             450 / 2,  // top
-             0.5,                      // near
-             2000000);    
-	
-// draw to the depth texture
-gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
-gl.viewport(0, 0, depthTextureSize, depthTextureSize);
-gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	const lightProjectionMatrix = m4.orthographic(
+				-850 / 2,   // left
+				 850 / 2,   // right
+				-850 / 2,  // bottom
+				 850 / 2,  // top
+				 0.5,                      // near
+				 2000000);    
+		
+	// draw to the depth texture
+	gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
+	gl.viewport(0, 0, depthTextureSize, depthTextureSize);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-drawScene(
-	lightProjectionMatrix,
-	lightWorldMatrix,
-	m4.identity(),
-	lightWorldMatrix,
-	colorProgramInfo,
-	processList,
-	1);
-
-
-// now draw scene to the canvas projecting the depth texture into the scene
-gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-gl.clearColor(0, 0, 0, 1);
-gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-let textureMatrix = m4.identity();
-textureMatrix = m4.translate(textureMatrix, 0.5, 0.5, 0.5);
-textureMatrix = m4.scale(textureMatrix, 0.5, 0.5, 0.5);
-
-textureMatrix = m4.multiply(textureMatrix, lightProjectionMatrix);
-
-// use the inverse of this world matrix to make
-// a matrix that will transform other positions
-// to be relative this this world space.
-
-textureMatrix = m4.multiply(
-	textureMatrix,
-	m4.inverse(lightWorldMatrix));
-
-// Compute the projection matrix
-const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-
-if(renderSettings.orthographic==0){
-	var  projectionMatrix = m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.01, 20000);
-}else{
-	var projectionMatrix =  m4.orthographic(
-            -renderSettings.zoom / 2,   // left
-             renderSettings.zoom / 2,   // right
-            -renderSettings.zoom / 2,  // bottom
-             renderSettings.zoom / 2,  // top
-             0.5,                      // near
-             2000000);    
-	
-}
+	drawScene(
+		lightProjectionMatrix,
+		lightWorldMatrix,
+		m4.identity(),
+		lightWorldMatrix,
+		colorProgramInfo,
+		processList,
+		1);
 
 
+	// now draw scene to the canvas projecting the depth texture into the scene
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+	gl.clearColor(0, 0, 0, 1);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	
+	let textureMatrix = m4.identity();
+	textureMatrix = m4.translate(textureMatrix, 0.5, 0.5, 0.5);
+	textureMatrix = m4.scale(textureMatrix, 0.5, 0.5, 0.5);
+
+	textureMatrix = m4.multiply(textureMatrix, lightProjectionMatrix);
+
+	// use the inverse of this world matrix to make
+	// a matrix that will transform other positions
+	// to be relative this this world space.
+
+	textureMatrix = m4.multiply(
+		textureMatrix,
+		m4.inverse(lightWorldMatrix));
+
+	// Compute the projection matrix
+	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+
+	if(renderSettings.orthographic==0){
+		var  projectionMatrix = m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.01, 20000);
+	}else{
+		var projectionMatrix =  m4.orthographic(
+				-renderSettings.zoom / 2,   // left
+				 renderSettings.zoom / 2,   // right
+				-renderSettings.zoom / 2,  // bottom
+				 renderSettings.zoom / 2,  // top
+				 0.5,                      // near
+				 2000000);    
+		
+	}
 
 
-// Compute the camera's matrix using look at.
-const cameraPosition = [player.position[0], -player.position[2], player.position[1]];
-const target = [lookPosition[0], -lookPosition[2], lookPosition[1]];
-const up = [0, 1, 0];
-const cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
-create_frustrum();
+		
 
-if(get==1){
-drawScene(
-	projectionMatrix,
-	cameraMatrix,
-	textureMatrix,
-	lightWorldMatrix,
-	textureProgramInfo,
-	processList,
-	0);
-}
+
+	// Compute the camera's matrix using look at.
+	const cameraPosition = [player.position[0], -player.position[2], player.position[1]];
+	const target = [lookPosition[0], -lookPosition[2], lookPosition[1]];
+	const up = [0, 1, 0];
+	const cameraMatrix = m4.lookAt(cameraPosition, target, up);
+
+	create_frustrum();
+
+	drawScene(
+		projectionMatrix,
+		cameraMatrix,
+		textureMatrix,
+		lightWorldMatrix,
+		textureProgramInfo,
+		processList,
+		0);
+
+
+
+	//If there is a cursor to be drawn
+	if(controls.cursorDraw.size!=0){
+		//gl.enable(gl.BLEND);
+		//Displace cursor 
+		var modelMatrix = glMatrix.mat4.create()
+		glMatrix.mat4.translate(modelMatrix,modelMatrix ,[controls.cursorPosition[0] - blockSettings.chunk.XYZ/2,-controls.cursorPosition[2]+ blockSettings.chunk.XYZ/2  ,controls.cursorPosition[1]-blockSettings.chunk.XYZ/2]);
+		gl.uniformMatrix4fv(programInfo.uniformLocations.modelMatrix,false,modelMatrix);
+		gl.uniform1f(programInfo.uniformLocations.transparency,Math.min(controls.buildStrength/60+0.1,0.7));
+		//Draw cursor
+		gl.bindVertexArray(controls.cursorDraw.vao);
+		//gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+		//gl.disable(gl.BLEND);
+		gl.drawElements(gl.TRIANGLES, controls.cursorDraw.size ,gl.UNSIGNED_INT,0);	
+	}
+
 }
 
 

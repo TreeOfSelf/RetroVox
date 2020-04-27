@@ -16,12 +16,12 @@ function create_frustrum(){
 
 	//Near plane
 	var nearSize=[];
-	 nearSize[1]= 2 * Math.tan( (renderSettings.fov * Math.PI / 180) *0.64) * zNear; // Height
+	 nearSize[1]= 2 * Math.tan( ((renderSettings.fov) * Math.PI / 180) *0.64) * zNear; // Height
 	 nearSize[0]= nearSize[1] * (gl.canvas.clientWidth / gl.canvas.clientHeight) //Width
 
 	//Far planes
 	var farSize=[];
-	 farSize[1]= 2 * Math.tan( (renderSettings.fov  * Math.PI / 180) *0.64) * zFar; // Height
+	 farSize[1]= 2 * Math.tan( ((renderSettings.fov)  * Math.PI / 180) *0.64) * zFar; // Height
 	 farSize[0]= farSize[1] * (gl.canvas.clientWidth / gl.canvas.clientHeight) //Width	
 	//Direction vector
 	var viewD =  glMatrix.vec3.fromValues(Math.sin(player.rotation[0])*Math.cos(player.rotation[1]),+Math.cos(player.rotation[0])*-Math.cos(player.rotation[1]),Math.sin(player.rotation[1]));
@@ -178,8 +178,8 @@ function create_frustrum(){
 
 
 check_frustrum= function(point){
-		var amountXY = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.55;
-		var amountZ = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.4;
+		var amountXY = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.5;
+		var amountZ = -blockSettings.sector.XYZ*blockSettings.chunk.XYZ*0.5;
 
 		//Position we are checking
 		
