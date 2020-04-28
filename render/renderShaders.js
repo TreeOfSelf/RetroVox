@@ -47,25 +47,32 @@ const gl = canvas.getContext("webgl2",{
 	antialias : true,
 	//premultipliedAlpha: false, 
 });
+//Pixel Shader
+
 
 //Pixel Shader
 
 const pixelVS = `#version 300 es
 in vec3 a_position;
 in vec3 a_color;
+in vec2 a_offset;
 
 out vec3 v_color;
+out vec2 v_offset;
+out float v_mix;
 
 uniform mat4 u_projection;
 uniform mat4 u_world;
 uniform mat4 u_view;
+uniform vec3 u_cam;
 
 void main() {
   // Multiply the position by the matrices.
 	gl_Position =  u_projection	* u_view * u_world * vec4(a_position[0],-a_position[2],a_position[1],1.0);
-	gl_PointSize = 128.0;
+	gl_PointSize = 150000.0/gl_Position[2];//128.0;
 	v_color = a_color;
-
+	v_offset = a_offset;
+	v_mix = distance(u_cam.xy,a_position.xy)*0.0002;
 }
 `;
 
@@ -73,16 +80,24 @@ const pixelFS = `#version 300 es
 precision mediump float;
 
 in vec3 v_color;
+in vec2 v_offset;
+in float v_mix;
 
 uniform sampler2D u_sampler;
+uniform vec3 u_timeColor;
+uniform float u_time;
 
 out vec4 outColor;
 
 
 void main() {
-  outColor = texture(u_sampler,vec2(gl_PointCoord[0]*0.49,gl_PointCoord[1]*0.25));
+  outColor = texture(u_sampler,vec2(gl_PointCoord[0]*0.5+v_offset[0],gl_PointCoord[1]*0.25+v_offset[1]));
+  if(outColor.a<=0.1){
+	  discard;
+  }
+  outColor.rgb = mix(outColor.rgb,u_timeColor,  min(1.0,min(0.9,abs(u_time)/7000.0) + v_mix));
   //outColor.rgb = v_color;
-  //gl_FragDepth=-500.0;
+
 }
 `;
 
@@ -243,7 +258,7 @@ void main() {
 	
 
 
-	fragColor.rgb*= max(   min(0.25,max((100.0/abs(u_time))*1000.0,0.65))      ,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* (shadowLight / max(0.7,min(4.0,(abs(u_time)/1000.0))) ));
+	fragColor.rgb*= max(  max(0.35,(1.0-abs(u_time)*0.0001)-0.4)   ,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* (shadowLight / max(0.7,min(4.0,(abs(u_time)/1000.0))) ));
 	fragColor.rgb = mix(fragColor.rgb,u_timeColor,min(1.0,v_mix));
 	fragColor.a = u_transparency;
 
@@ -319,6 +334,7 @@ const pixelInfo = {
 	attribLocations : {
 		position: gl.getAttribLocation(pixelProgramInfo.program, 'a_position'),
 		color: gl.getAttribLocation(pixelProgramInfo.program, 'a_color'),
+		offset: gl.getAttribLocation(pixelProgramInfo.program, 'a_offset'),
 	},
 	uniformLocations : {
 		sampler : gl.getAttribLocation(pixelProgramInfo.program, 'u_sampler'),
