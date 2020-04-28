@@ -173,7 +173,7 @@ gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 gl.lineWidth(15.0);
 
 
-gl.clearColor(0.7,0.85,0.98,1.0);
+
 renderSettings.lightIntensity = 0.009;
 
 
@@ -182,7 +182,6 @@ get=1;
 
 
 function render(now){
-	var time = Date.now();
 	fps.drawLength=0;
 	
 	gl.enable(gl.BLEND);
@@ -190,6 +189,12 @@ function render(now){
 	mobile_controls();
 	player_physics();
 
+
+	var timeMod = 800/Math.abs(time);
+	timeMod=Math.min(timeMod,1);
+	timeColor = [0.7*timeMod,0.85*timeMod,0.98*timeMod];
+	
+	gl.clearColor(timeColor[0],timeColor[1],timeColor[2],1.0);
 	
 	//Test to see if the browser window has changed from our set size
 	if(window.innerWidth*renderSettings.resolution!=renderSettings.screenSize[0] || window.innerHeight*renderSettings.resolution!=renderSettings.screenSize[1]){
@@ -238,12 +243,6 @@ function render(now){
 
 
 
-function rendedr(now){
-
-	
-
-
-}
 
 
 
@@ -313,7 +312,7 @@ function drawSky(  projectionMatrix,
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, skyBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(
-	[Math.round(player.position[0]+time)+0.1, Math.round(player.position[1]),-600]
+	[Math.round(player.position[0]+time)+0.1, Math.round(player.position[1]),-600 + Math.abs(time*0.25)]
 	),gl.STATIC_DRAW);
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, skyColorBuffer);
@@ -347,6 +346,8 @@ function drawScene(
 		u_world : m4.identity(),
 		u_transparency : 1,
 		u_cam : player.position,
+		u_time : time,
+		u_timeColor : timeColor,
 	});
 	
 	//Draw all if shadow rendering 
@@ -411,7 +412,7 @@ function render_sectors(processList) {
 
 	// first draw from the POV of the light
 	const lightWorldMatrix = m4.lookAt(
-		[Math.round(player.position[0]+time)+0.1, 600, Math.round(player.position[1])],
+		[Math.round(player.position[0]+time)+0.1, 600- Math.abs(time*0.25), Math.round(player.position[1])],
 		[Math.round(player.position[0]), 0, Math.round(player.position[1])], 
 			  // position
 
@@ -438,7 +439,7 @@ function render_sectors(processList) {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, depthFramebuffer);
 	gl.viewport(0, 0, depthTextureSize, depthTextureSize);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+	gl.disable(gl.CULL_FACE);
 	drawScene(
 		lightProjectionMatrix,
 		lightWorldMatrix,
@@ -496,7 +497,7 @@ function render_sectors(processList) {
 	const cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
 	create_frustrum();
-
+	gl.enable(gl.CULL_FACE);
 	drawScene(
 		projectionMatrix,
 		cameraMatrix,

@@ -207,14 +207,18 @@ uniform  highp sampler2DArray u_sampler;
 uniform float u_transparency;
 uniform vec3 u_reverseLight;
 uniform sampler2D u_projectedTexture;
+uniform float u_time;
+uniform vec3 u_timeColor;
 
 out vec4 fragColor;
 
 void main() {
-	
+	if(v_mix>=0.95){
+		discard;
+	}
 	
 	vec3 projectedTexcoord = v_projectedCoords.xyz / v_projectedCoords.w;
-	float currentDepth = projectedTexcoord.z  -0.000005;//-0.0000006;//-0.00001;
+	float currentDepth = projectedTexcoord.z  -0.000002;//-0.0000006;//-0.00001;
 
 	bool inRange =
 	  projectedTexcoord.x >= 0.0 &&
@@ -239,8 +243,8 @@ void main() {
 	
 
 
-	fragColor.rgb*= max(0.45,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* shadowLight);
-	fragColor.rgb = mix(fragColor.rgb,vec3(0.7,0.85,0.98),min(1.0,v_mix));
+	fragColor.rgb*= max(   min(0.25,max((100.0/abs(u_time))*1000.0,0.65))      ,min(dot(vec3(v_normal[0],-v_normal[2],v_normal[1]),normalize(u_reverseLight))*1.0,1.0)* (shadowLight / max(0.7,min(4.0,(abs(u_time)/1000.0))) ));
+	fragColor.rgb = mix(fragColor.rgb,u_timeColor,min(1.0,v_mix));
 	fragColor.a = u_transparency;
 
 
@@ -294,7 +298,7 @@ const programInfo = {
 		textureSampler : gl.getUniformLocation(textureProgramInfo.program, 'u_sampler'),
 		projectedTexture : gl.getUniformLocation(textureProgramInfo.program, 'u_projectedTexture'),
 		reverseLight : gl.getUniformLocation(textureProgramInfo.program,'u_reverseLight'),
-		reverseLight : gl.getUniformLocation(textureProgramInfo.program,'u_cam'),
+
 
 	},
 };

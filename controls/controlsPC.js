@@ -191,10 +191,10 @@ keyboard_controls = function(){
 	}
 	
 	if(controls.keys['[']==1){
-		time-=1;
+		time-=10;
 	}
 	if(controls.keys[']']==1){
-		time+=1;
+		time+=10;
 	}
 	
 	//ARROW KEY LOOKING
