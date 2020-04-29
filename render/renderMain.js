@@ -90,9 +90,9 @@ window.loadImage = function(url, onload) {
 
 //Texture array for terrain materials
 const sunTexture = loadTexture(gl,'sun.png');
-var sunSize = 128;
-var sunWidth = 256
-var sunHeight = 512;
+var sunSize = 240;
+var sunWidth = 240*2;
+var sunHeight = 240*4;
 
 var textureArray = gl.createTexture();
 loadImage('grass.png', function(image){
@@ -210,7 +210,7 @@ function render(now){
 	for(var xx=-renderSettings.viewDistance.XY;xx<=renderSettings.viewDistance.XY;xx++){
 	for(var yy=-renderSettings.viewDistance.XY;yy<=renderSettings.viewDistance.XY;yy++){
 	for(var zz=-renderSettings.viewDistance.XY;zz<=renderSettings.viewDistance.XY;zz++){
-		var sectorPos = [xx+player.sector[0],yy+player.sector[1],zz+player.sector[2]];
+		var sectorPos = [xx+player.sector[0],yy+player.sector[1],zz];
 		var sectorID = sector_returnID(sectorPos[0],sectorPos[1],sectorPos[2]);
 	
 		if(sector[sectorID]!=null){
@@ -235,11 +235,24 @@ function render(now){
 
 var clouds = [];
 function cloud_create(){
+	
+	var xx = Math.random()*8000-Math.random()*8000;
+	var yy = Math.random()*8000-Math.random()*8000;
+	var size = Math.random()*1000000+50000;
+	for(var v=0;v<clouds.length;v++){
+		
+		if(distance_2d( [clouds[v].x,clouds[v].y],[xx,yy])<clouds[v].size*0.0005 +size*0.0005 ){
+			return;
+		}
+	}
+	
+	
 	clouds.push({
-		x : Math.random()*8000-Math.random()*8000,
-		y : Math.random()*8000-Math.random()*8000,
+		x : xx,
+		y : yy,
 		z : Math.random()*300-550,
 		coords : [0,0],
+		size : size,
 	});
 	
 
@@ -247,7 +260,7 @@ function cloud_create(){
 	var chance = Math.round(Math.random()*3);
 	
 	
-	var base = sunSize*2;
+	var base = sunSize*1;
 	
 	switch(chance){
 		case 0:
@@ -266,7 +279,7 @@ function cloud_create(){
 	
 }
 
-for(var v=0;v<=100;v++){
+for(var v=0;v<=3000;v++){
 	cloud_create();
 }
 
@@ -296,8 +309,12 @@ gl.vertexAttribPointer(pixelInfo.attribLocations.color,3,gl.FLOAT,false,0,0);
 var skyOffsetBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER,skyOffsetBuffer);
 gl.vertexAttribPointer(pixelInfo.attribLocations.offset,2,gl.FLOAT,false,0,0);
-//gl.bufferData(gl.ARRAY_BUFFER,999999,gl.STATIC_DRAW);
 gl.enableVertexAttribArray(pixelInfo.attribLocations.offset);	
+
+var skySizeBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,skySizeBuffer);
+gl.vertexAttribPointer(pixelInfo.attribLocations.size,1,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(pixelInfo.attribLocations.size);	
 
 gl.uniform1i(pixelInfo.uniformLocations.uSampler, 2);
 
@@ -341,7 +358,9 @@ function drawSky(  projectionMatrix,
 		sunTick=0;
 	}
 	
-	switch(Math.round(sunTick)){
+	sunOffset = [0,0];
+	
+	/*switch(Math.round(sunTick)){
 		case 0:
 			sunOffset = [0,0];
 		break;
@@ -354,26 +373,27 @@ function drawSky(  projectionMatrix,
 		case 3:
 			sunOffset = [sunSize/sunWidth,sunSize/sunHeight];
 		break;
-	}
+	}*/
 	
 	
 	var drawPos = [];
 	var drawCol = [];
 	var drawOffset = [];
+	var drawSize = [];
 	
 	//add sun values
 	drawPos.push((player.position[0]+time)+0.1, (player.position[1]),-1200 + Math.abs(time*0.25));
 	drawCol.push(1.0,0.0,1.0);
 	drawOffset.push(sunOffset[0],sunOffset[1]);
-	
+	drawSize.push(500000);
 	
 	//add cloud values
 	
 	for(var k=0;k<clouds.length;k++){
 		var cloud = clouds[k];
 		
-		cloud.x+=0.07;
-		cloud.y+=0.2;
+		cloud.x+=0.07*5.0;
+		cloud.y+=0.2*5.0;
 	
 		if(cloud.x>player.position[0]+4000){
 			cloud.x=player.position[0]-4000;
@@ -386,7 +406,7 @@ function drawSky(  projectionMatrix,
 		drawPos.push(cloud.x,cloud.y,cloud.z);
 		drawCol.push(1.0,1.0,1.0);
 		drawOffset.push(cloud.coords[0],cloud.coords[1]+0.5);
-		
+		drawSize.push(cloud.size);
 	}
 
 	
@@ -409,8 +429,10 @@ function drawSky(  projectionMatrix,
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, skyOffsetBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(drawOffset),gl.DYNAMIC_DRAW);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, skySizeBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(drawSize),gl.DYNAMIC_DRAW);
 	gl.drawArrays(gl.POINTS, 0,  drawPos.length/3);	
-
 }
 
 
@@ -566,7 +588,7 @@ function render_sectors(processList) {
 	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 
 	if(renderSettings.orthographic==0){
-		var  projectionMatrix = m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.5, 4000);
+		var  projectionMatrix = m4.perspective(renderSettings.fov * Math.PI / 180, aspect, 0.5, 4500);
 	}else{
 		var projectionMatrix =  m4.orthographic(
 				-renderSettings.zoom / 2,   // left

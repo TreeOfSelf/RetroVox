@@ -56,6 +56,7 @@ const pixelVS = `#version 300 es
 in vec3 a_position;
 in vec3 a_color;
 in vec2 a_offset;
+in float a_size;
 
 out vec3 v_color;
 out vec2 v_offset;
@@ -69,10 +70,11 @@ uniform vec3 u_cam;
 void main() {
   // Multiply the position by the matrices.
 	gl_Position =  u_projection	* u_view * u_world * vec4(a_position[0],-a_position[2],a_position[1],1.0);
-	gl_PointSize = 150000.0/gl_Position[2];//128.0;
+	//gl_PointSize = a_size/gl_Position[2];//128.0;
+	gl_PointSize = a_size*0.001;
 	v_color = a_color;
 	v_offset = a_offset;
-	v_mix = distance(u_cam.xy,a_position.xy)*0.0002;
+	v_mix = distance(u_cam.xy,a_position.xy)*0.0005;
 }
 `;
 
@@ -92,7 +94,7 @@ out vec4 outColor;
 
 void main() {
   outColor = texture(u_sampler,vec2(gl_PointCoord[0]*0.5+v_offset[0],gl_PointCoord[1]*0.25+v_offset[1]));
-  if(outColor.a<=0.1){
+  if(outColor.a<=0.4){
 	  discard;
   }
   outColor.rgb = mix(outColor.rgb,u_timeColor,  min(1.0,min(0.9,abs(u_time)/7000.0) + v_mix));
@@ -203,7 +205,7 @@ void main() {
 	v_normal = a_normal;
 	v_coords =  a_position;
 	v_type = a_type;
-	v_mix = max(0.0,(distance(a_position,u_cam)-180.0))/30.0;
+	v_mix = max(0.0,(distance(a_position.xy,u_cam.xy)-180.0))/30.0;
 }
 `;
 
@@ -335,6 +337,7 @@ const pixelInfo = {
 		position: gl.getAttribLocation(pixelProgramInfo.program, 'a_position'),
 		color: gl.getAttribLocation(pixelProgramInfo.program, 'a_color'),
 		offset: gl.getAttribLocation(pixelProgramInfo.program, 'a_offset'),
+		size: gl.getAttribLocation(pixelProgramInfo.program, 'a_size'),
 	},
 	uniformLocations : {
 		sampler : gl.getAttribLocation(pixelProgramInfo.program, 'u_sampler'),
