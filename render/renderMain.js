@@ -125,7 +125,7 @@ gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_L
 });
 
 const depthTexture = gl.createTexture();
-const depthTextureSize = 6000
+const depthTextureSize = 3000
 gl.bindTexture(gl.TEXTURE_2D, depthTexture);
 gl.texImage2D(
   gl.TEXTURE_2D,      // target
@@ -180,7 +180,8 @@ function render(now){
 	mobile_controls();
 	player_physics();
 
-
+	physics_calculate();
+	
 	var timeMod = 800/Math.abs(time);
 	timeMod=Math.min(timeMod,1);
 	timeColor = [0.7*timeMod,0.85*timeMod,0.98*timeMod];
@@ -241,7 +242,7 @@ function cloud_create(){
 	var size = Math.random()*1000000+50000;
 	for(var v=0;v<clouds.length;v++){
 		
-		if(distance_2d( [clouds[v].x,clouds[v].y],[xx,yy])<clouds[v].size*0.0005 +size*0.0005 ){
+		if(distance_2d( [clouds[v].x,clouds[v].y],[xx,yy])<clouds[v].size*0.001 +size*0.001 ){
 			return;
 		}
 	}
@@ -392,16 +393,66 @@ function drawSky(  projectionMatrix,
 	for(var k=0;k<clouds.length;k++){
 		var cloud = clouds[k];
 		
-		cloud.x+=0.07*5.0;
-		cloud.y+=0.2*5.0;
+		cloud.x+=0.07*1.0;
+		cloud.y+=0.2*1.0;
+	
+	
 	
 		if(cloud.x>player.position[0]+4000){
-			cloud.x=player.position[0]-4000;
+			var hit=0;
+			var testX=0;
+			while(hit==0){
+				testX=player.position[0]-4000-Math.random()*2000;
+				for(var C=0;C<clouds.length;C++){
+					if(distance_2d([testX,cloud.y],[clouds[C].x,clouds[C].y])>clouds[C].size*0.001 +cloud.size*0.001){
+						hit=1;
+					}
+				}
+			} 
+			cloud.x=testX;
 		}
 		if(cloud.y>=player.position[1]+4000){
-			cloud.y=player.position[1]-4000;
+			var hit=0;
+			var testY=0;
+			while(hit==0){
+				testY=player.position[1]-4000-Math.random()*2000;
+				for(var C=0;C<clouds.length;C++){
+					if(distance_2d([cloud.x,testY],[clouds[C].x,clouds[C].y])>clouds[C].size*0.001 +cloud.size*0.001){
+						hit=1;
+					}
+				}	
+			} 
+			cloud.y=testY;
 		}
-
+		
+	
+		if(cloud.x<player.position[0]-6000){
+			var hit=0;
+			var testX=0;
+			while(hit==0){
+				testX=player.position[0]-4000+Math.random()*2000;
+				for(var C=0;C<clouds.length;C++){
+					if(distance_2d([testX,cloud.y],[clouds[C].x,clouds[C].y])>clouds[C].size*0.001 +cloud.size*0.001){
+						hit=1;
+					}
+				}
+			} 
+			cloud.x=testX;
+		}
+		if(cloud.y<=player.position[1]-6000){
+			var hit=0;
+			var testY=0;
+			while(hit==0){
+				testY=player.position[1]-4000-Math.random()*2000;
+				for(var C=0;C<clouds.length;C++){
+					if(distance_2d([cloud.x,testY],[clouds[C].x,clouds[C].y])>clouds[C].size*0.001 +cloud.size*0.001){
+						hit=1;
+					}
+				}	
+			} 
+			cloud.y=testY;
+		}
+		
 	
 		drawPos.push(cloud.x,cloud.y,cloud.z);
 		drawCol.push(1.0,1.0,1.0);
@@ -543,10 +594,10 @@ function render_sectors(processList) {
 	*/
 
 	const lightProjectionMatrix = m4.orthographic(
-				-375 / 2,   // left
-				 375 / 2,   // right
-				-375 / 2,  // bottom
-				 375 / 2,  // top
+				-400 / 2,   // left
+				 400 / 2,   // right
+				-400 / 2,  // bottom
+				 400 / 2,  // top
 				 0.5,                      // near
 				 2000000);    
 		

@@ -45,6 +45,8 @@ var meshWorker ={
 
 };
 
+var chunk = [];
+
 //messaging from mesh thread 
 meshWorker.worker.addEventListener('message', function(e) {
 	var message = e.data;
@@ -85,6 +87,13 @@ meshWorker.worker.addEventListener('message', function(e) {
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, controls.cursorDraw.buffers.type);
 		gl.bufferData(gl.ARRAY_BUFFER,new Uint8Array(message.result[2]),gl.STATIC_DRAW);
+		break;
+		
+		case "chunkCollision":
+			chunk[message.chunkID]={
+				coords : message.coords,
+				triangles : new Float32Array(message.position),
+			}
 		break;
 		
 		//Sector drawing

@@ -662,15 +662,29 @@ return function(data,dataType, dims,chunkPos,lod,chunkID) {
   
 	//Set draw data to the specified chunk
 	
+	
+	
+	
 	if(chunkID!='cursor'){
 
-		chunk[chunkID].drawData.position = new Float32Array(finalVert);	
-		chunk[chunkID].drawData.texture = new Float32Array(textureCoords);
-		chunk[chunkID].drawData.type = new Uint8Array(finalType);
-		
+		if(finalVert[0]!=null){
+			
+			chunk[chunkID].drawData.position = new Float32Array(finalVert);	
+			chunk[chunkID].drawData.texture = new Float32Array(textureCoords);
+			chunk[chunkID].drawData.type = new Uint8Array(finalType);
+			
 
-		chunk_draw_sector(chunkID);
+			chunk_draw_sector(chunkID);
 
+			var result = new Float32Array(finalVert).buffer;
+			self.postMessage({
+				id : 'chunkCollision',
+				chunkID : chunkID,
+				coords : chunk[chunkID].coords,
+				position : result,
+			},[result]);
+			
+		}
 	//Return draw data for cursor chunk
 	}else{
 
