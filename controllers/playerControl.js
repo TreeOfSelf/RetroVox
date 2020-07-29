@@ -82,15 +82,43 @@ var upVector = glMatrix.vec3.fromValues(0,0,1);
 var rightVector = glMatrix.vec3.create();
 
 
-//Function ran every frame to calculate player physics
-function player_physics(){
+//Function ran every frame to calculate players goto position
+player_movement=function(){
 		
-	//Movement 	
+	
+	//Get vector of player position 
+	var positionVector = glMatrix.vec3.fromValues(player.position[0],player.position[1],player.position[2]);
+	
 	
 	//Movement X/Y/Z forward
-	player.position[0]-=Math.sin(player.rotation[0])* (player.momentum[0]);
-	player.position[1]+=Math.cos(player.rotation[0])* (player.momentum[0]);
-	player.position[2]-=Math.sin(player.rotation[1])* (player.momentum[0]);
+	
+
+
+	//Calculate forward movement 
+	var forwardMovement = glMatrix.vec3.fromValues(
+	player.position[0]-Math.sin(player.rotation[0])* (player.momentum[0]),
+	player.position[1]+Math.cos(player.rotation[0])* (player.momentum[0]),
+	player.position[2]);
+	
+	
+	//Get vector pointing from original point to forward movement point and normalize to get a ray in that direction
+	forwardMovementNormal =  glMatrix.vec3.create();
+
+	glMatrix.vec3.subtract(forwardMovementNormal,forwardMovement,positionVector);
+	glMatrix.vec3.normalize(forwardMovementNormal,forwardMovementNormal);
+
+	
+	//Set offsets to later offset position if that place is freer
+	forwardMovement = glMatrix.vec3.fromValues(
+	-Math.sin(player.rotation[0])* (player.momentum[0]),
+	Math.cos(player.rotation[0])* (player.momentum[0]),
+	0);
+		
+	
+
+	//Free cam movement 
+	//player.position[2]-=Math.sin(player.rotation[1])* (player.momentum[0]);
+	
 	
 	//Calculate forward vector
 	var forwardVector = glMatrix.vec3.fromValues(-Math.sin(player.rotation[0]),Math.cos(player.rotation[0]),0)
@@ -98,9 +126,51 @@ function player_physics(){
 	glMatrix.vec3.cross(rightVector,forwardVector,upVector);
 
 	//Movement X/Y/Z strafe 
+	
+	
+	/*
+	if(physics_infront(
+	player.position[0]+rightVector[0]* (player.momentum[1]),
+	player.position[1]+rightVector[1]* (player.momentum[1])
+	)==false){
+		
 	player.position[0]+=rightVector[0]* (player.momentum[1]);
 	player.position[1]+=rightVector[1]* (player.momentum[1]);
-	player.position[2]+=rightVector[2]* (player.momentum[1]);
+	
+	}*/
+	
+
+	//player.position[2]+=rightVector[2]* (player.momentum[1]);
+	
+	
+
+	var triangleList = physics_getTriangles(player.chunk[0],player.chunk[1],player.chunk[2]);
+
+
+	//Test each triangle
+	var forwardFree=true;
+	var gravityFree=true;
+	var strafeFree=true;
+	for(var l=0;l<triangleList.length;l++){
+		//Forward test 
+		//console.log(distance_3d(triangleList[l][0],[player.position[0],player.position[2],player.position[1]]),player.momentum[0]);
+		if(forwardFree==true && distance_3d(triangleList[l][0],[player.position[0],player.position[1],player.position[2]])<=Math.abs(player.momentum[0]*4)+2.0){
+			var pointHit  = intersectTriangle([],[player.position[0],player.position[1],player.position[2]],forwardMovementNormal,triangleList[l]);
+			if(pointHit!=null){
+				forwardFree=null;
+				//Flag falling to off and set player height to the points height
+				//falling=0;
+				//player.position[2]=pointHit[2]-3f
+			}
+		}
+	}
+	//Move forward if it isnt blocked
+	//console.log(forwardFree,forwardMovement,forwardMovementNormal);
+	if(forwardFree==true){
+		player.position[0]+=forwardMovement[0];
+		player.position[1]+=forwardMovement[1];
+	}
+
 	
 	
 	//Slow acceleration for forward & strafe

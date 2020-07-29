@@ -178,9 +178,8 @@ function render(now){
 	gl.enable(gl.BLEND);
 	keyboard_controls();
 	mobile_controls();
-	player_physics();
+	player_movement();
 
-	physics_calculate();
 	
 	var timeMod = 800/Math.abs(time);
 	timeMod=Math.min(timeMod,1);
