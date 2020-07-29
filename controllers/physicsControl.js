@@ -8,9 +8,9 @@ physics_getTriangles = function(x,y,z){
 	var triangleList=[];
 	
 	//Loop thorugh nearby chunks
-	for(var xx=-1;xx<=1;xx++){
-	for(var yy=-1;yy<=1;yy++){
-	for(var zz=-1;zz<=1;zz++){
+	for(var xx=-0;xx<=0;xx++){
+	for(var yy=-0;yy<=0;yy++){
+	for(var zz=-0;zz<=0;zz++){
 		//Return chunkID from offset position 
 		var chunkID = chunk_returnID(x+xx,y+yy,z+zz);
 			if(chunk[chunkID]!=null){

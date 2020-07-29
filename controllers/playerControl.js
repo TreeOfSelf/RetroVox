@@ -154,7 +154,7 @@ player_movement=function(){
 	for(var l=0;l<triangleList.length;l++){
 		//Forward test 
 		//console.log(distance_3d(triangleList[l][0],[player.position[0],player.position[2],player.position[1]]),player.momentum[0]);
-		if(forwardFree==true && distance_3d(triangleList[l][0],[player.position[0],player.position[1],player.position[2]])<=Math.abs(player.momentum[0]*4)+2.0){
+		if(forwardFree==true && distance_3d(triangleList[l][0],[player.position[0],player.position[1],player.position[2]])<=Math.abs(player.momentum[0]*3)+1.0){
 			var pointHit  = intersectTriangle([],[player.position[0],player.position[1],player.position[2]],forwardMovementNormal,triangleList[l]);
 			if(pointHit!=null){
 				forwardFree=null;
