@@ -152,6 +152,11 @@ canvas.addEventListener('wheel', function(e) {
 //Function ran every frame to check keyboard controls
 keyboard_controls = function(){
 	
+	if(controls.keys[' ']){
+		if(player.momentum[2]==0){
+			player.momentum[2]=-0.5;
+		}
+	}
 	
 	if(controls.keys['-'] || controls.keys['_']){
 		if(controls.buildStrength>2){
