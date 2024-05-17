@@ -9,8 +9,8 @@ The  files can be hosted on your preffered HTTP server
 
 
 ## Screenshot(s)
-![image](https://hardcoreanarchy.gay/images/1.png)
-![image](https://hardcoreanarchy.gay/images/2.png)
+![image](https://sebastiancodes.online/github/1.png)
+![image](https://sebastiancodes.online/github/2.png)
 
 
 ## Contributing
